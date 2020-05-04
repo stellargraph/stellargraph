@@ -347,7 +347,7 @@ def rl_us(link=None):
     return T("US", link=link, details="UnsupervisedSampler")
 
 
-def rl_dgi(link="embeddings/deep-graph-infomax-cora"):
+def rl_dgi(link="embeddings/deep-graph-infomax-embeddings"):
     return T("DGI", link=link, details="DeepGraphInfomax")
 
 
@@ -361,19 +361,19 @@ ALGORITHMS = [
         heterogeneous="see RGCN",
         features=True,
         temporal="see T-GCN",
-        nc=T(link="node-classification/gcn/gcn-cora-node-classification-example"),
+        nc=T(link="node-classification/gcn-node-classification"),
         interpretability_nc=T(
-            link="interpretability/gcn/node-link-importance-demo-gcn"
+            link="interpretability/gcn-node-link-importance"
         ),
-        lp=T(link="link-prediction/gcn/cora-gcn-links-example"),
+        lp=T(link="link-prediction/gcn-link-prediction"),
         rl=[rl_us(), rl_dgi()],
         inductive="see Cluster-GCN",
-        gc=T(link="graph-classification/supervised-graph-classification"),
+        gc=T(link="graph-classification/gcn-supervised-graph-classification"),
     ),
     Algorithm(
         "Cluster-GCN",
         features=True,
-        nc=T(link="node-classification/cluster-gcn/cluster-gcn-node-classification"),
+        nc=T(link="node-classification/cluster-gcn-node-classification"),
         lp=True,
         inductive=True,
     ),
@@ -381,21 +381,21 @@ ALGORITHMS = [
         T("RGCN", details="Relational GCN (RGCN)"),
         heterogeneous=HETEROGENEOUS_EDGE,
         features=True,
-        nc=T(link="node-classification/rgcn/rgcn-aifb-node-classification-example"),
+        nc=T(link="node-classification/rgcn-node-classification"),
         lp=True,
     ),
     Algorithm(
         T("T-GCN", details="Temporal GCN (T-GCN), implemented as GCN-LSTM"),
         features="time series, sequence",
         temporal="node features",
-        nc=T(link="time-series/gcn-lstm-LA"),
+        nc=T(link="time-series/gcn-lstm-time-series"),
     ),
     Algorithm(
         T("GAT", details="Graph ATtention Network (GAT)"),
         features=True,
-        nc=T(link="node-classification/gat/gat-cora-node-classification-example"),
+        nc=T(link="node-classification/gat-node-classification"),
         interpretability_nc=T(
-            link="interpretability/gat/node-link-importance-demo-gat.ipynb"
+            link="interpretability/gat-node-link-importance"
         ),
         lp=True,
         rl=[rl_us(), rl_dgi()],
@@ -403,20 +403,20 @@ ALGORITHMS = [
     Algorithm(
         T("SGC", details="Simplified Graph Convolution (SGC)"),
         features=True,
-        nc=T(link="node-classification/sgc/sgc-node-classification-example"),
+        nc=T(link="node-classification/sgc-node-classification"),
         lp=True,
     ),
     Algorithm(
         T("PPNP", details="Personalized Propagation of Neural Predictions (PPNP)"),
         features=True,
-        nc=T(link="node-classification/ppnp/ppnp-cora-node-classification-example"),
+        nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi(link=None)],
     ),
     Algorithm(
         T("APPNP", details="Approximate PPNP (APPNP)"),
         features=True,
-        nc=T(link="node-classification/ppnp/ppnp-cora-node-classification-example"),
+        nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
     ),
@@ -424,31 +424,31 @@ ALGORITHMS = [
         "GraphWave",
         nc=via_rl(),
         lp=via_rl(),
-        rl=T(link="embeddings/graphwave-barbell"),
+        rl=T(link="embeddings/graphwave-embeddings"),
     ),
     Algorithm(
         "Attri2Vec",
         features=True,
         nc=T(
-            link="node-classification/attri2vec/attri2vec-citeseer-node-classification-example"
+            link="node-classification/attri2vec-node-classification"
         ),
-        lp=T(link="link-prediction/attri2vec/stellargraph-attri2vec-DBLP"),
-        rl=T(link="embeddings/stellargraph-attri2vec-citeseer"),
+        lp=T(link="link-prediction/attri2vec-link-prediction"),
+        rl=T(link="embeddings/attri2vec-embeddings"),
     ),
     Algorithm(
         "GraphSAGE",
         heterogeneous="see HinSAGE",
         directed=T(
-            link="node-classification/graphsage/directed-graphsage-on-cora-example"
+            link="node-classification/directed-graphsage-node-classification"
         ),
         features=True,
         nc=T(
-            link="node-classification/graphsage/graphsage-cora-node-classification-example"
+            link="node-classification/graphsage-node-classification"
         ),
-        lp=T(link="link-prediction/graphsage/cora-links-example"),
-        rl=[rl_us(link="embeddings/embeddings-unsupervised-graphsage-cora"), rl_dgi()],
+        lp=T(link="link-prediction/graphsage-link-prediction"),
+        rl=[rl_us(link="embeddings/graphsage-unsupervised-sampler-embeddings"), rl_dgi()],
         inductive=T(
-            link="node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example"
+            link="node-classification/graphsage-inductive-node-classification"
         ),
     ),
     Algorithm(
@@ -456,47 +456,47 @@ ALGORITHMS = [
         heterogeneous=True,
         features=True,
         nc=True,
-        lp=T(link="link-prediction/hinsage/movielens-recommender"),
+        lp=T(link="link-prediction/hinsage-link-prediction"),
         rl=rl_dgi(),
         inductive=True,
     ),
     Algorithm(
         "Node2Vec",
         weighted=T(
-            link="node-classification/node2vec/stellargraph-node2vec-weighted-random-walks"
+            link="node-classification/node2vec-weighted-node-classification"
         ),
         nc=via_rl(
-            link="node-classification/node2vec/stellargraph-node2vec-node-classification"
+            link="node-classification/node2vec-node-classification"
         ),
-        lp=via_rl(link="link-prediction/random-walks/cora-lp-demo"),
-        rl=T(link="embeddings/stellargraph-node2vec"),
+        lp=via_rl(link="link-prediction/node2vec-link-prediction"),
+        rl=T(link="embeddings/node2vec-embeddings"),
     ),
     Algorithm(
         "Metapath2Vec",
         heterogeneous=True,
         nc=via_rl(),
         lp=via_rl(),
-        rl=T(link="embeddings/stellargraph-metapath2vec"),
+        rl=T(link="embeddings/metapath2vec-embeddings"),
     ),
     Algorithm(
         T("CTDNE", details="Continuous-Time Dynamic Network Embeddings"),
         temporal=True,
         nc=via_rl(),
-        lp=via_rl(link="link-prediction/random-walks/ctdne-link-prediction"),
+        lp=via_rl(link="link-prediction/ctdne-link-prediction"),
         rl=True,
     ),
     Algorithm(
         "Watch Your Step",
-        nc=via_rl(link="embeddings/watch-your-step-cora-demo"),
+        nc=via_rl(link="embeddings/watch-your-step-embeddings"),
         lp=via_rl(),
-        rl=T(link="embeddings/watch-your-step-cora-demo"),
+        rl=T(link="embeddings/watch-your-step-embeddings"),
     ),
     Algorithm(
         "ComplEx",
         heterogeneous=HETEROGENEOUS_EDGE,
         directed=True,
         nc=via_rl(),
-        lp=T(link="link-prediction/knowledge-graphs/complex"),
+        lp=T(link="link-prediction/complex-link-prediction"),
         rl=True,
     ),
     Algorithm(
@@ -504,7 +504,7 @@ ALGORITHMS = [
         heterogeneous=HETEROGENEOUS_EDGE,
         directed=True,
         nc=via_rl(),
-        lp=T(link="link-prediction/knowledge-graphs/distmult"),
+        lp=T(link="link-prediction/distmult-link-prediction"),
         rl=True,
     ),
 ]
