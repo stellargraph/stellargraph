@@ -40,3 +40,15 @@ def test_external_id_index_to_iloc(count, expected_missing):
 
     # missing value
     assert idx.to_iloc(["A"]) == expected_missing
+
+
+def test_benchmark_external_id_index_from_iloc(benchmark):
+    N = 1000
+    SIZE = 100
+    idx = ExternalIdIndex(np.arange(N))
+    x = np.random.randint(0, N, size=SIZE)
+
+    def f():
+        idx.from_iloc(x)
+
+    benchmark(f)

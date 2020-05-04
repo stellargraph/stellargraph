@@ -191,6 +191,17 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
+# This is processed by Jinja2 and inserted before each notebook
+nbsphinx_prolog = r"""
+.. raw:: html
+
+    <div>
+      <p><a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download this notebook</a></p>
+    </div>
+"""
+
+nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
+
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
