@@ -160,7 +160,7 @@ class LinkSequence(Sequence):
 
     Args:
         sample_function (Callable): A function that returns features for supplied head nodes.
-        ids (np.array): a 2D array of shape (num_links, 2) containing the source and target nodes
+        ids (iterable): Link IDs to batch, each link id being a tuple of (src, dst) node ids.
         targets (list, optional): A list of targets or labels to be used in the downstream task.
         shuffle (bool): If True (default) the ids will be randomly shuffled every epoch.
         seed (int, optional): Random seed
@@ -200,8 +200,8 @@ class LinkSequence(Sequence):
             )
 
         self.batch_size = batch_size
-        self.ids = ids
-        self.data_size = self.ids.shape[0]
+        self.ids = list(ids)
+        self.data_size = len(self.ids)
         self.shuffle = shuffle
         self._rs, _ = random_state(seed)
 
@@ -379,6 +379,10 @@ class FullBatchSequence(Sequence):
             raise ValueError(
                 "When passed together targets and indices should be the same length."
             )
+
+        # Store features and targets as np.ndarray
+        self.features = np.asanyarray(features)
+        self.target_indices = np.asanyarray(indices)
 
         # Convert sparse matrix to dense:
         if sps.issparse(A) and hasattr(A, "toarray"):
