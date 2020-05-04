@@ -82,10 +82,10 @@ You can start working with the examples immediately in Google Colab or Binder by
 
 Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the `curl` command below:
 ```bash
-curl https://codeload.github.com/stellargraph/stellargraph/tar.gz/master | tar -xz --strip=1 stellargraph-master/demos
+curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
 ```
 
-All dependencies required to run our demo notebooks locally can be installed using one of the following:
+The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
 
 - Using pip: `pip install stellargraph[demos]`
 - Using conda: `conda install -c stellargraph stellargraph`
