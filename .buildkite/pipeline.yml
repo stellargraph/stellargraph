@@ -150,6 +150,18 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":book: check demo indexing"
+    command: "python scripts/demo_indexing.py --action=compare"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
   - label: ":shell: format"
     <<: *timeout
     plugins:
@@ -208,15 +220,6 @@ steps:
   - label: ":space_invader: check whitespace"
     <<: *timeout
     command: "scripts/whitespace.sh --ci"
-
-  - label: ":book: check demo table"
-    command: "python scripts/demo_table.py --action=compare"
-    <<: *timeout
-    plugins:
-      <<: *plugins
-      docker#v3.5.0:
-        image: "python:3.6"
-        propagate_environment: true
 
   - label: ":snake: conda build"
     <<: *timeout
