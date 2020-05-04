@@ -360,6 +360,7 @@ ALGORITHMS = [
         T("GCN", details="Graph Convolutional Network (GCN)"),
         heterogeneous="see RGCN",
         features=True,
+        temporal="see T-GCN",
         nc=T(link="node-classification/gcn/gcn-cora-node-classification-example"),
         interpretability_nc=T(
             link="interpretability/gcn/node-link-importance-demo-gcn"
@@ -382,6 +383,12 @@ ALGORITHMS = [
         features=True,
         nc=T(link="node-classification/rgcn/rgcn-aifb-node-classification-example"),
         lp=True,
+    ),
+    Algorithm(
+        T("T-GCN", details="Temporal GCN, implemented as GCN-LSTM"),
+        features="time series, sequence",
+        temporal="node features",
+        nc=T(link="time-series/gcn-lstm-LA"),
     ),
     Algorithm(
         T("GAT", details="Graph ATtention Network (GAT)"),

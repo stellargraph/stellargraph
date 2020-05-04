@@ -93,8 +93,8 @@ class PaddedGraphGenerator(Generator):
         Args:
             graph_ilocs (iterable): an iterable of graph indexes in self.graphs for the graphs of interest
                 (e.g., training, validation, or test set nodes).
-            targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
-                len(targets))`.
+            targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graph_ilocs),
+                len(targets))``.
             symmetric_normalization (bool, optional): The type of normalization to be applied on the graph adjacency
                 matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
                 degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
