@@ -72,7 +72,9 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 ## Getting Started
 
-[The numerous detailed and narrated examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) are a good way to get started with StellarGraph. There is likely to be one that is similar to your data or your problem (if not, [let us know](#getting-help)).
+[The numerous detailed and narrated examples][demos] are a good way to get started with StellarGraph. There is likely to be one that is similar to your data or your problem (if not, [let us know](#getting-help)).
+
+[demos]: https://stellargraph.readthedocs.io/en/stable/demos/index.html
 
 You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
 
@@ -93,7 +95,7 @@ The dependencies required to run most of our demo notebooks locally can be insta
 If you get stuck or have a problem, there's many ways to make progress and get help or support:
 
 - [Read the documentation](https://stellargraph.readthedocs.io)
-- [Consult the examples](https://github.com/stellargraph/stellargraph/tree/master/demos/)
+- [Consult the examples][demos]
 - Contact us:
   - [Ask questions and discuss problems on the StellarGraph Discourse forum](https://community.stellargraph.io)
   - [File an issue](https://github.com/stellargraph/stellargraph/issues/new/choose)
@@ -162,7 +164,9 @@ model.fit(generator.flow(train_targets.index, train_targets), epochs=5)
 print(f"Test set: loss = {loss}, accuracy = {accuracy}")
 ```
 
-This algorithm is spelled out in more detail in [its extended narrated notebook](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb). We provide [many more algorithms, each with a detailed example](https://github.com/stellargraph/stellargraph/tree/master/demos/).
+This algorithm is spelled out in more detail in [its extended narrated notebook][gcn-demo]. We provide [many more algorithms, each with a detailed example][demos].
+
+[gcn-demo]: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gcn/gcn-cora-node-classification-example.html
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
@@ -204,7 +208,7 @@ To install StellarGraph library from [PyPI](https://pypi.org) using `pip`, execu
 pip install stellargraph
 ```
 
-Some of the examples in the `demos` [directory](https://github.com/stellargraph/stellargraph/tree/master/demos) require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
+[Some of the examples][demos] require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
 ```
 pip install stellargraph[demos]
 ```

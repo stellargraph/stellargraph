@@ -177,13 +177,15 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f"[![Open In Binder](https://mybinder.org/badge_logo.svg)]({self._binder_url(notebook_path)})"
+        # html needed to add the target="_parent" so that the links work from Github rendered notebooks
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
 
     def _colab_badge(self, notebook_path):
-        return f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({self._colab_url(notebook_path)})"
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
 
     def _badge_markdown(self, notebook_path):
-        return f"> Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}"
+        # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
+        return f"<table><tr><td>Run the latest release of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
@@ -194,6 +196,8 @@ if 'google.colab' in sys.modules:
         self.remove_tagged_cells_from_notebook(nb)
         badge_cell = nbformat.v4.new_markdown_cell(self._badge_markdown(notebook_path))
         self.tag_cell(badge_cell)
+        # badges are created separately in docs by nbsphinx prolog / epilog
+        hide_cell_from_docs(badge_cell)
         # the badges go after the first cell, unless the first cell is code
         if nb.cells[0].cell_type == "code":
             nb.cells.insert(0, badge_cell)
@@ -237,6 +241,32 @@ except AttributeError:
         self.tag_cell(version_cell)
         hide_cell_from_docs(version_cell)
         nb.cells.insert(first_code_cell_id, version_cell)
+        return nb, resources
+
+
+class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
+    metadata_tag = "DataLoadingLinks"
+    search_tag = "DataLoading"
+
+    data_loading_description = f"""\
+(See [the "Loading from Pandas" demo](https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-pandas.html) for details on how data can be loaded.)"""
+
+    def preprocess(self, nb, resources):
+        self.remove_tagged_cells_from_notebook(nb)
+        first_data_loading = next(
+            (
+                index
+                for index, cell in enumerate(nb.cells)
+                if self.search_tag in self.tags(cell)
+            ),
+            None,
+        )
+
+        if first_data_loading is not None:
+            links_cell = nbformat.v4.new_markdown_cell(self.data_loading_description)
+            self.tag_cell(links_cell)
+            nb.cells.insert(first_data_loading, links_cell)
+
         return nb, resources
 
 
@@ -320,6 +350,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add or update cells that validate the version of StellarGraph",
     )
+    parser.add_argument(
+        "-l",
+        "--loading_links",
+        action="store_true",
+        help="Add or update cells that link to docs for loading data",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-o",
@@ -361,6 +397,7 @@ if __name__ == "__main__":
     cell_timeout = args.cell_timeout
     run_cloud = args.run_cloud or args.default
     version_validation = args.version_validation or args.default
+    loading_links = args.loading_links or args.default
 
     # Add preprocessors
     preprocessor_list = []
@@ -368,6 +405,8 @@ if __name__ == "__main__":
         preprocessor_list.append(CloudRunnerPreprocessor)
     if version_validation:
         preprocessor_list.append(VersionValidationPreprocessor)
+    if loading_links:
+        preprocessor_list.append(LoadingLinksPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
