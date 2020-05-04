@@ -64,6 +64,7 @@ class MarkdownCell:
 
     def __init__(self, cell):
         source = cell_source(cell)
+        self.metadata = cell.metadata
         self._lines = source.splitlines()
 
         self.ast = COMMONMARK_PARSER.parse(source)
@@ -113,6 +114,10 @@ def is_heading(elem):
 
 def is_title(elem):
     return is_heading(elem) and elem.level == 1
+
+
+def is_block_quote(elem):
+    return elem.t == "block_quote"
 
 
 def is_inline(elem):
@@ -233,7 +238,7 @@ def title_heading(cells):
         lines = number_lines(first_line, 1)
 
         raise FormattingError(
-            f"The first cell should be a markdown cell (containing only a title, like `# ...`). This one seems to be a code cell. First line of the cell:\n\n{lines}"
+            f"The first cell should be a markdown cell (containing only a title, like `# ...`, and optionally a summary, like `> ...`). This one seems to be a code cell. First line of the cell:\n\n{lines}"
         )
 
     elems = list(direct_children(first.ast))
@@ -244,12 +249,16 @@ def title_heading(cells):
         raise FormattingError(
             message_with_line(
                 first,
-                "The first cell should be just the title for the notebook (like `# ...`) but the title seems to be missing here",
+                "The first cell should be just the title for the notebook (like `# ...`) optionally followed by a summary (like `> ...`), but the title seems to be missing here",
             )
         )
 
     if len(elems) == 1:
         # all good, only element is a title
+        return
+
+    if len(elems) == 2 and title_idx == 0 and is_block_quote(elems[1]):
+        # all good, '# title' followed by '> summary'
         return
 
     # have a title, but there's other things too.
@@ -258,7 +267,7 @@ def title_heading(cells):
     raise FormattingError(
         message_with_line(
             first,
-            "The first cell should contain only the title (like `# ...`) for the notebook. Additional introductory content can be in a separate following cell",
+            "The first cell should contain only the title (like `# ...`) optionally followed by a summary (like `> ...`) for the notebook. Additional introductory content can be in a separate following cell",
             sourcepos=sourcepos,
         )
     )
@@ -334,7 +343,6 @@ def simple_inline_formatting(cells):
     """
     rST doesn't easily supported nested formatting, such as Markdown like [some `code` within a
     link](...) or **`bold code`**, so we disallow it.
-
     http://docutils.sourceforge.net/FAQ.html#is-nested-inline-markup-possible
     """
 
@@ -376,6 +384,43 @@ def simple_inline_formatting(cells):
                     cell,
                     f"Found some nested formatting within a {elem.t} element{summary}, which isn't supported in reStructuredText, as used by Sphinx and Read the Docs. Consider: {'; '.join(suggestions)}",
                     sourcepos=closest_parent_sourcepos(elem),
+                )
+            )
+
+    if errors:
+        raise FormattingError(errors)
+
+
+@checker
+def no_leading_block_quotes(cells):
+    """
+    A block quote at the start of a cell doesn't recieve the necessary separating comment in rST
+
+    A rST quote is just indented text, which can merge with earlier directives unless there's a
+    separating comment. Within a single cell, nbsphinx/nbconvert handles this correctly, but it
+    doesn't when the quote is at the start of the cell. See:
+    - https://github.com/spatialaudio/nbsphinx/issues/450
+    - https://github.com/stellargraph/stellargraph/pull/1398
+    """
+    errors = []
+    for cell in cells:
+        if not isinstance(cell, MarkdownCell):
+            continue
+
+        # unfortunately, the cloud runner cells break this rule (and there doesn't seem to be a good
+        # way to avoid it), so skip them, and we just have to be careful that they get formatted
+        # correctly.
+        if "CloudRunner" in cell.metadata.get("tags", []):
+            continue
+
+        first = cell.ast.first_child
+
+        if is_block_quote(first):
+            errors.append(
+                message_with_line(
+                    cell,
+                    f"Found a block quote (like `> ...`) as the first element of a cell; this must be avoided because it may cause problems during the reStructuredText conversion (https://github.com/spatialaudio/nbsphinx/issues/450). Consider: moving the block quote",
+                    sourcepos=first.sourcepos,
                 )
             )
 
