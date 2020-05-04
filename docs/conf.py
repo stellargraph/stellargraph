@@ -195,8 +195,13 @@ texinfo_documents = [
 nbsphinx_prolog = r"""
 .. raw:: html
 
-    <div>
-      <p><a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download this notebook</a></p>
+    <div class="admonition info">
+      <p>
+        Execute this notebook:
+        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/master/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
+        <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
+      </p>
     </div>
 """
 
