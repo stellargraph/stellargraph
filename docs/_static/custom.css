@@ -4,11 +4,3 @@
     /* cells can wrap to be multi-line */
     white-space: normal;
 }
-
-/* table can overhang the normal text width */
-.wy-table-responsive table {
-    background: white;
-}
-.wy-table-responsive {
-    overflow: visible;
-}
