@@ -185,7 +185,7 @@ if 'google.colab' in sys.modules:
 
     def _badge_markdown(self, notebook_path):
         # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
-        return f"<table><tr><td>Run the master version of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
+        return f"<table><tr><td>Run the latest release of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
@@ -196,9 +196,8 @@ if 'google.colab' in sys.modules:
         self.remove_tagged_cells_from_notebook(nb)
         badge_cell = nbformat.v4.new_markdown_cell(self._badge_markdown(notebook_path))
         self.tag_cell(badge_cell)
-        hide_cell_from_docs(
-            badge_cell
-        )  # badges are created in docs by nbsphinx prolog / epilog
+        # badges are created separately in docs by nbsphinx prolog / epilog
+        hide_cell_from_docs(badge_cell)
         # the badges go after the first cell, unless the first cell is code
         if nb.cells[0].cell_type == "code":
             nb.cells.insert(0, badge_cell)
