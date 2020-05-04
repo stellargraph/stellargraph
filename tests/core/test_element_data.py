@@ -46,9 +46,9 @@ def test_benchmark_external_id_index_from_iloc(benchmark):
     N = 1000
     SIZE = 100
     idx = ExternalIdIndex(np.arange(N))
+    x = np.random.randint(0, N, size=SIZE)
 
     def f():
-        x = np.random.randint(0, N, size=SIZE)
         idx.from_iloc(x)
 
     benchmark(f)
