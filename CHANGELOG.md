@@ -1,5 +1,73 @@
 # Change Log
 
+## [1.0.0](https://github.com/stellargraph/stellargraph/tree/v1.0.0)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.11.0...v1.0.0)
+
+This 1.0 release of StellarGraph is the culmination of 2 years of activate development.
+
+Jump in to this release, with the new demos and examples:
+
+- [More helpful indexing and guidance in demo READMEs](demos/)
+- [Loading from Neo4j][neo4j]
+- [More explanatory Node2Vec link prediction][n2v-lp]
+- [Unsupervised `GraphSAGE` and `HinSAGE` via `DeepGraphInfomax`][dgi]
+- [Graph classification with `GCNSupervisedGraphClassification`][gc]
+- [Time series prediction using spatial information, using `GraphConvolutionLSTM`][gcn-lstm] (experimental)
+
+[neo4j]: demos/basics/loading-saving-neo4j.ipynb
+[n2v-lp]: demos/link-prediction/random-walks/cora-lp-demo.ipynb
+[dgi]: demos/embeddings/deep-graph-infomax-cora.ipynb
+[gc]: demos/graph-classification/supervised-graph-classification.ipynb
+[gcn-lstm]: demos/spatio-temporal/gcn-lstm-LA.ipynb
+
+### Major features and improvements
+
+- Better demonstration notebooks and documentation to make the library more accessible to new and existing users:
+  - The [demos READMEs](demos/) now contain more guidance and explanation to make it easier to find a relevant example [\#1200](https://github.com/stellargraph/stellargraph/pull/1200)
+  - A [demo for loading data from Neo4j][neo4j] has been added [\#1184](https://github.com/stellargraph/stellargraph/pull/1184)
+  - The [demo for link prediction using Node2Vec][n2v-lp] has been rewritten to be clearer [\#1190](https://github.com/stellargraph/stellargraph/pull/1190)
+  - Notebooks are [now included in the API documentation](https://stellargraph.readthedocs.io/en/latest/demos/index.html), for more convenient access [\#1279](https://github.com/stellargraph/stellargraph/pull/1279)
+  - Notebooks now detect if they're being used with an incorrect version of the StellarGraph library, elimanting confusion about version mismatches [\#1242](https://github.com/stellargraph/stellargraph/pull/1242)
+- New algorithms:
+  - `GCNSupervisedGraphClassification`: supervised graph classification model based on Graph Convolutional layers (GCN) [\#929](https://github.com/stellargraph/stellargraph/issues/929), [demo][gc].
+  - `DeepGraphConvolutionalNeuralNetwork` (DGCNN): supervised graph classification using a stack of graph convolutional layers followed by `SortPooling`, and standard convolutional and pooling (such as `Conv1D` and `MaxPool1D`) [\#1212](https://github.com/stellargraph/stellargraph/pull/1212) [\#1265](https://github.com/stellargraph/stellargraph/pull/1265)
+  - `SortPooling` layer: the node pooling layer introduced in [Zhang et al](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf) [\#1210](https://github.com/stellargraph/stellargraph/pull/1210)
+- `DeepGraphInfomax` can be used to train almost any model in an unsupervised way, via the `corrupt_index_groups` parameter to `CorruptedGenerator` [\#1243](https://github.com/stellargraph/stellargraph/pull/1243), [demo][dgi]. Additionally, many algorithms provide defaults and so can be used with `DeepGraphInfomax` without specifying this parameter:
+  - any model using `FullBatchNodeGenerator`, including models supported in StellarGraph 0.11: `GCN`, `GAT`, `PPNP` and `APPNP`
+  - `GraphSAGE` [\#1162](https://github.com/stellargraph/stellargraph/pull/1162)
+  - `HinSAGE` for heterogeneous graphs with node features [\#1254](https://github.com/stellargraph/stellargraph/pull/1254)
+- `UnsupervisedSampler` supports a `walker` parameter to use other random walking algorithms such as `BiasedRandomWalk`, in addition to the default `UniformRandomWalk`. [\#1187](https://github.com/stellargraph/stellargraph/pull/1187)
+- The `StellarGraph` class is now smaller, faster and easier to construct:
+  - The `StellarGraph(..., edge_type_column=...)` parameter can be used to construct a heterogeneous graph from a single flat `DataFrame`, containing a column of the edge types [\#1284](https://github.com/stellargraph/stellargraph/pull/1284). This avoids the need to build separate `DataFrame`s for each type, and is significantly faster when there are many types. Using `edge_type_column` gives a 2.6× speedup for loading the `stellargraph.datasets.FB15k` dataset (with almost 600 thousand edges across 1345 types).
+  - `StellarGraph`'s internal cache of node adjacencies now uses the smallest integer type it can [\#1289](https://github.com/stellargraph/stellargraph/pull/1289). This reduces memory use by 31% on the `FB15k` dataset, and 36% on a reddit dataset (with 11.6 million edges).
+
+### Breaking changes
+
+- Edge weights are now validated to be numeric when creating a `StellarGraph`, previously edge weights could be any type, but all algorithms that use them would fail. [\#1191](https://github.com/stellargraph/stellargraph/pull/1191)
+- Full batch layers no longer support an "output indices" tensor to filter the output rows to a selected set of nodes [\#1204](https://github.com/stellargraph/stellargraph/pull/1204) (this does **not** affect models like `GCN`, only the layers within them: `APPNPPropagationLayer`, `ClusterGraphConvolution`, `GraphConvolution`, `GraphAttention`, `GraphAttentionSparse`, `PPNPPropagationLayer`, `RelationalGraphConvolution`). Migration: post-process the output using `tf.gather` manually or the new `sg.layer.misc.GatherIndices` layer.
+- `GraphConvolution` has been generalised to work with batch size > 1, subsuming the functionality of the now-deprecated `ClusterGraphConvolution` (and `GraphClassificationConvolution`) [\#1205](https://github.com/stellargraph/stellargraph/pull/1205). Migration: replace `stellargraph.layer.ClusterGraphConvolution` with `stellargraph.layer.GraphConvolution`.
+
+### Experimental features
+
+Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
+
+- `GraphConvolutionLSTM`: time series prediction on spatio-temporal data, combining GCN with a [LSTM](https://en.wikipedia.org/wiki/Long_short-term_memory) model to augment the conventional time-series model with information from nearby data points [\#1085](https://github.com/stellargraph/stellargraph/pull/1085), [demo][gcn-lstm]
+
+### Bug fixes and other changes
+
+- Random walk classes like `UniformRandomWalk` and `BiasedRandomWalk` can have their hyperparameters set on construction, in addition to in each call to `run` [\#1179](https://github.com/stellargraph/stellargraph/pull/1179)
+- Node feature sampling was made ~4× faster by ensuring a better data layout, this makes some configurations of `GraphSAGE` (and `HinSAGE`) noticably faster [\#1225](https://github.com/stellargraph/stellargraph/pull/1225)
+- The `PROTEINS` dataset has been added to `stellargraph.datasets`, for graph classification [\#1282](https://github.com/stellargraph/stellargraph/pull/1282)
+- The `BlogCatalog3` dataset can now be successfully downloaded again [\#1283](https://github.com/stellargraph/stellargraph/pull/1283)
+- Knowledge graph model evaluation via `rank_edges_against_all_nodes` now defaults to the `random` strategy for breaking ties, and supports `top` (previous default) and `bottom` as alternatives [\#1223](https://github.com/stellargraph/stellargraph/pull/1223)
+- Creating a `RelationalFullBatchNodeGenerator` is now significantly faster and requires much less memory (18× speedup and 560× smaller for the `stellargraph.datasets.AIFB` dataset) [\#1274](https://github.com/stellargraph/stellargraph/pull/1274)
+- `StellarGraph.info` now shows a summary of the edge weights for each edge type [\#1240](https://github.com/stellargraph/stellargraph/pull/1240)
+- Various documentation, demo and error message fixes and improvements: [\#1141](https://github.com/stellargraph/stellargraph/pull/1141), [\#1219](https://github.com/stellargraph/stellargraph/pull/1219), [\#1246](https://github.com/stellargraph/stellargraph/pull/1246), [\#1260](https://github.com/stellargraph/stellargraph/pull/1260), [\#1266](https://github.com/stellargraph/stellargraph/pull/1266)
+- DevOps changes:
+  - CI: [\#1161](https://github.com/stellargraph/stellargraph/pull/1161), [\#1189](https://github.com/stellargraph/stellargraph/pull/1189), [\#1230](https://github.com/stellargraph/stellargraph/pull/1230), [\#1122](https://github.com/stellargraph/stellargraph/pull/1122)
+  - Other: [\#1197](https://github.com/stellargraph/stellargraph/pull/1197)
+
 ## [1.0.0rc1](https://github.com/stellargraph/stellargraph/tree/v1.0.0rc1)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v0.11.0...v1.0.0rc1)
