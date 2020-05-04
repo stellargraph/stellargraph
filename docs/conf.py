@@ -195,8 +195,8 @@ texinfo_documents = [
 nbsphinx_prolog = r"""
 .. raw:: html
 
-    <div class="admonition note">
-      <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb"><button type="button">download this notebook</a>
+    <div>
+      <p><a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn btn-primary">download this notebook</a></p>
     </div>
 """
 
