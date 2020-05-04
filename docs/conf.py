@@ -196,7 +196,7 @@ nbsphinx_prolog = r"""
 .. raw:: html
 
     <div>
-      <p><a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn btn-primary">Download this notebook</a></p>
+      <p><a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download this notebook</a></p>
     </div>
 """
 
