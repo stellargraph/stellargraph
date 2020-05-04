@@ -127,6 +127,10 @@ def is_text(elem):
     return elem.t == "text"
 
 
+def is_image(elem):
+    return elem.t == "image"
+
+
 SYNTAX_SUMMARY = {
     "block_quote": "> text",
     "code": "`code`",
@@ -348,8 +352,10 @@ def simple_inline_formatting(cells):
                 # not an inline formatting, so not relevant
                 continue
 
-            if all(is_text(child) for child in direct_children(elem)):
-                # if all of the children are plain text, this is perfect!
+            if all(
+                is_text(child) or is_image(child) for child in direct_children(elem)
+            ):
+                # if all of the children are plain text or images, this is perfect!
                 continue
 
             # an inline element that contains non-text elements, error!
