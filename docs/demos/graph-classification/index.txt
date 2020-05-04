@@ -21,7 +21,7 @@ This table lists all graph classification demos, including the algorithms traine
      - GCN, mean pooling
      - yes
      - yes
-   * - :doc:`DGCNN <dgcnn-graph-classification`
+   * - :doc:`DGCNN <dgcnn-graph-classification>`
      - DeepGraphCNN
      - yes
      - yes
