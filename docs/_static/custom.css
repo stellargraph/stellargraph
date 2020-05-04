@@ -1,0 +1,14 @@
+/**** override table width restrictions *****/
+
+.wy-table-responsive table td, .wy-table-responsive table th {
+    /* cells can wrap to be multi-line */
+    white-space: normal;
+}
+
+/* table can overhang the normal text width */
+.wy-table-responsive table {
+    background: white;
+}
+.wy-table-responsive {
+    overflow: visible;
+}

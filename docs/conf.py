@@ -227,3 +227,5 @@ class RewriteLinks(docutils.transforms.Transform):
 
 def setup(app):
     app.add_transform(RewriteLinks)
+
+    app.add_stylesheet("custom.css")
