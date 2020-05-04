@@ -223,18 +223,20 @@ class Rst(Format):
 
     def _render_t(self, t):
         link = self.link(t)
+        # RST doesn't support the title, directly, but CSS gives us a bit more control to display
+        # longer column headings
+        text = t.details if t.details else t.text
         if link:
-            # RST doesn't support the title, directly
-            return f":any:`{t.text} <{link}>`"
+            return f":any:`{text} <{link}>`"
 
-        return t.text
+        return text
 
     def _render_cell(self, cell):
         if not cell:
             return ""
 
         if isinstance(cell, list):
-            return " ".join(self._render_cell(contents) for contents in cell)
+            return ", ".join(self._render_cell(contents) for contents in cell)
         else:
             return self._render_t(cell)
 
@@ -278,10 +280,10 @@ def index_link(*args, **kwargs):
 
 
 ALGORITHM = T("Algorithm")
-HETEROGENEOUS = T("Heter.", details="Heterogeneous graphs")
+HETEROGENEOUS = T("Heter.", details="Heterogeneous")
 DIRECTED = T("Dir.", details="Directed")
 WEIGHTED = T("EW", details="Edge weights")
-TEMPORAL = T("T", details="Time-varying or temporal graphs")
+TEMPORAL = T("T", details="Time-varying, temporal")
 FEATURES = T("NF", details="Node features")
 NC = index_link("NC", link="node-classification", details="Node classification")
 LP = index_link("LP", link="link-prediction", details="Link prediction")
@@ -338,30 +340,27 @@ class Algorithm:
         self.columns = {name: T.textify(value) for name, value in columns.items()}
 
 
-HETEROGENEOUS_EDGE = T("yes, edges", details="Multiple edges types and one node type")
+HETEROGENEOUS_EDGE = T("yes, edges", details="multiple edges types")
 
 
 def rl_us(link=None):
-    return T("US", link=link, details="UnsupervisedSampler, using link prediction")
+    return T("US", link=link, details="UnsupervisedSampler")
 
 
 def rl_dgi(link="embeddings/deep-graph-infomax-cora"):
-    return T("DGI", link=link, details="DeepGraphInfomax, using mutual information")
+    return T("DGI", link=link, details="DeepGraphInfomax")
 
 
 def via_rl(link=None):
-    return T(
-        "via RL",
-        link=link,
-        details="As a downstream task by training a classifier on reprentation/embedding vectors",
-    )
+    return T("via RL", link=link, details="via embedding vectors",)
 
 
 ALGORITHMS = [
     Algorithm(
-        T("GCN", details="Graph Convolutional Network"),
+        T("GCN", details="Graph Convolutional Network (GCN)"),
         heterogeneous="see RGCN",
         features=True,
+        temporal="see T-GCN",
         nc=T(link="node-classification/gcn/gcn-cora-node-classification-example"),
         interpretability_nc=T(
             link="interpretability/gcn/node-link-importance-demo-gcn"
@@ -379,14 +378,20 @@ ALGORITHMS = [
         inductive=True,
     ),
     Algorithm(
-        T("RGCN", details="Relational GCN"),
+        T("RGCN", details="Relational GCN (RGCN)"),
         heterogeneous=HETEROGENEOUS_EDGE,
         features=True,
         nc=T(link="node-classification/rgcn/rgcn-aifb-node-classification-example"),
         lp=True,
     ),
     Algorithm(
-        T("GAT", details="Graph ATtention Network"),
+        T("T-GCN", details="Temporal GCN (T-GCN), implemented as GCN-LSTM"),
+        features="time series, sequence",
+        temporal="node features",
+        nc=T(link="time-series/gcn-lstm-LA"),
+    ),
+    Algorithm(
+        T("GAT", details="Graph ATtention Network (GAT)"),
         features=True,
         nc=T(link="node-classification/gat/gat-cora-node-classification-example"),
         interpretability_nc=T(
@@ -396,20 +401,20 @@ ALGORITHMS = [
         rl=[rl_us(), rl_dgi()],
     ),
     Algorithm(
-        T("SGC", details="Simplified Graph Convolution"),
+        T("SGC", details="Simplified Graph Convolution (SGC)"),
         features=True,
         nc=T(link="node-classification/sgc/sgc-node-classification-example"),
         lp=True,
     ),
     Algorithm(
-        T("PPNP", details="Personalized Propagation of Neural Predictions"),
+        T("PPNP", details="Personalized Propagation of Neural Predictions (PPNP)"),
         features=True,
         nc=T(link="node-classification/ppnp/ppnp-cora-node-classification-example"),
         lp=True,
         rl=[rl_us(), rl_dgi(link=None)],
     ),
     Algorithm(
-        T("APPNP", details="Approximate PPNP"),
+        T("APPNP", details="Approximate PPNP (APPNP)"),
         features=True,
         nc=T(link="node-classification/ppnp/ppnp-cora-node-classification-example"),
         lp=True,

@@ -1,4 +1,4 @@
-## Ensemble learning for graph neural network algorithms
+## Model calibration
 
 This folder contains two [Jupyter](http://jupyter.org/) python notebooks demonstrating `StellarGraph` model calibration
 for binary (`calibration-pubmed-link-prediction.ipynb`) and multi-class
