@@ -1,4 +1,4 @@
-Graphsage Link Prediction
+GraphSAGE Link Prediction
 =========================
 
 This is an example of using the GraphSAGE [1] model, with a link classifier on top,
