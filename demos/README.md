@@ -286,7 +286,7 @@ See [the root README](../README.md) or each algorithm's documentation for the re
 You can run download a local copy of the demos using the `curl` command below:
 
 ```bash
-curl https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
+curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
 ```
 
 All dependencies required to run our demo notebooks locally can be installed using one of the following:
