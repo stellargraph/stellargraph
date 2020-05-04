@@ -1,4 +1,4 @@
-Link prediction using StellarGraph
+Link prediction
 ==================================
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing link prediction on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
