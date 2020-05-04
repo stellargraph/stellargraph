@@ -21,8 +21,8 @@ import tensorflow as tf
 
 def _defined_in_stellargraph(obj):
     try:
-        print(obj, inspect.getfile(obj))
-        return "stellargraph" in inspect.getfile(obj)
+        print(obj, inspect.getfile(obj), inspect.getmodule(obj))
+        return "stellargraph" in inspect.getmodule(obj).__name__
     except TypeError:
         return False
 
@@ -41,7 +41,8 @@ def _find_stellargraph_classes(obj, visited=None):
         return
 
     def pred(sub_obj):
-        return (inspect.ismodule(sub_obj) or inspect.isclass(sub_obj)) and _defined_in_stellargraph(sub_obj)
+        class_or_module = inspect.ismodule(sub_obj) or inspect.isclass(sub_obj)
+        return class_or_module and _defined_in_stellargraph(sub_obj)
 
     for _name, sub_obj in inspect.getmembers(obj, pred):
         yield from _find_stellargraph_classes(sub_obj, visited)
