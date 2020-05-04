@@ -189,7 +189,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         return output
 
 
-@experimental(reason="Lack of unit tests and some code refinement", issues=[1131, 1132])
+# @experimental(reason="Lack of unit tests and some code refinement", issues=[1131, 1132])
 class GraphConvolutionLSTM:
 
     """
@@ -228,8 +228,8 @@ class GraphConvolutionLSTM:
         adj,
         gc_layers,
         lstm_layer_size,
-        gc_activations,
-        lstm_activations=["tanh"],
+        gc_activations=None,
+        lstm_activations=None,
         bias=True,
         dropout=0.5,
         kernel_initializer=None,
