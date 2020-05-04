@@ -551,10 +551,14 @@ class StellarGraph:
         Returns:
             The graph edges. If edge weights are included then a tuple of (edges, weights).
         """
-        edge_arrs = self.edge_arrays(include_edge_type, include_edge_weight)
+        edge_arrs = self.edge_arrays(
+            include_edge_type, include_edge_weight, use_ilocs=use_ilocs
+        )
         return self._to_edges(edge_arrs)
 
-    def edge_arrays(self, include_edge_type=False, include_edge_weight=False) -> tuple:
+    def edge_arrays(
+        self, include_edge_type=False, include_edge_weight=False, use_ilocs=False
+    ) -> tuple:
         """
         Obtains the collection of edges in the graph as a tuple of arrays (sources, targets, types, weights).
         ``types`` and ``weights`` will be `None` if the optional parameters are not specified.
@@ -562,6 +566,7 @@ class StellarGraph:
         Args:
             include_edge_type (bool): A flag that indicates whether to return edge types.
             include_edge_weight (bool): A flag that indicates whether to return edge weights.
+            use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>`
 
         Returns:
             A tuple containing 1D arrays of the source and target nodes (sources, targets, types, weights). Setting include_edge_type
@@ -569,7 +574,13 @@ class StellarGraph:
         """
         types = self._edges.type_of_iloc(slice(None)) if include_edge_type else None
         weights = self._edges.weights if include_edge_weight else None
-        return self._edges.sources, self._edges.targets, types, weights
+        sources = self._edges.sources
+        targets = self._edges.targets
+
+        if not use_ilocs:
+            sources = self.node_ilocs_to_ids(sources)
+            targets = self.node_ilocs_to_ids(targets)
+        return sources, targets, types, weights
 
     def has_node(self, node: Any) -> bool:
         """
@@ -605,9 +616,9 @@ class StellarGraph:
                 weights = weights[correct_type]
 
         if weights is not None:
-            return other_node_id, weights
+            return other_node, weights
 
-        return other_node_id
+        return other_node
 
     def _to_neighbors(self, neigh_arrs, include_edge_weight):
         if include_edge_weight:
@@ -617,7 +628,7 @@ class StellarGraph:
         return list(neigh_arrs)
 
     def neighbor_arrays(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
     ) -> Iterable[np.ndarray]:
         """
         Obtains the collection of neighbouring nodes connected to the given node
@@ -648,7 +659,7 @@ class StellarGraph:
         )
 
     def neighbors(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
     ) -> Iterable[any]:
         """
         Obtains the collection of neighbouring nodes connected
@@ -664,11 +675,13 @@ class StellarGraph:
         Returns:
             iterable: The neighboring nodes.
         """
-        neigh_arrs = self.neighbor_arrays(node, include_edge_weight, edge_types)
+        neigh_arrs = self.neighbor_arrays(
+            node, include_edge_weight, edge_types, use_ilocs=use_ilocs
+        )
         return self._to_neighbors(neigh_arrs, include_edge_weight)
 
     def in_node_arrays(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
     ) -> Iterable[np.ndarray]:
         """
         Obtains the collection of neighbouring nodes with edges
@@ -687,7 +700,10 @@ class StellarGraph:
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
             return self.neighbor_arrays(
-                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+                node,
+                include_edge_weight=include_edge_weight,
+                edge_types=edge_types,
+                use_ilocs=use_ilocs,
             )
 
         if not use_ilocs:
@@ -700,7 +716,7 @@ class StellarGraph:
         )
 
     def in_nodes(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
@@ -719,11 +735,13 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring in-nodes.
         """
-        neigh_arrs = self.in_node_arrays(node, include_edge_weight, edge_types)
+        neigh_arrs = self.in_node_arrays(
+            node, include_edge_weight, edge_types, use_ilocs=use_ilocs
+        )
         return self._to_neighbors(neigh_arrs, include_edge_weight)
 
     def out_node_arrays(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
     ) -> Iterable[np.ndarray]:
         """
         Obtains the collection of neighbouring nodes with edges
@@ -742,7 +760,10 @@ class StellarGraph:
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
             return self.neighbor_arrays(
-                node, include_edge_weight=include_edge_weight, edge_types=edge_types
+                node,
+                include_edge_weight=include_edge_weight,
+                edge_types=edge_types,
+                use_ilocs=use_ilocs,
             )
 
         if not use_ilocs:
@@ -756,7 +777,7 @@ class StellarGraph:
         )
 
     def out_nodes(
-        self, node: Any, include_edge_weight=False, edge_types=None
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
     ) -> Iterable[Any]:
         """
         Obtains the collection of neighbouring nodes with edges
@@ -773,7 +794,9 @@ class StellarGraph:
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        neigh_arrs = self.out_node_arrays(node, include_edge_weight, edge_types)
+        neigh_arrs = self.out_node_arrays(
+            node, include_edge_weight, edge_types, use_ilocs=use_ilocs
+        )
         return self._to_neighbors(neigh_arrs, include_edge_weight)
 
     def nodes_of_type(self, node_type=None):
@@ -1302,8 +1325,6 @@ class StellarGraph:
             weights = self._edges.weights[type_selector][selector]
         else:
             weights = np.ones(src_idx.shape, dtype=self._edges.weights.dtype)
-
-        n = len(index)
 
         adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=(n, n))
         if not self.is_directed() and n > 0:

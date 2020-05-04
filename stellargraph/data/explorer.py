@@ -572,7 +572,9 @@ class UniformRandomMetaPathWalk(RandomWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.graph.neighbor_arrays(current_node, use_ilocs=True)
+                        neighbours = self.graph.neighbor_arrays(
+                            current_node, use_ilocs=True
+                        )
                         # filter these by node type
                         neighbours = [
                             n_node
