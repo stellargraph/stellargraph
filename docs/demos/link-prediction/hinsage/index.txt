@@ -1,4 +1,4 @@
-Hinsage Recommender -- Movielens Example
+HinSAGE Recommender -- Movielens Example
 ========================================
 
 This is an example of using Heterogeneous GraphSAGE [1] (HinSAGE) as a hybrid recommender
