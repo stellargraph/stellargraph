@@ -461,8 +461,7 @@ class BiasedRandomWalk(RandomWalk):
                     # select one of the neighbours using the
                     # appropriate transition probabilities
                     choice = naive_weighted_choices(
-                        rs,
-                        (transition_probability(nn) for nn in neighbours),
+                        rs, (transition_probability(nn) for nn in neighbours),
                     )
 
                     previous_node = current_node
