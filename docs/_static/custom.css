@@ -1,3 +1,8 @@
+div.wy-nav-content {
+    /* make the main content wider, for wider tables */
+    max-width: 1200px;
+}
+
 /**** override table width restrictions *****/
 
 .wy-table-responsive table td, .wy-table-responsive table th {
