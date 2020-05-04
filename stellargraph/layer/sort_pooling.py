@@ -20,7 +20,6 @@ from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
 
 
-@experimental(reason="Missing unit tests and generally untested.", issues=[1044])
 class SortPooling(Layer):
     """
     Sort Pooling Keras layer.
@@ -94,23 +93,18 @@ class SortPooling(Layer):
 
         return embeddings
 
-    def call(self, inputs, **kwargs):
+    def call(self, embeddings, mask):
         """
         Applies the layer.
 
         Args:
-            inputs (list): a list of 2 tensors that includes
-                the node features (size B x N x Sum F_i), and
-                a boolean mask (size B x N)
-
+            embeddings (tensor): the node features (size B x N x Sum F_i)
                 where B is the batch size, N is the number of nodes in the largest graph in the batch, and
                 F_i is the dimensionality of node features output from the i-th convolutional layer.
-
+            mask (tensor): a boolean mask (size B x N)
         Returns:
             Keras Tensor that represents the output of the layer.
         """
-
-        embeddings, mask = inputs[0], inputs[1]
 
         outputs = tf.map_fn(
             self._sort_tensor_with_mask, (embeddings, mask), dtype=embeddings.dtype
@@ -128,6 +122,8 @@ class SortPooling(Layer):
         )
 
         if self.flatten_output:
-            outputs = tf.reshape(outputs, [tf.shape(outputs)[0], -1, 1])
+            outputs = tf.reshape(
+                outputs, [outputs_shape[0], embeddings.shape[-1] * self.k, 1]
+            )
 
         return outputs

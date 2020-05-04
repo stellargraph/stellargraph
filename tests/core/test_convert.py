@@ -30,7 +30,7 @@ _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 
 def test_columnar_convert_type_default():
-    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False, {})
     shared, type_starts, features = converter.convert(_EMPTY_DF)
     assert type_starts == [("foo", 0)]
     assert "foo" in features
@@ -40,7 +40,7 @@ def test_columnar_convert_selected_columns():
     df = _EMPTY_DF.assign(before="abc", same=10)
 
     converter = ColumnarConverter(
-        "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False
+        "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False, {}
     )
     shared, type_starts, features = converter.convert({"x": df, "y": df})
 
@@ -53,7 +53,7 @@ def test_columnar_convert_selected_columns():
 
 def test_columnar_convert_selected_columns_missing():
     converter = ColumnarConverter(
-        "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False
+        "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False, {}
     )
 
     with pytest.raises(
@@ -63,7 +63,9 @@ def test_columnar_convert_selected_columns_missing():
 
 
 def test_columnar_convert_column_default():
-    converter = ColumnarConverter("some_name", "foo", None, {"before": 123}, {}, False)
+    converter = ColumnarConverter(
+        "some_name", "foo", None, {"before": 123}, {}, False, {}
+    )
     shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
     assert type_starts == [("x", 0), ("y", 2)]
@@ -74,7 +76,7 @@ def test_columnar_convert_column_default():
 def test_columnar_convert_column_default_selected_columns():
     # the defaulting happens before the renaming
     converter = ColumnarConverter(
-        "x", "foo", None, {"before": 123}, {"before": "after"}, False
+        "x", "foo", None, {"before": 123}, {"before": "after"}, False, {}
     )
     shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
@@ -85,7 +87,7 @@ def test_columnar_convert_column_default_selected_columns():
 
 
 def test_columnar_convert_features():
-    converter = ColumnarConverter("some_name", "foo", None, {}, {"x": "x"}, True)
+    converter = ColumnarConverter("some_name", "foo", None, {}, {"x": "x"}, True, {})
     df = _EMPTY_DF.assign(a=[1, 2], b=[100, 200], x=123)
     shared, type_starts, features = converter.convert(df)
 
@@ -95,14 +97,14 @@ def test_columnar_convert_features():
 
 
 def test_columnar_convert_disallow_features():
-    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False, {})
     df = _EMPTY_DF.assign(a=1)
     with pytest.raises(ValueError, match="expected zero feature columns, found 'a'"):
-        shared, features = converter.convert(df)
+        shared, type_starts, features = converter.convert(df)
 
 
 def test_columnar_convert_invalid_input():
-    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False)
+    converter = ColumnarConverter("some_name", "foo", None, {}, {}, False, {})
 
     with pytest.raises(TypeError, match="some_name: expected dict, found int"):
         converter.convert(1)
@@ -115,7 +117,13 @@ def test_columnar_convert_invalid_input():
 
 def test_columnar_convert_type_column():
     converter = ColumnarConverter(
-        "some_name", "foo", "type_column", {}, {"type_column": "TC", "data": "D"}, False
+        "some_name",
+        "foo",
+        "type_column",
+        {},
+        {"type_column": "TC", "data": "D"},
+        False,
+        {},
     )
 
     df = pd.DataFrame(
@@ -135,7 +143,7 @@ def test_columnar_convert_type_column():
         ValueError, match=r"allow_features: expected no features .* \('type_column'\)"
     ):
         ColumnarConverter(
-            "some_name", "foo", "type_column", {}, {"type_column": "TC"}, True
+            "some_name", "foo", "type_column", {}, {"type_column": "TC"}, True, {}
         )
 
     with pytest.raises(
@@ -149,7 +157,37 @@ def test_columnar_convert_type_column():
             {},
             {"TC": "type_column", "data": "D"},
             False,
+            {},
         )
+
+
+def test_columnar_convert_transform_columns():
+
+    columns = {"x": np.complex128(1), "y": np.uint16(2), "z": np.float32(3.0)}
+
+    dfs = {
+        name: pd.DataFrame({"s": [0], "t": [1], "w": [w]}, index=[i])
+        for i, (name, w) in enumerate(columns.items())
+    }
+
+    converter = ColumnarConverter(
+        "some_name",
+        float,
+        None,
+        column_defaults={},
+        selected_columns={"s": "ss", "t": "tt", "w": "ww",},
+        transform_columns={"w": lambda x: x + 1,},
+        allow_features=False,
+    )
+
+    converted, type_starts, _ = converter.convert(dfs)
+
+    assert (converted.iloc[type_starts[0][1] : type_starts[1][1]]["ww"] == 2).all()
+    assert (converted[type_starts[1][1] : type_starts[2][1]]["ww"] == 3).all()
+    assert (converted[type_starts[2][1] :]["ww"] == 4).all()
+
+    assert (converted["ss"] == 0).all()
+    assert (converted["tt"] == 1).all()
 
 
 def test_convert_edges_weights():
@@ -158,6 +196,13 @@ def test_convert_edges_weights():
             name: pd.DataFrame({"s": [0], "t": [1], "w": [w]}, index=[i])
             for i, (name, w) in enumerate(ws.items())
         }
+        nodes = convert_nodes(
+            pd.DataFrame([], index=[0, 1]),
+            name="other_name",
+            default_type=np.int8,
+            dtype=np.int8,
+        )
+
         convert_edges(
             dfs,
             name="some_name",
@@ -165,6 +210,7 @@ def test_convert_edges_weights():
             source_column="s",
             target_column="t",
             weight_column="w",
+            nodes=nodes,
             type_column=None,
         )
 
@@ -189,6 +235,9 @@ def test_convert_edges_type_column():
         }
     )
 
+    nodes = pd.DataFrame([], index=[10, 20, 30, 40, 50, 60])
+    nodes = convert_nodes(nodes, name="other_name", default_type=np.int8, dtype=np.int8)
+
     edges = convert_edges(
         data,
         name="some_name",
@@ -197,10 +246,11 @@ def test_convert_edges_type_column():
         target_column="t",
         weight_column="w",
         type_column="l",
+        nodes=nodes,
     )
 
-    np.testing.assert_array_equal(edges.sources, [20, 30, 50, 10, 40])
-    np.testing.assert_array_equal(edges.targets, [30, 40, 60, 20, 50])
+    np.testing.assert_array_equal(edges.sources, [1, 2, 4, 0, 3])
+    np.testing.assert_array_equal(edges.targets, [2, 3, 5, 1, 4])
     np.testing.assert_array_equal(
         edges.type_of_iloc(slice(None)), ["a", "a", "b", "c", "c"]
     )
@@ -438,6 +488,29 @@ def test_from_networkx_default_features():
         nodes, edges = from_networkx_for_testing(g, "f")
 
     assert_dataframe_dict_equal(nodes, expected_nodes)
+    assert edges == {}
+
+
+def test_from_networkx_empty():
+    g = nx.Graph()
+    # no features, means no types
+    nodes, edges = from_networkx_for_testing(g)
+    assert nodes == {}
+    assert edges == {}
+
+    # various forms of features:
+    nodes, edges = from_networkx_for_testing(g, node_features={})
+    assert nodes == {}
+    assert edges == {}
+
+    features = pd.DataFrame(columns=range(10))
+
+    nodes, edges = from_networkx_for_testing(g, node_features=features)
+    assert nodes == {}
+    assert edges == {}
+
+    nodes, edges = from_networkx_for_testing(g, node_features={"b": features})
+    assert nodes == {}
     assert edges == {}
 
 

@@ -104,14 +104,9 @@ class BatchedLinkGenerator(Generator):
         False for prediction.
 
         Args:
-            link_ids: link_ids can be either:
-                - a tuple of 1D numpy arrays containing the source and target nodes in format (sources, targets)
-                - a 2D numpy array with shape (N_links, 2) where `link_ids[:, 0] = sources` and
-                    `link_ids[:, 1] = targets`
-                - a `stellargraph.EdgeList` object
-                - a `stellargraph.data.UnsupervisedSampler` object.
+            link_ids: an iterable of tuples of node IDs as (source, target)
             targets: a 2D array of numeric targets with shape
-                `(len(link_ids), target_size)`
+                ``(len(link_ids), target_size)``
             shuffle (bool): If True the links will be shuffled at each
                 epoch, if False the links will be processed in order.
             seed (int, optional): Random seed
@@ -130,50 +125,51 @@ class BatchedLinkGenerator(Generator):
         if isinstance(link_ids, UnsupervisedSampler):
             return OnDemandLinkSequence(self.sample_features, self.batch_size, link_ids)
 
-        if is_real_iterable(link_ids) and len(link_ids) == 2:
-            link_ids = np.stack(link_ids, axis=1)
+        # Otherwise pass iterable (check?) to standard LinkSequence
+        elif isinstance(link_ids, collections.abc.Iterable):
+            # Check all IDs are actually in the graph and are of expected type
+            for link in link_ids:
+                if len(link) != 2:
+                    raise KeyError("Expected link IDs to be a tuple of length 2")
 
-        # support old link ids format for backwards compatability
-        elif is_real_iterable(link_ids) and all(len(x) == 2 for x in link_ids):
-            link_ids = np.array(link_ids)
+                src, dst = link
+                try:
+                    node_type_src = self.graph.node_type(src)
+                except KeyError:
+                    raise KeyError(
+                        f"Node ID {src} supplied to generator not found in graph"
+                    )
+                try:
+                    node_type_dst = self.graph.node_type(dst)
+                except KeyError:
+                    raise KeyError(
+                        f"Node ID {dst} supplied to generator not found in graph"
+                    )
 
-        if not (isinstance(link_ids, np.ndarray) and link_ids.shape[1] == 2):
+                if self.head_node_types is not None and (
+                    node_type_src != expected_src_type
+                    or node_type_dst != expected_dst_type
+                ):
+                    raise ValueError(
+                        f"Node pair ({src}, {dst}) not of expected type ({expected_src_type}, {expected_dst_type})"
+                    )
+
+            link_ids = [self.graph.node_ids_to_ilocs(ids) for ids in link_ids]
+
+            return LinkSequence(
+                self.sample_features,
+                self.batch_size,
+                link_ids,
+                targets=targets,
+                shuffle=shuffle,
+                seed=seed,
+            )
+
+        else:
             raise TypeError(
                 "Argument to .flow not recognised. "
                 "Please pass a list of samples or a UnsupervisedSampler object."
             )
-
-        for ii in range(link_ids.shape[0]):
-
-            src, dst = link_ids[ii, 0], link_ids[ii, 1]
-            try:
-                node_type_src = self.graph.node_type(src)
-            except KeyError:
-                raise KeyError(
-                    f"Node ID {src} supplied to generator not found in graph"
-                )
-            try:
-                node_type_dst = self.graph.node_type(dst)
-            except KeyError:
-                raise KeyError(
-                    f"Node ID {dst} supplied to generator not found in graph"
-                )
-
-            if self.head_node_types is not None and (
-                node_type_src != expected_src_type or node_type_dst != expected_dst_type
-            ):
-                raise ValueError(
-                    f"Node pair ({src}, {dst}) not of expected type ({expected_src_type}, {expected_dst_type})"
-                )
-
-        return LinkSequence(
-            self.sample_features,
-            self.batch_size,
-            link_ids,
-            targets=targets,
-            shuffle=shuffle,
-            seed=seed,
-        )
 
     def flow_from_dataframe(self, link_targets, shuffle=False):
         """
@@ -295,7 +291,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             # Get features for the sampled nodes
             batch_feats.append(
                 [
-                    self.graph.node_features(layer_nodes, node_type)
+                    self.graph.node_features(layer_nodes, node_type, use_ilocs=True,)
                     for layer_nodes in nodes_per_hop
                 ]
             )
@@ -384,7 +380,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
             G, graph_schema=self.schema, seed=seed
         )
 
-    def _get_features(self, node_samples, head_size):
+    def _get_features(self, node_samples, head_size, use_ilocs=False):
         """
         Collect features from sampled nodes.
         Args:
@@ -399,7 +395,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         # Resize features to (batch_size, n_neighbours, feature_size)
         # for each node type (note that we can have different feature size for each node type)
         batch_feats = [
-            self.graph.node_features(layer_nodes, nt)
+            self.graph.node_features(layer_nodes, nt, use_ilocs=use_ilocs)
             for nt, layer_nodes in node_samples
         ]
 
@@ -420,7 +416,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
         Returns:
             A list of the same length as `num_samples` of collected features from
-            the sampled nodes of shape: `(len(head_nodes), num_sampled_at_layer, feature_size)`
+            the sampled nodes of shape: ``(len(head_nodes), num_sampled_at_layer, feature_size)``
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
@@ -457,7 +453,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
             for ab in zip(nodes_by_type[0], nodes_by_type[1])
         ]
 
-        batch_feats = self._get_features(nodes_by_type, len(head_links))
+        batch_feats = self._get_features(nodes_by_type, len(head_links), use_ilocs=True)
 
         return batch_feats
 
@@ -506,8 +502,8 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
         target_ids = [head_link[0] for head_link in head_links]
         context_ids = [head_link[1] for head_link in head_links]
-        target_feats = self.graph.node_features(target_ids)
-        context_feats = self.graph._get_index_for_nodes(context_ids)
+        target_feats = self.graph.node_features(target_ids, use_ilocs=True)
+        context_feats = np.array(context_ids)
         batch_feats = [target_feats, np.array(context_feats)]
 
         return batch_feats
@@ -605,7 +601,9 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
                 nodes_in_slot = [
                     element for sample in node_samples for element in sample[slot]
                 ]
-                features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
+                features_for_slot = self.graph.node_features(
+                    nodes_in_slot, node_type, use_ilocs=True,
+                )
 
                 features[slot] = np.reshape(
                     features_for_slot, (len(hns), -1, features_for_slot.shape[1])

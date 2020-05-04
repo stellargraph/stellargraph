@@ -22,6 +22,7 @@ a machine-learning ready graph used by models.
 
 """
 import argparse
+import difflib
 import nbformat
 import re
 import shlex
@@ -176,10 +177,13 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
+        return f"[![Open In Binder](https://mybinder.org/badge_logo.svg)]({self._binder_url(notebook_path)})"
 
     def _colab_badge(self, notebook_path):
-        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
+        return f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({self._colab_url(notebook_path)})"
+
+    def _badge_markdown(self, notebook_path):
+        return f"> Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}"
 
     def preprocess(self, nb, resources):
         notebook_path = resources[self.path_resource_name]
@@ -188,9 +192,7 @@ if 'google.colab' in sys.modules:
                 f"WARNING: Notebook file path of {notebook_path} didn't start with {self.demos_path_prefix}, and may result in bad links to cloud runners."
             )
         self.remove_tagged_cells_from_notebook(nb)
-        # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
-        badge_markdown = f"<table><tr><td>Run the master version of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
-        badge_cell = nbformat.v4.new_markdown_cell(badge_markdown)
+        badge_cell = nbformat.v4.new_markdown_cell(self._badge_markdown(notebook_path))
         self.tag_cell(badge_cell)
         # the badges go after the first cell, unless the first cell is code
         if nb.cells[0].cell_type == "code":
@@ -458,6 +460,18 @@ if __name__ == "__main__":
 
                 if original != updated:
                     check_failed.append(str(file_loc))
+
+                    if on_ci:
+                        # CI doesn't provide enough state to diagnose a peculiar or
+                        # seemingly-spurious difference, so include a diff in the logs. This allows
+                        # us to inspect the change retroactive if required, but doesn't junk up the
+                        # final output/annotation.
+                        sys.stdout.writelines(
+                            difflib.unified_diff(
+                                original.splitlines(keepends=True),
+                                updated.splitlines(keepends=True),
+                            )
+                        )
 
                 tempdir.cleanup()
 

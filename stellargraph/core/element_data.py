@@ -320,35 +320,52 @@ class EdgeData(ElementData):
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
 
-        # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = {}
-        out_dict = {}
-        undirected = {}
-
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            in_dict.setdefault(tgt, []).append(i)
-            out_dict.setdefault(src, []).append(i)
-
-            undirected.setdefault(tgt, []).append(i)
-            if src != tgt:
-                undirected.setdefault(src, []).append(i)
-
-        dtype = np.min_scalar_type(len(self.sources))
-        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
-        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
-        self._edges_dict = _numpyise(undirected, dtype=dtype)
+        # These are lazily initialized, to only pay the (construction) time and memory cost when
+        # actually using them
+        self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
+    def _init_directed_adj_lists(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        in_dict = {}
+        out_dict = {}
+
+        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
+            in_dict.setdefault(tgt, []).append(i)
+            out_dict.setdefault(src, []).append(i)
+
+        dtype = np.min_scalar_type(len(self.sources))
+        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
+        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
+
+    def _init_undirected_adj_lists(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        undirected = {}
+
+        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
+            undirected.setdefault(tgt, []).append(i)
+            if src != tgt:
+                undirected.setdefault(src, []).append(i)
+
+        dtype = np.min_scalar_type(len(self.sources))
+        self._edges_dict = _numpyise(undirected, dtype=dtype)
+
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
+            if self._edges_dict is None:
+                self._init_undirected_adj_lists()
             return self._edges_dict
         if ins:
+            if self._edges_in_dict is None:
+                self._init_directed_adj_lists()
             return self._edges_in_dict
         if outs:
+            if self._edges_out_dict is None:
+                self._init_directed_adj_lists()
             return self._edges_out_dict
 
         raise ValueError(

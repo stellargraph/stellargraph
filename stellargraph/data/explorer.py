@@ -34,7 +34,7 @@ from scipy.special import softmax
 from ..core.schema import GraphSchema
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
-from ..core.validation import require_integer_in_range
+from ..core.validation import require_integer_in_range, comma_sep
 from ..random import random_state
 from abc import ABC, abstractmethod
 
@@ -107,7 +107,6 @@ class GraphWalk(object):
 
         # Initialize the random state
         self._check_seed(seed)
-
         self._random_state, self._np_random_state = random_state(seed)
 
         # We require a StellarGraph for this
@@ -129,7 +128,9 @@ class GraphWalk(object):
         adj = getattr(self, "adj_types", None)
         if not adj:
             # Create a dict of adjacency lists per edge type, for faster neighbour sampling from graph in SampledHeteroBFS:
-            self.adj_types = adj = self.graph._adjacency_types(self.graph_schema)
+            self.adj_types = adj = self.graph._adjacency_types(
+                self.graph_schema, use_ilocs=True
+            )
         return adj
 
     def _check_seed(self, seed):
@@ -159,9 +160,7 @@ class GraphWalk(object):
         return rs
 
     def neighbors(self, node):
-        if not self.graph.has_node(node):
-            self._raise_error("node {} not in graph".format(node))
-        return self.graph.neighbor_arrays(node)
+        return self.graph.neighbor_arrays(node, use_ilocs=True)
 
     def run(self, *args, **kwargs):
         """
@@ -272,6 +271,8 @@ class UniformRandomWalk(RandomWalk):
         self._validate_walk_params(nodes, n, length)
         rs = self._get_random_state(seed)
 
+        nodes = self.graph.node_ids_to_ilocs(nodes)
+
         # for each root node, do n walks
         return [self._walk(rs, node, length) for node in nodes for _ in range(n)]
 
@@ -279,7 +280,7 @@ class UniformRandomWalk(RandomWalk):
         walk = [start_node]
         current_node = start_node
         for _ in range(length - 1):
-            neighbours = self.graph.neighbor_arrays(current_node)
+            neighbours = self.graph.neighbor_arrays(current_node, use_ilocs=True)
             if len(neighbours) == 0:
                 # dead end, so stop
                 break
@@ -288,7 +289,7 @@ class UniformRandomWalk(RandomWalk):
                 current_node = rs.choice(neighbours)
             walk.append(current_node)
 
-        return walk
+        return list(self.graph.node_ilocs_to_ids(walk))
 
 
 def naive_weighted_choices(rs, weights):
@@ -351,6 +352,32 @@ class BiasedRandomWalk(RandomWalk):
         self.p = p
         self.q = q
         self.weighted = weighted
+        self._checked_weights = False
+
+        if weighted:
+            self._check_weights_valid()
+
+    def _check_weights_valid(self):
+        if self._checked_weights:
+            # we only need to check the weights once, either in the constructor or in run, whichever
+            # sets `weighted=True` first
+            return
+
+        # Check that all edge weights are greater than or equal to 0.
+        edges, weights = self.graph.edges(include_edge_weight=True, use_ilocs=True)
+        (invalid,) = np.where((weights < 0) | ~np.isfinite(weights))
+        if len(invalid) > 0:
+
+            def format(idx):
+                s, t = edges[idx]
+                w = weights[idx]
+                return f"{s!r} to {t!r} (weight = {w})"
+
+            raise ValueError(
+                f"graph: expected all edge weights to be non-negative and finite, found some negative or infinite: {comma_sep(invalid, stringify=format)}"
+            )
+
+        self._checked_weights = True
 
     def run(
         self, nodes, *, n=None, length=None, p=None, q=None, seed=None, weighted=None
@@ -382,33 +409,32 @@ class BiasedRandomWalk(RandomWalk):
         self._check_weights(p, q, weighted)
         rs = self._get_random_state(seed)
 
-        if weighted:
-            # Check that all edge weights are greater than or equal to 0.
-            # Also, if the given graph is a MultiGraph, then check that there are no two edges between
-            # the same two nodes with different weights.
-            for node in self.graph.nodes():
-                # TODO Encapsulate edge weights
-                for neighbor in self.graph.neighbor_arrays(node):
+        nodes = self.graph.node_ids_to_ilocs(nodes)
 
-                    wts = set()
-                    name = f"Edge weight between ({node}) and ({neighbor})"
-                    for weight in self.graph._edge_weights(node, neighbor):
-                        weight_is_valid = (
-                            isinstance(weight, (float, int))
-                            and np.isfinite(weight)
-                            and weight >= 0
-                        )
-                        if not weight_is_valid:
-                            raise ValueError(
-                                f"{name}: expected numeric value greater than or equal to 0, found {weight}"
-                            )
-                        wts.add(weight)
-                    if len(wts) > 1:
-                        # multigraph with different weights on edges between same pair of nodes
-                        raise ValueError(
-                            f"{name}: expected all edges between two particular nodes to have the "
-                            f"same weight value, found {list(wts)}"
-                        )
+        if weighted:
+            self._check_weights_valid()
+
+            # calculate the appropriate unnormalised transition probability, given the history of
+            # the walk
+            def transition_probability(nn):
+                nn, weight = nn
+
+                if nn == previous_node:  # d_tx = 0
+                    return ip * weight
+                elif any(nn == pn for pn, _ in previous_node_neighbours):  # d_tx = 1
+                    return weight
+                else:  # d_tx = 2
+                    return iq * weight
+
+        else:
+            # without weights
+            def transition_probability(nn):
+                if nn == previous_node:  ## d_tx = 0
+                    return ip
+                elif nn in previous_node_neighbours:  # d_tx = 1
+                    return 1.0
+                else:  # d_tx = 2
+                    return iq
 
         ip = 1.0 / p
         iq = 1.0 / q
@@ -419,52 +445,34 @@ class BiasedRandomWalk(RandomWalk):
                 # the walk starts at the root
                 walk = [node]
 
-                neighbours = self.graph.neighbor_arrays(node)
+                previous_node = None
+                previous_node_neighbours = []
 
-                previous_node = node
-                previous_node_neighbours = neighbours
+                current_node = node
 
-                # calculate the appropriate unnormalised transition
-                # probability, given the history of the walk
-                def transition_probability(nn, current_node, weighted):
+                for _ in range(length - 1):
+                    neighbours = self.graph.neighbor(
+                        current_node, use_ilocs=True, include_edge_weight=weighted
+                    )
 
+                    if not neighbours:
+                        break
+
+                    # select one of the neighbours using the
+                    # appropriate transition probabilities
+                    choice = naive_weighted_choices(
+                        rs, (transition_probability(nn) for nn in neighbours),
+                    )
+
+                    previous_node = current_node
+                    previous_node_neighbours = neighbours
+                    current_node = neighbours[choice]
                     if weighted:
-                        # TODO Encapsulate edge weights
-                        weight_cn = self.graph._edge_weights(current_node, nn)[0]
-                    else:
-                        weight_cn = 1.0
+                        current_node = current_node.node
 
-                    if nn == previous_node:  # d_tx = 0
-                        return ip * weight_cn
-                    elif nn in previous_node_neighbours:  # d_tx = 1
-                        return 1.0 * weight_cn
-                    else:  # d_tx = 2
-                        return iq * weight_cn
+                    walk.append(current_node)
 
-                if len(neighbours) > 0:
-                    current_node = rs.choice(neighbours)
-                    for _ in range(length - 1):
-                        walk.append(current_node)
-                        neighbours = self.graph.neighbor_arrays(current_node)
-
-                        if len(neighbours) == 0:
-                            break
-
-                        # select one of the neighbours using the
-                        # appropriate transition probabilities
-                        choice = naive_weighted_choices(
-                            rs,
-                            (
-                                transition_probability(nn, current_node, weighted)
-                                for nn in neighbours
-                            ),
-                        )
-
-                        previous_node = current_node
-                        previous_node_neighbours = neighbours
-                        current_node = neighbours[choice]
-
-                walks.append(walk)
+                walks.append(list(self.graph.node_ilocs_to_ids(walk)))
 
         return walks
 
@@ -535,11 +543,13 @@ class UniformRandomMetaPathWalk(RandomWalk):
         self._check_metapath_values(metapaths)
         rs = self._get_random_state(seed)
 
+        nodes = self.graph.node_ids_to_ilocs(nodes)
+
         walks = []
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.node_type(node)
+            label = self.graph.node_type(node, use_ilocs=True)
             filtered_metapaths = [
                 metapath
                 for metapath in metapaths
@@ -562,12 +572,13 @@ class UniformRandomMetaPathWalk(RandomWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.graph.neighbor_arrays(current_node)
+                        neighbours = self.graph.neighbor_arrays(current_node, use_ilocs=True)
                         # filter these by node type
                         neighbours = [
                             n_node
                             for n_node in neighbours
-                            if self.graph.node_type(n_node) == metapath[d]
+                            if self.graph.node_type(n_node, use_ilocs=True)
+                            == metapath[d]
                         ]
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
@@ -577,7 +588,9 @@ class UniformRandomMetaPathWalk(RandomWalk):
                             neighbours
                         )  # the next node in the walk
 
-                    walks.append(walk)  # store the walk
+                    walks.append(
+                        list(self.graph.node_ilocs_to_ids(walk))
+                    )  # store the walk
 
         return walks
 
@@ -659,12 +672,14 @@ class SampledBreadthFirstWalk(GraphWalk):
                     # consider the subgraph up to and including max_hops from root node
                     if depth > max_hops:
                         continue
+
                     neighbours = (
                         self.neighbors(cur_node) if cur_node is not None else []
                     )
                     if len(neighbours) == 0:
                         # Either node is unconnected or is in directed graph with no out-nodes.
-                        neighbours = [None] * n_size[cur_depth]
+                        _size = n_size[cur_depth]
+                        neighbours = [-1] * _size
                     else:
                         # sample with replacement
                         neighbours = rs.choices(neighbours, k=n_size[cur_depth])
@@ -715,7 +730,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 walk = list()  # the list of nodes in the subgraph of node
 
                 # Start the walk by adding the head node, and node type to the frontier list q
-                node_type = self.graph.node_type(node)
+                node_type = self.graph.node_type(node, use_ilocs=True)
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
@@ -743,7 +758,8 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             if len(neigh_et) > 0:
                                 samples = rs.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
-                                samples = [None] * n_size[depth - 1]
+                                _size = n_size[depth - 1]
+                                samples = [-1] * _size
 
                             walk.append(samples)
                             q.extend(
@@ -873,15 +889,15 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         """
         if node is None:
             # Non-node, e.g. previously sampled from empty neighbourhood
-            return [None] * size
+            return [-1] * size
         neighbours = list(
-            self.graph.in_node_arrays(node)
+            self.graph.in_nodes(node, use_ilocs=True)
             if idx == 0
-            else self.graph.out_node_arrays(node)
+            else self.graph.out_nodes(node, use_ilocs=True)
         )
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
-            return [None] * size
+            return [-1] * size
         # Sample with replacement
         return rs.choices(neighbours, k=size)
 

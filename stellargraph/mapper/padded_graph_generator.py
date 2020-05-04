@@ -45,6 +45,14 @@ class PaddedGraphGenerator(Generator):
                 raise TypeError(
                     f"graphs: expected every element to be a StellarGraph object, found {type(graph).__name__}."
                 )
+
+            if graph.number_of_nodes() == 0:
+                # an empty graph has no information at all and breaks things like mean pooling, so
+                # let's disallow them
+                raise ValueError(
+                    "graphs: expected every graph to be non-empty, found graph with no nodes"
+                )
+
             # Check that there is only a single node type for GAT or GCN
             node_type = graph.unique_node_type(
                 "graphs: expected only graphs with a single node type, found a graph with node types: %(found)s"
@@ -85,8 +93,8 @@ class PaddedGraphGenerator(Generator):
         Args:
             graph_ilocs (iterable): an iterable of graph indexes in self.graphs for the graphs of interest
                 (e.g., training, validation, or test set nodes).
-            targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
-                len(targets))`.
+            targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graph_ilocs),
+                len(targets))``.
             symmetric_normalization (bool, optional): The type of normalization to be applied on the graph adjacency
                 matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
                 degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
