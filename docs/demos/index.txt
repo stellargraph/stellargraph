@@ -27,6 +27,7 @@ Find algorithms for a task
 
   * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>` (and :doc:`community detection <./community_detection/index>` for using these to cluster nodes)
 
+* Time series or sequence prediction for nodes within a graph (including spatio-temporal data): :doc:`time series <./time-series/index>`
 * Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
 * Loading data into a ``StellarGraph`` object, with Pandas, Neo4j or NetworkX: :doc:`basics <./basics/index>`
 * Experimental: running GraphSAGE on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
@@ -56,7 +57,7 @@ Find a demo for an algorithm
      - see RGCN
      -
      -
-     -
+     - see T-GCN
      - yes
      - :any:`demo <node-classification/gcn/gcn-cora-node-classification-example>`
      - :any:`demo <link-prediction/gcn/cora-gcn-links-example>`
@@ -84,6 +85,18 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/rgcn/rgcn-aifb-node-classification-example>`
      - yes
+     -
+     -
+     -
+   *
+     - T-GCN
+     -
+     -
+     -
+     - node features
+     - time series, sequence
+     - :any:`demo <time-series/gcn-lstm-LA>`
+     -
      -
      -
      -
