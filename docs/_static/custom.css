@@ -5,7 +5,7 @@
     white-space: normal;
 }
 
-@media screen and (min-width: 1400px) {
+@media screen and (min-width: 1600px) {
     /* if the screen is wide enough, allow the table to overhang the normal text width */
     .wy-table-responsive table {
         background: white;
