@@ -82,7 +82,7 @@ def test_run_context_pairs(line_graph):
         # since each walk has length = 2, there must be an edge between each positive context pair
         for context, label in sampled:
             if label == 1:
-                assert context in set(line_graph.neighbor_arrays(target))
+                assert context in set(line_graph.neighbors(target))
 
 
 def test_walker_uniform_random(line_graph):

@@ -62,7 +62,7 @@ def create_graphSAGE_model(graph, link_prediction=False):
     if link_prediction:
         # We are going to train on the original graph
         generator = GraphSAGELinkGenerator(graph, batch_size=2, num_samples=[2, 2])
-        edge_ids_train = (np.array([1, 2, 1]), np.array([2, 3, 3]))
+        edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
         train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
     else:
         generator = GraphSAGENodeGenerator(graph, batch_size=2, num_samples=[2, 2])
@@ -105,7 +105,7 @@ def create_HinSAGE_model(graph, link_prediction=False):
             num_samples=[2, 1],
             head_node_types=["default", "default"],
         )
-        edge_ids_train = (np.array([1, 2, 1]), np.array([2, 3, 3]))
+        edge_ids_train = np.array([[1, 2], [2, 3], [1, 3]])
         train_gen = generator.flow(edge_ids_train, np.array([1, 1, 0]))
     else:
         generator = HinSAGENodeGenerator(
@@ -619,7 +619,7 @@ def test_predict():
 #
 def test_evaluate_link_prediction():
     tf.keras.backend.clear_session()
-    edge_ids_test = (np.array([1, 2, 1]), np.array([2, 3, 3]))
+    edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
     edge_labels_test = np.array([1, 1, 0])
 
     graph = example_graph_1(feature_size=4)
@@ -718,7 +718,7 @@ def test_evaluate_link_prediction():
 
 def test_predict_link_prediction():
     tf.keras.backend.clear_session()
-    edge_ids_test = (np.array([1, 2, 1]), np.array([2, 3, 3]))
+    edge_ids_test = np.array([[1, 2], [2, 3], [1, 3]])
 
     graph = example_graph_1(feature_size=2)
 
@@ -749,7 +749,7 @@ def test_predict_link_prediction():
         test_predictions = ens.predict(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
-        assert len(test_predictions) == len(edge_ids_test[0])
+        assert len(test_predictions) == len(edge_ids_test)
 
         assert test_predictions.shape[1] == 1
 
@@ -757,7 +757,7 @@ def test_predict_link_prediction():
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions
-        assert test_predictions.shape[2] == len(edge_ids_test[0])
+        assert test_predictions.shape[2] == len(edge_ids_test)
         assert test_predictions.shape[3] == 1
 
         #
@@ -779,7 +779,7 @@ def test_predict_link_prediction():
         test_predictions = ens.predict(test_gen, summarise=True)
 
         print("test_predictions shape {}".format(test_predictions.shape))
-        assert len(test_predictions) == len(edge_ids_test[0])
+        assert len(test_predictions) == len(edge_ids_test)
 
         assert test_predictions.shape[1] == 1
 
@@ -787,7 +787,7 @@ def test_predict_link_prediction():
 
         assert test_predictions.shape[0] == ens.n_estimators
         assert test_predictions.shape[1] == ens.n_predictions
-        assert test_predictions.shape[2] == len(edge_ids_test[0])
+        assert test_predictions.shape[2] == len(edge_ids_test)
         assert test_predictions.shape[3] == 1
 
 
