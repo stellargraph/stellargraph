@@ -194,9 +194,10 @@ texinfo_documents = [
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
 .. raw:: html
-      
-    <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb"><button type="button">download this notebook</a>
 
+    <div class="admonition note">
+      <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb"><button type="button">download this notebook</a>
+    </div>
 """
 
 nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
