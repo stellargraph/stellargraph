@@ -45,7 +45,7 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td>see RGCN</td>
     <td></td>
     <td></td>
-    <td>see T-GCN</td>
+    <td></td>
     <td>yes</td>
     <td><a href='node-classification/gcn/gcn-cora-node-classification-example.ipynb'>demo</a></td>
     <td><a href='link-prediction/gcn/cora-gcn-links-example.ipynb'>demo</a></td>
@@ -78,19 +78,6 @@ The demo notebooks can be run without any installation of Python by using Binder
     <td>yes</td>
     <td><a href='node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb'>demo</a></td>
     <td>yes</td>
-    <td></td>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td><span title='Temporal GCN, implemented as GCN-LSTM'>T-GCN</span></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td>node features</td>
-    <td>time series, sequence</td>
-    <td><a href='time-series/gcn-lstm-LA.ipynb'>demo</a></td>
-    <td></td>
     <td></td>
     <td></td>
     <td></td>
