@@ -275,6 +275,19 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
   </tr>
+  <tr>
+    <td><span title='Deep Graph CNN'>DGCNN</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><a href='graph-classification/dgcnn-graph-classification.ipynb'>demo</a></td>
+  </tr>
 </table>
 <!-- DEMO TABLE MARKER -->
 
