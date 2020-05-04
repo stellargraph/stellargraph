@@ -17,7 +17,7 @@ This table lists all graph classification demos, including the algorithms traine
      - algorithm(s)
      - node features
      - inductive
-   * - :doc:`GCN Supervised Graph Classification <supervised-graph-classification>`
+   * - :doc:`GCN Supervised Graph Classification <gcn-supervised-graph-classification>`
      - GCN, mean pooling
      - yes
      - yes

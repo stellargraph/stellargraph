@@ -15,11 +15,11 @@ This table lists interpretability demos, including the algorithms used.
 
    * - demo
      - algorithm(s)
-   * - :doc:`GCN (dense) <gcn/node-link-importance-demo-gcn>`
+   * - :doc:`GCN (dense) <gcn-node-link-importance>`
      - GCN, Integrated Gradients
-   * - :doc:`GCN (sparse) <gcn/node-link-importance-demo-gcn-sparse>`
+   * - :doc:`GCN (sparse) <gcn-sparse-node-link-importance>`
      - GCN, Integrated Gradients
-   * - :doc:`GAT <gat/node-link-importance-demo-gat>`
+   * - :doc:`GAT <gat-node-link-importance>`
      - GAT, Integrated Gradients
 
 
