@@ -8,6 +8,7 @@
 
 import urllib.parse
 import docutils
+import sphinx
 
 # -- Path setup --------------------------------------------------------------
 
@@ -241,13 +242,33 @@ class RewriteLinks(docutils.transforms.Transform):
     # before NBSphinx's link processing
     default_priority = 300
 
+
+    def _rewrite_api_link(self, linktext, fragment):
+        env = self.document.settings.env
+        module_prefix = "module-"
+        if fragment.startswith(module_prefix):
+            reftype = "mod"
+            fragment = fragment[len(module_prefix):]
+        else:
+            _, last_path = fragment.rsplit(".", 1)
+            if last_path[0].islower():
+                reftype = "meth"
+            else:
+                reftype = "class"
+
+        xref = sphinx.addnodes.pending_xref(
+            reftype=reftype, reftarget=fragment,
+            refdomain='py',
+            refwarn=True, refdoc=env.docname)
+        xref += docutils.nodes.Text(linktext, linktext)
+        return xref
+
     def apply(self):
         env = self.document.settings.env
         for node in self.document.traverse(docutils.nodes.reference):
             refuri = node.get("refuri")
             parsed = urllib.parse.urlparse(refuri)
 
-            new_components = None
             if parsed.netloc == "" and parsed.path.endswith("README.md"):
                 # the notebooks include links to READMEs so that the links work locally and on
                 # GitHub, but on Read the Docs, the equivalent files are 'index', not 'README'.
@@ -260,29 +281,19 @@ class RewriteLinks(docutils.transforms.Transform):
                     parsed.query,
                     parsed.fragment,
                 )
+                node["refuri"] = urllib.parse.urlunparse(new_components)
+
             elif parsed.netloc == "stellargraph.readthedocs.io":
                 # rewrite deep links to the Read the Docs documentation to
-                components = parsed.path.split("/", 3)
-                if len(components) == 4:
-                    empty, en, version, rest = components
+                path_components = parsed.path.split("/", 3)
+                if len(path_components) == 4:
+                    empty, en, version, rest = path_components
                     assert empty == ""
                     assert en == "en"
 
-                    new_path = "/" + rest
-                else:
-                    new_path = "/"
+                    if rest == "api.html":
+                        node.replace_self(self._rewrite_api_link(node.astext(), parsed.fragment))
 
-                new_components = (
-                    "", # scheme
-                    "", # netloc
-                    new_path,
-                    parsed.params,
-                    parsed.query,
-                    parsed.fragment,
-                )
-
-            if new_components is not None:
-                node["refuri"] = urllib.parse.urlunparse(new_components)
 
 
 def setup(app):
