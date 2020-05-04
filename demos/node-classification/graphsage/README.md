@@ -7,9 +7,9 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Stellargraph example: Fully directed GraphSAGE on a directed CORA citation network](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage/directed-graphsage-on-cora-example.html) | [source](directed-graphsage-on-cora-example.ipynb) |
-| [Stellargraph example: GraphSAGE on the CORA citation network](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage/graphsage-cora-node-classification-example.html) | [source](graphsage-cora-node-classification-example.ipynb) |
-| [Inductive representation learning using GraphSAGE on the Pubmed-Diabetes citation network ](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html) | [source](graphsage-pubmed-inductive-node-classification-example.ipynb) |
+| [Node classification with directed GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage/directed-graphsage-on-cora-example.html) | [source](directed-graphsage-on-cora-example.ipynb) |
+| [Node classification with GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage/graphsage-cora-node-classification-example.html) | [source](graphsage-cora-node-classification-example.ipynb) |
+| [Inductive node classification and representation learning using GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.html) | [source](graphsage-pubmed-inductive-node-classification-example.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->
