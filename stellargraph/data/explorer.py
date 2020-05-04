@@ -571,7 +571,9 @@ class UniformRandomMetaPathWalk(RandomWalk):
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
                         neighbours = self.graph.neighbors(current_node, use_ilocs=True)
                         # filter these by node type
-                        neighbour_types = self.graph.vectorized_node_type(neighbours)
+                        neighbour_types = self.graph.node_type(
+                            neighbours, use_ilocs=True
+                        )
                         neighbours = [
                             neigh
                             for neigh, neigh_type in zip(neighbours, neighbour_types)

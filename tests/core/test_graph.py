@@ -1850,9 +1850,9 @@ def test_unique_node_type():
         many_types.unique_node_type("ABC custom message %(found)s 123")
 
 
-def test_vetorized_node_types():
+def test_bulk_node_types():
     sg = example_hin_1(feature_sizes={}, reverse_order=True)
     node_ilocs = sg.nodes(use_ilocs=True)
-    node_types = sg.vectorized_node_type(node_ilocs)
+    node_types = sg.node_type(node_ilocs, use_ilocs=True)
     assert (node_types[:4] == "A").all()
     assert (node_types[4:] == "B").all()

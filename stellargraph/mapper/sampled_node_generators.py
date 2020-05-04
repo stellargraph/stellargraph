@@ -136,7 +136,7 @@ class BatchedNodeGenerator(Generator):
             expected_node_type = None
 
         node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
-        node_types = self.graph.vectorized_node_type(node_ilocs)
+        node_types = self.graph.node_type(node_ilocs, use_ilocs=True)
         invalid = node_ilocs[node_types != expected_node_type]
 
         if len(invalid) > 0:

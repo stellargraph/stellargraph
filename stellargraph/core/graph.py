@@ -738,30 +738,26 @@ class StellarGraph:
         Get the type of the node
 
         Args:
-            node: Node ID
+            node: a node or iterable of nodes
+            use_ilocs: if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
 
         Returns:
-            Node type
+            Node type or numpy array of node types
         """
-        nodes = [node]
+        if is_real_iterable(node):
+            nodes = node
+        else:
+            nodes = [node]
+
         if not use_ilocs:
             nodes = self._nodes.ids.to_iloc(nodes, strict=True)
         type_sequence = self._nodes.type_of_iloc(nodes)
 
+        if is_real_iterable(node):
+            return type_sequence
+
         assert len(type_sequence) == 1
         return type_sequence[0]
-
-    def vectorized_node_type(self, node_ilocs):
-        """
-        Get the type of the nodes
-
-        Args:
-            node_ilocs: a numpy array of node ilocs.
-
-        Returns:
-            a numpy array of node types
-        """
-        return self._nodes.type_of_iloc(node_ilocs)
 
     @property
     def node_types(self):
