@@ -246,9 +246,3 @@ def test_generator_flow_StellarGraphs():
     seq_2 = generator.flow([graphs[1], graphs[2], graphs[0]])
 
     assert all(g1 == g2 for g1, g2 in zip(seq_1.graphs, seq_2.graphs))
-
-    with pytest.raises(TypeError, match="graph_ilocs:.*"):
-        generator.flow(["abd"])
-
-    with pytest.raises(TypeError, match="graph_ilocs:.*"):
-        generator.flow("abd")

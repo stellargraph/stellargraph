@@ -16,6 +16,7 @@
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from .sequences import PaddedGraphSequence
+import numpy as np
 from .base import Generator
 
 
@@ -131,15 +132,11 @@ class PaddedGraphGenerator(Generator):
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
-        if isinstance(graph_ilocs[0], int):
-            graphs = [self.graphs[i] for i in graph_ilocs]
-        elif isinstance(graph_ilocs[0], StellarGraph):
+        if isinstance(graph_ilocs[0], StellarGraph):
             graphs = graph_ilocs
         else:
-            raise TypeError(
-                f"graph_ilocs: expected an iterable of ints or"
-                f" StellarGraphs, found {type(graph_ilocs[0])}"
-            )
+            graphs = [self.graphs[i] for i in graph_ilocs]
+
         return PaddedGraphSequence(
             graphs=graphs,
             targets=targets,
