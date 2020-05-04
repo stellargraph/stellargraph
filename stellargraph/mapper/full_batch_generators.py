@@ -128,8 +128,8 @@ class FullBatchGenerator(Generator):
         elif self.method in ["ppnp"]:
             if self.use_sparse:
                 raise ValueError(
-                    "use_sparse=true' is incompatible with 'ppnp'."
-                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                    "sparse: method='ppnp' requires 'sparse=False', found 'sparse=True' "
+                    "(consider using the APPNP model for sparse support)"
                 )
             self.features, self.Aadj = PPNP_Aadj_feats_op(
                 features=self.features,
@@ -157,8 +157,8 @@ class FullBatchGenerator(Generator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -179,10 +179,9 @@ class FullBatchGenerator(Generator):
         # [(source, target), ...]
         node_ids = np.asarray(node_ids)
         flat_node_ids = node_ids.reshape(-1)
-        flat_node_indices = self.graph._get_index_for_nodes(flat_node_ids)
+        flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
         # back to the original shape
         node_indices = flat_node_indices.reshape(node_ids.shape)
-
         if self.use_sparse:
             return SparseFullBatchSequence(
                 self.features, self.Aadj, targets, node_indices
@@ -209,18 +208,18 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     'method' option should be specified with the correct pre-processing for
     each algorithm. The options are as follows:
 
-    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+    *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
         to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
         of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
-    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
+    *   ``method='ppnp'``: Calculates the personalized page rank matrix of Eq. 2 in [4].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
     [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
-    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_.
     [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
 
     Example::
@@ -238,7 +237,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
             'sgc', 'self_loops', or 'none'.
@@ -262,8 +261,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -295,18 +294,18 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     'method' option should be specified with the correct pre-processing for
     each algorithm. The options are as follows:
 
-    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+    *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
         to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
         of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
-    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
+    *   ``method='ppnp'``: Calculates the personalized page rank matrix of Eq. 2 in [4].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
     [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
-    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_.
     [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
 
     Example::
@@ -324,7 +323,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
             'sgc', 'self_loops', or 'none'.
@@ -348,8 +347,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         Args:
             link_ids: an iterable of link ids specified as tuples of node ids
                 or an array of shape (N_links, 2) specifying the links.
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -453,7 +452,7 @@ class RelationalFullBatchNodeGenerator(Generator):
         Args:
             node_ids: and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets: a 2D array of numeric node targets with shape ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with RGCN models
@@ -470,7 +469,7 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        node_indices = self.graph._get_index_for_nodes(node_ids)
+        node_indices = self.graph.node_ids_to_ilocs(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices

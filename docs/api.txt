@@ -159,7 +159,7 @@ Deep Graph Convolutional Neural Network
 .. autoclass:: SortPooling
   :members:
 
-.. autoclass:: DeepGraphConvolutionalNeuralNetwork
+.. autoclass:: DeepGraphCNN
   :members:
 
 Deep Graph Infomax

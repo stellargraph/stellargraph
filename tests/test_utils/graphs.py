@@ -111,7 +111,7 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None, is_directed=False, self_loop=False
+    feature_sizes=None, is_directed=False, self_loop=False, reverse_order=False
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
@@ -121,9 +121,13 @@ def example_hin_1(
             return repeated_features(ids, feature_size)
 
     a_ids = [0, 1, 2, 3]
+    if reverse_order:
+        a_ids = a_ids[::-1]
     a = pd.DataFrame(features("A", a_ids), index=a_ids)
 
     b_ids = [4, 5, 6]
+    if reverse_order:
+        b_ids = b_ids[::-1]
     b = pd.DataFrame(features("B", b_ids), index=b_ids)
 
     r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
