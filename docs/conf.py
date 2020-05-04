@@ -99,6 +99,7 @@ exclude_patterns = [
     "requirements.txt",
     "demos/community_detection/*",
     "demos/use-cases/*",
+    "demos/interpretability/gcn/hateful-twitters-interpretability.*"
 ]
 
 # The name of the Pygments (syntax highlighting) style to use.
