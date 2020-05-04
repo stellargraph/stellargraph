@@ -236,3 +236,19 @@ def test_generator_flow_shuffle():
         if not batches_all_equal(batches, get_next_epoch_batches(seq)):
             at_least_one_different = True
     assert at_least_one_different
+
+
+def test_generator_flow_StellarGraphs():
+    generator = PaddedGraphGenerator(graphs=graphs)
+    graph_ilocs = [1, 2, 0]
+
+    seq_1 = generator.flow(graph_ilocs)
+    seq_2 = generator.flow([graphs[1], graphs[2], graphs[0]])
+
+    assert all(g1 == g2 for g1, g2 in zip(seq_1.graphs, seq_2.graphs))
+
+    with pytest.raises(TypeError, match="graph_ilocs:.*"):
+        generator.flow(["abd"])
+
+    with pytest.raises(TypeError, match="graph_ilocs:.*"):
+        generator.flow("abd")

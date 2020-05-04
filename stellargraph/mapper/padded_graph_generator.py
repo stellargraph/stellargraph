@@ -91,8 +91,8 @@ class PaddedGraphGenerator(Generator):
         with the supplied graph indexes and targets.
 
         Args:
-            graph_ilocs (iterable): an iterable of graph indexes in self.graphs for the graphs of interest
-                (e.g., training, validation, or test set nodes).
+            graph_ilocs (iterable): an iterable of graph indexes in self.graphs or an iterable of `StellarGraph`s
+                for the graphs of interest (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graph_ilocs),
                 len(targets))``.
             symmetric_normalization (bool, optional): The type of normalization to be applied on the graph adjacency
@@ -131,8 +131,17 @@ class PaddedGraphGenerator(Generator):
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
+        if isinstance(graph_ilocs[0], int):
+            graphs = [self.graphs[i] for i in graph_ilocs]
+        elif isinstance(graph_ilocs[0], StellarGraph):
+            graphs = graph_ilocs
+        else:
+            raise TypeError(
+                f"graph_ilocs: expected an iterable of ints or"
+                f" StellarGraphs, found {type(graph_ilocs[0])}"
+            )
         return PaddedGraphSequence(
-            graphs=[self.graphs[i] for i in graph_ilocs],
+            graphs=graphs,
             targets=targets,
             symmetric_normalization=symmetric_normalization,
             batch_size=batch_size,
