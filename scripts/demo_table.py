@@ -362,9 +362,7 @@ ALGORITHMS = [
         features=True,
         temporal="see T-GCN",
         nc=T(link="node-classification/gcn-node-classification"),
-        interpretability_nc=T(
-            link="interpretability/gcn-node-link-importance"
-        ),
+        interpretability_nc=T(link="interpretability/gcn-node-link-importance"),
         lp=T(link="link-prediction/gcn-link-prediction"),
         rl=[rl_us(), rl_dgi()],
         inductive="see Cluster-GCN",
@@ -394,9 +392,7 @@ ALGORITHMS = [
         T("GAT", details="Graph ATtention Network (GAT)"),
         features=True,
         nc=T(link="node-classification/gat-node-classification"),
-        interpretability_nc=T(
-            link="interpretability/gat-node-link-importance"
-        ),
+        interpretability_nc=T(link="interpretability/gat-node-link-importance"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
     ),
@@ -429,27 +425,22 @@ ALGORITHMS = [
     Algorithm(
         "Attri2Vec",
         features=True,
-        nc=T(
-            link="node-classification/attri2vec-node-classification"
-        ),
+        nc=T(link="node-classification/attri2vec-node-classification"),
         lp=T(link="link-prediction/attri2vec-link-prediction"),
         rl=T(link="embeddings/attri2vec-embeddings"),
     ),
     Algorithm(
         "GraphSAGE",
         heterogeneous="see HinSAGE",
-        directed=T(
-            link="node-classification/directed-graphsage-node-classification"
-        ),
+        directed=T(link="node-classification/directed-graphsage-node-classification"),
         features=True,
-        nc=T(
-            link="node-classification/graphsage-node-classification"
-        ),
+        nc=T(link="node-classification/graphsage-node-classification"),
         lp=T(link="link-prediction/graphsage-link-prediction"),
-        rl=[rl_us(link="embeddings/graphsage-unsupervised-sampler-embeddings"), rl_dgi()],
-        inductive=T(
-            link="node-classification/graphsage-inductive-node-classification"
-        ),
+        rl=[
+            rl_us(link="embeddings/graphsage-unsupervised-sampler-embeddings"),
+            rl_dgi(),
+        ],
+        inductive=T(link="node-classification/graphsage-inductive-node-classification"),
     ),
     Algorithm(
         "HinSAGE",
@@ -462,12 +453,8 @@ ALGORITHMS = [
     ),
     Algorithm(
         "Node2Vec",
-        weighted=T(
-            link="node-classification/node2vec-weighted-node-classification"
-        ),
-        nc=via_rl(
-            link="node-classification/node2vec-node-classification"
-        ),
+        weighted=T(link="node-classification/node2vec-weighted-node-classification"),
+        nc=via_rl(link="node-classification/node2vec-node-classification"),
         lp=via_rl(link="link-prediction/node2vec-link-prediction"),
         rl=T(link="embeddings/node2vec-embeddings"),
     ),
