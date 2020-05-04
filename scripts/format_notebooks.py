@@ -240,6 +240,32 @@ except AttributeError:
         return nb, resources
 
 
+class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
+    metadata_tag = "DataLoadingLinks"
+    search_tag = "DataLoading"
+
+    data_loading_description = f"""\
+(See [the "Loading from Pandas" demo](https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-pandas.html) for details on how data can be loaded.)"""
+
+    def preprocess(self, nb, resources):
+        self.remove_tagged_cells_from_notebook(nb)
+        first_data_loading = next(
+            (
+                index
+                for index, cell in enumerate(nb.cells)
+                if self.search_tag in self.tags(cell)
+            ),
+            None,
+        )
+
+        if first_data_loading is not None:
+            links_cell = nbformat.v4.new_markdown_cell(self.data_loading_description)
+            self.tag_cell(links_cell)
+            nb.cells.insert(first_data_loading, links_cell)
+
+        return nb, resources
+
+
 # ANSI terminal escape sequences
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
@@ -320,6 +346,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add or update cells that validate the version of StellarGraph",
     )
+    parser.add_argument(
+        "-l",
+        "--loading_links",
+        action="store_true",
+        help="Add or update cells that link to docs for loading data",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-o",
@@ -361,6 +393,7 @@ if __name__ == "__main__":
     cell_timeout = args.cell_timeout
     run_cloud = args.run_cloud or args.default
     version_validation = args.version_validation or args.default
+    loading_links = args.loading_links or args.default
 
     # Add preprocessors
     preprocessor_list = []
@@ -368,6 +401,8 @@ if __name__ == "__main__":
         preprocessor_list.append(CloudRunnerPreprocessor)
     if version_validation:
         preprocessor_list.append(VersionValidationPreprocessor)
+    if loading_links:
+        preprocessor_list.append(LoadingLinksPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 

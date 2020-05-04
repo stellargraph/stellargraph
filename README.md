@@ -27,9 +27,6 @@
   <a href="https://codecov.io/gh/stellargraph/stellargraph">
     <img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" />
   </a>
-  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
-    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
-  </a>
   <a href="https://pypi.org/project/stellargraph" alt="pypi downloads">
     <img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph">
   </a>
@@ -50,7 +47,6 @@
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
        * [Install StellarGraph in Anaconda Python](#Install-stellargraph-in-anaconda-python)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
-       * [Docker Image](#docker-image)
    * [Citing](#citing)
    * [References](#references)
 
@@ -192,6 +188,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
+| TGCN [19] | The GraphConvolutionLSTM model in StellarGraph follows the Temporal Graph Convolutional Network architecture proposed in the TGCN paper with a few enhancements in the layers architecture. |
 
 ## Installation
 
@@ -240,13 +237,6 @@ Some of the examples in the `demos` directory require installing additional depe
 ```
 pip install .[demos]
 ```
-
-
-#### Docker Image
-
-* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
-
-Images can be pulled via `docker pull stellargraph/stellargraph`
 
 
 ## Citing
@@ -308,3 +298,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 17. Embedding Entities and Relations for Learning and Inference in Knowledge Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng, ICLR, 2015. arXiv:1412.6575 ([link](https://arxiv.org/pdf/1412.6575))
 
 18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf))
+
+19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. Ling Zhao, Yujiao Song, Chao Zhang, Yu Liu, Pu Wang, Tao Lin, Min Deng, and Haifeng Li.IEEE Transactions on Intelligent Transportation Systems, 2019. ([link](https://ieeexplore.ieee.org/document/8809901))
