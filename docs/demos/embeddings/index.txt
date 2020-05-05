@@ -3,7 +3,7 @@ Unsupervised representation learning
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing unsupervised node and edge representation learning on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
-A node representation learning task computes a representation or embedding vector for each node in a graph. These vectors capture latent/hidden information about the nodes and edges, and can be used for (semi-)supervised downstream tasks like :doc:`node classification <../node-classification/index>` and :doc:`link prediction <../link-prediction/index>`, or unsupervised ones like :doc:`community detection <../community_detection/index>` or similarity searches. Representation learning is typically an unsupervised task, where the model is trained on data that does not have any ground-truth labels.
+A node representation learning task computes a representation or embedding vector for each node in a graph. These vectors capture latent/hidden information about the nodes and edges, and can be used for (semi-)supervised downstream tasks like :doc:`node classification <../node-classification/index>` and :doc:`link prediction <../link-prediction/index>`, or unsupervised ones like community detection or similarity searches. Representation learning is typically an unsupervised task, where the model is trained on data that does not have any ground-truth labels.
 
 Node representations can also be computed from (semi-)supervised models, using the output of a hidden layer as the embedding vector for nodes or edges. StellarGraph provides some :doc:`demonstrations of node classification <../node-classification/index>` and :doc:`link prediction <../link-prediction/index>`, some of which include computing and visualising node or edge embeddings.
 
@@ -20,37 +20,37 @@ This table lists all representation learning demos, including the algorithms tra
      - training method
      - node features
      - downstream tasks shown
-   * - :doc:`Deep Graph Infomax <deep-graph-infomax-cora>`
+   * - :doc:`Deep Graph Infomax <deep-graph-infomax-embeddings>`
      - GCN, GAT, PPNP, APPNP, GraphSAGE, HinSAGE
      - ``DeepGraphInfomax`` (mutual information)
      - yes
      - visualisation, node classification
-   * - :doc:`Unsupervised GraphSAGE <embeddings-unsupervised-graphsage-cora>`
+   * - :doc:`Unsupervised GraphSAGE <graphsage-unsupervised-sampler-embeddings>`
      - GraphSAGE
      - ``UnsupervisedSampler`` (link prediction)
      - yes
      - visualisation, node classification
-   * - :doc:`Attri2Vec <stellargraph-attri2vec-citeseer>`
+   * - :doc:`Attri2Vec <attri2vec-embeddings>`
      - Attri2Vec
      - ``UnsupervisedSampler`` (link prediction)
      - yes
      - visualisation
-   * - :doc:`Metapath2Vec <stellargraph-metapath2vec>`
+   * - :doc:`Metapath2Vec <metapath2vec-embeddings>`
      - Metapath2Vec
      - natively unsupervised
      -
      - visualisation
-   * - :doc:`Node2Vec <stellargraph-node2vec>`
+   * - :doc:`Node2Vec <node2vec-embeddings>`
      - Node2Vec
      - natively unsupervised
      -
      - visualisation
-   * - :doc:`Watch Your Step <watch-your-step-cora-demo>`
+   * - :doc:`Watch Your Step <watch-your-step-embeddings>`
      - Watch Your Step
      - natively unsupervised
      -
      - visualisation, node classification
-   * - :doc:`GraphWave <graphwave-barbell>`
+   * - :doc:`GraphWave <graphwave-embeddings>`
      - GraphWave
      - natively unsupervised
      -

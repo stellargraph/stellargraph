@@ -7,8 +7,8 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [StellarGraph Ensemble for link prediction](https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html) | [source](ensemble-link-prediction-example.ipynb) |
-| [Stellargraph Ensembles for node attribute inference](https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html) | [source](ensemble-node-classification-example.ipynb) |
+| [Ensemble models for link prediction](https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html) | [source](ensemble-link-prediction-example.ipynb) |
+| [Ensemble models for node classification](https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html) | [source](ensemble-node-classification-example.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->
