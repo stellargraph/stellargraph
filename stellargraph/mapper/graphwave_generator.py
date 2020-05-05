@@ -52,14 +52,10 @@ class GraphWaveGenerator(Generator):
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
-        node_types = list(G.node_types)
-        if len(node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        # Check that there is only a single node type
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         require_integer_in_range(degree, "degree", min_val=1)
 
@@ -67,7 +63,7 @@ class GraphWaveGenerator(Generator):
         adj = G.to_adjacency_matrix().tocoo()
 
         # Function to map node IDs to indices for quicker node index lookups
-        self._node_lookup = G._get_index_for_nodes
+        self._node_lookup = G.node_ids_to_ilocs
 
         degree_mat = diags(np.asarray(adj.sum(1)).ravel())
         laplacian = degree_mat - adj
@@ -118,8 +114,8 @@ class GraphWaveGenerator(Generator):
             sample_points: a 1D array of points at which to sample the characteristic function. This should be of the
                 form: `sample_points=np.linspace(0, max_val, number_of_samples)` and is graph dependent.
             batch_size (int): the number of node embeddings to include in a batch.
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
             shuffle (bool): indicates whether to shuffle the dataset after each epoch
             seed (int,optional): the random seed to use for shuffling the dataset
             repeat (bool): indicates whether iterating through the DataSet will continue infinitely or stop after one

@@ -83,7 +83,7 @@ steps:
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 45
+    parallelism: 47
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -130,6 +130,30 @@ steps:
     <<: *timeout
     depends_on: "runner-3_6"
     command: "python scripts/format_notebooks.py --default --ci demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":jupyter::book: check notebook text"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    command: "python scripts/notebook_text_checker.py demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":book: check demo indexing"
+    command: "python scripts/demo_indexing.py --action=compare"
+    <<: *timeout
+    depends_on: "runner-3_6"
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:
@@ -197,15 +221,6 @@ steps:
     <<: *timeout
     command: "scripts/whitespace.sh --ci"
 
-  - label: ":book: check demo table"
-    command: "python scripts/demo_table.py --action=compare"
-    <<: *timeout
-    plugins:
-      <<: *plugins
-      docker#v3.5.0:
-        image: "python:3.6"
-        propagate_environment: true
-
   - label: ":snake: conda build"
     <<: *timeout
     command: ".buildkite/steps/conda-build.sh"
@@ -216,36 +231,6 @@ steps:
         run: conda
     agents:
       queue: "t2medium"
-
-  - label: ":docker: build image"
-    <<: *timeout
-    plugins:
-      <<: *plugins
-      docker-compose#v3.2.0:
-        <<: *compose-config
-        build:
-          - stellargraph
-        image-repository: index.docker.io/stellargraph/stellargraph
-        # Caching can cause packages to be pinned to old (possibly-vulnerable) versions for long
-        # periods.  Setting `REFRESH_BUILD=true` allows for builds (e.g. scheduled builds) to start
-        # from scratch and refresh the caches.
-        no-cache: ${REFRESH_BUILD-false}
-        cache-from:
-          - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
-          - stellargraph:index.docker.io/stellargraph/stellargraph:latest
-    agents:
-      queue: "t2medium"
-
-  - wait
-
-  - label: ":docker: publish image"
-    <<: *timeout
-    plugins:
-      <<: *plugins
-      docker-compose#v3.2.0:
-        <<: *compose-config
-        push:
-          - stellargraph:index.docker.io/stellargraph/stellargraph:${IMAGE_TAG}
 
   # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
   # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that

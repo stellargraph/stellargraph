@@ -553,6 +553,8 @@ class PaddedGraphSequence(Sequence):
             matrix by the inverse of the degree matrix. This parameter is ignored if normalize=False.
         batch_size (int, optional): The batch size. It defaults to 1.
         name (str, optional): An optional name for this generator object.
+        shuffle (bool, optional): If True the node IDs will be shuffled at the end of each epoch.
+        seed (int, optional): Random seed.
     """
 
     def __init__(
@@ -563,6 +565,8 @@ class PaddedGraphSequence(Sequence):
         symmetric_normalization=True,
         batch_size=1,
         name=None,
+        shuffle=False,
+        seed=None,
     ):
 
         self.name = name
@@ -593,6 +597,8 @@ class PaddedGraphSequence(Sequence):
             self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
 
         self.normalized_adjs = np.asanyarray(self.normalized_adjs)
+        _, self._np_rs = random_state(seed)
+        self.shuffle = shuffle
 
         self.on_epoch_end()
 
@@ -618,7 +624,7 @@ class PaddedGraphSequence(Sequence):
         # pad adjacency and feature matrices to equal the size of those from the largest graph
         features = [
             np.pad(
-                graph.node_features(graph.nodes()),
+                graph.node_features(),
                 pad_width=((0, max_nodes - graph.number_of_nodes()), (0, 0)),
             )
             for graph in graphs
@@ -649,9 +655,9 @@ class PaddedGraphSequence(Sequence):
         """
          Shuffle all graphs at the end of each epoch
         """
-        indexes = list(range(len(self.graphs)))
-        random.shuffle(indexes)
-        self.graphs = self.graphs[indexes]
-        self.normalized_adjs = self.normalized_adjs[indexes]
-        if self.targets is not None:
-            self.targets = self.targets[indexes]
+        if self.shuffle:
+            indexes = self._np_rs.permutation(len(self.graphs))
+            self.graphs = self.graphs[indexes]
+            self.normalized_adjs = self.normalized_adjs[indexes]
+            if self.targets is not None:
+                self.targets = self.targets[indexes]

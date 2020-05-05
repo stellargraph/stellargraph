@@ -50,8 +50,8 @@ class ClusterGCN:
     To use this class as a Keras model, the features and pre-processed adjacency matrix
     should be supplied using the :class:`ClusterNodeGenerator` class.
 
-    For more details, please see the Cluster-GCN demo notebook:
-    demos/node-classification/clustergcn/cluster-gcn-node-classification.ipynb
+    For more details, please see `the Cluster-GCN demo notebook
+    <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \

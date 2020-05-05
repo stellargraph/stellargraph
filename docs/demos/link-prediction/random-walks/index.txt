@@ -1,9 +1,0 @@
-Random Walks
-====================================
-
-.. toctree::
-    :titlesonly:
-    :glob:
-
-    */index
-    ./*

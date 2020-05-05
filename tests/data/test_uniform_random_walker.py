@@ -15,8 +15,9 @@
 # limitations under the License.
 
 import pytest
+import numpy as np
 from stellargraph.data.explorer import UniformRandomWalk
-from ..test_utils.graphs import create_test_graph
+from ..test_utils.graphs import create_test_graph, example_graph_random
 
 
 class TestUniformRandomWalk(object):
@@ -233,16 +234,16 @@ class TestUniformRandomWalk(object):
         urw = UniformRandomWalk(g, n=n, length=length, seed=seed)
         urw_no_params = UniformRandomWalk(g)
 
-        assert urw.run(nodes=nodes) == urw_no_params.run(
-            nodes=nodes, n=n, length=length, seed=seed
-        )
+        run_1 = urw.run(nodes=nodes)
+        run_2 = urw_no_params.run(nodes=nodes, n=n, length=length, seed=seed)
+        assert np.array_equal(run_1, run_2)
 
     def test_benchmark_uniformrandomwalk(self, benchmark):
-
-        g = create_test_graph()
+        g = example_graph_random(n_nodes=100, n_edges=500)
         urw = UniformRandomWalk(g)
 
-        nodes = ["0"]  # this node has no edges including itself
+        nodes = np.arange(0, 50)
+        n = 2
         n = 5
         length = 5
 
