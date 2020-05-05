@@ -136,7 +136,6 @@ class PaddedGraphGenerator(Generator):
             )
 
         if isinstance(graphs[0], StellarGraph):
-            graphs = graphs
             self._check_graphs(graphs)
         else:
             graphs = [self.graphs[i] for i in graphs]
