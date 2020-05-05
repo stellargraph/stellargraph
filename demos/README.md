@@ -22,7 +22,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <th><span title='Node features'>NF</span></th>
     <th><span title='Node classification'><a href='node-classification/README.md'>NC</a></span></th>
     <th><span title='Link prediction'><a href='link-prediction/README.md'>LP</a></span></th>
-    <th><span title='Representation learning'><a href='embeddings/README.md'>RL</a></span></th>
+    <th><span title='Unsupervised'><a href='embeddings/README.md'>Unsup.</a></span></th>
     <th><span title='Inductive'>Ind.</span></th>
     <th><span title='Graph classification'><a href='graph-classification/README.md'>GC</a></span></th>
   </tr>
@@ -149,8 +149,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='embeddings/graphwave-barbell.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -204,8 +204,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><a href='node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via RL</a></span></td>
-    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via unsup.</a></span></td>
     <td><a href='embeddings/stellargraph-node2vec.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -217,8 +217,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='embeddings/stellargraph-metapath2vec.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -230,8 +230,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td>yes</td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
-    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via unsup.</a></span></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -243,8 +243,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via RL</a></span></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='embeddings/watch-your-step-cora-demo.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -256,7 +256,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='link-prediction/knowledge-graphs/complex.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
@@ -269,11 +269,24 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='link-prediction/knowledge-graphs/distmult.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
     <td></td>
+  </tr>
+  <tr>
+    <td><span title='Deep Graph CNN'>DGCNN</span></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><a href='graph-classification/dgcnn-graph-classification.ipynb'>demo</a></td>
   </tr>
 </table>
 <!-- DEMO TABLE MARKER -->
