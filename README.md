@@ -27,9 +27,6 @@
   <a href="https://codecov.io/gh/stellargraph/stellargraph">
     <img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" />
   </a>
-  <a href="https://cloud.docker.com/r/stellargraph/stellargraph" alt="docker hub">
-    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/stellargraph/stellargraph.svg">
-  </a>
   <a href="https://pypi.org/project/stellargraph" alt="pypi downloads">
     <img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph">
   </a>
@@ -50,7 +47,6 @@
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
        * [Install StellarGraph in Anaconda Python](#Install-stellargraph-in-anaconda-python)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
-       * [Docker Image](#docker-image)
    * [Citing](#citing)
    * [References](#references)
 
@@ -76,16 +72,18 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 ## Getting Started
 
-[The numerous detailed and narrated examples](https://github.com/stellargraph/stellargraph/tree/master/demos/) are a good way to get started with StellarGraph. There is likely to be one that is similar to your data or your problem (if not, [let us know](#getting-help)).
+[The numerous detailed and narrated examples][demos] are a good way to get started with StellarGraph. There is likely to be one that is similar to your data or your problem (if not, [let us know](#getting-help)).
+
+[demos]: https://stellargraph.readthedocs.io/en/stable/demos/index.html
 
 You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
 
 Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the `curl` command below:
 ```bash
-curl https://codeload.github.com/stellargraph/stellargraph/tar.gz/master | tar -xz --strip=1 stellargraph-master/demos
+curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
 ```
 
-All dependencies required to run our demo notebooks locally can be installed using one of the following:
+The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
 
 - Using pip: `pip install stellargraph[demos]`
 - Using conda: `conda install -c stellargraph stellargraph`
@@ -97,7 +95,7 @@ All dependencies required to run our demo notebooks locally can be installed usi
 If you get stuck or have a problem, there's many ways to make progress and get help or support:
 
 - [Read the documentation](https://stellargraph.readthedocs.io)
-- [Consult the examples](https://github.com/stellargraph/stellargraph/tree/master/demos/)
+- [Consult the examples][demos]
 - Contact us:
   - [Ask questions and discuss problems on the StellarGraph Discourse forum](https://community.stellargraph.io)
   - [File an issue](https://github.com/stellargraph/stellargraph/issues/new/choose)
@@ -166,7 +164,9 @@ model.fit(generator.flow(train_targets.index, train_targets), epochs=5)
 print(f"Test set: loss = {loss}, accuracy = {accuracy}")
 ```
 
-This algorithm is spelled out in more detail in [its extended narrated notebook](https://github.com/stellargraph/stellargraph/tree/master/demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb). We provide [many more algorithms, each with a detailed example](https://github.com/stellargraph/stellargraph/tree/master/demos/).
+This algorithm is spelled out in more detail in [its extended narrated notebook][gcn-demo]. We provide [many more algorithms, each with a detailed example][demos].
+
+[gcn-demo]: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gcn/gcn-cora-node-classification-example.html
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
@@ -192,6 +192,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
+| TGCN [19] | The GraphConvolutionLSTM model in StellarGraph follows the Temporal Graph Convolutional Network architecture proposed in the TGCN paper with a few enhancements in the layers architecture. |
 
 ## Installation
 
@@ -207,7 +208,7 @@ To install StellarGraph library from [PyPI](https://pypi.org) using `pip`, execu
 pip install stellargraph
 ```
 
-Some of the examples in the `demos` [directory](https://github.com/stellargraph/stellargraph/tree/master/demos) require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
+[Some of the examples][demos] require installing additional dependencies as well as `stellargraph`. To install these dependencies as well as StellarGraph using `pip` execute the following command:
 ```
 pip install stellargraph[demos]
 ```
@@ -240,13 +241,6 @@ Some of the examples in the `demos` directory require installing additional depe
 ```
 pip install .[demos]
 ```
-
-
-#### Docker Image
-
-* [stellargraph/stellargraph](https://hub.docker.com/r/stellargraph/stellargraph): Docker image with `stellargraph` installed.
-
-Images can be pulled via `docker pull stellargraph/stellargraph`
 
 
 ## Citing
@@ -308,3 +302,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 17. Embedding Entities and Relations for Learning and Inference in Knowledge Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng, ICLR, 2015. arXiv:1412.6575 ([link](https://arxiv.org/pdf/1412.6575))
 
 18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf))
+
+19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. Ling Zhao, Yujiao Song, Chao Zhang, Yu Liu, Pu Wang, Tao Lin, Min Deng, and Haifeng Li.IEEE Transactions on Intelligent Transportation Systems, 2019. ([link](https://ieeexplore.ieee.org/document/8809901))

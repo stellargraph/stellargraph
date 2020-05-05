@@ -45,7 +45,7 @@ class ClusterNodeGenerator(Generator):
 
     [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
 
-    For more information, please see the ClusterGCN demo: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see `the ClusterGCN demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn/cluster-gcn-node-classification.html>`_.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -152,8 +152,8 @@ class ClusterNodeGenerator(Generator):
         Args:
             node_ids (iterable): an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets (2d array, optional): a 2D array of numeric node targets with shape `(len(node_ids),
-                target_size)`
+            targets (2d array, optional): a 2D array of numeric node targets with shape ``(len(node_ids),
+                target_size)``
             name (str, optional): An optional name for the returned generator object.
 
         Returns:

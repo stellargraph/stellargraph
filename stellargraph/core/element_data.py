@@ -102,11 +102,11 @@ class ExternalIdIndex:
             return internal_ids.astype(self._dtype)
         return internal_ids
 
-    def from_iloc(self, internal_ids) -> pd.Index:
+    def from_iloc(self, internal_ids) -> np.ndarray:
         """
         Convert integer locations to their corresponding external ID.
         """
-        return self._index[internal_ids]
+        return self._index.to_numpy()[internal_ids]
 
 
 class ElementData:
