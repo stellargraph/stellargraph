@@ -82,7 +82,7 @@ class PaddedGraphGenerator(Generator):
 
     def flow(
         self,
-        graph_ilocs,
+        graphs,
         targets=None,
         symmetric_normalization=True,
         batch_size=1,
@@ -95,7 +95,7 @@ class PaddedGraphGenerator(Generator):
         with the supplied graph indexes and targets.
 
         Args:
-            graph_ilocs (iterable): an iterable of graph indexes in self.graphs or an iterable of `StellarGraph`s
+            graphs (iterable): an iterable of graph indexes in self.graphs or an iterable of `StellarGraph`s
                 for the graphs of interest (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graph_ilocs),
                 len(targets))``.
@@ -120,9 +120,9 @@ class PaddedGraphGenerator(Generator):
                 )
 
             # Check targets correct shape
-            if len(targets) != len(graph_ilocs):
+            if len(targets) != len(graphs):
                 raise ValueError(
-                    f"expected targets to be the same length as node_ids, found {len(targets)} vs {len(graph_ilocs)}"
+                    f"expected targets to be the same length as node_ids, found {len(targets)} vs {len(graphs)}"
                 )
 
         if not isinstance(batch_size, int):
@@ -135,11 +135,11 @@ class PaddedGraphGenerator(Generator):
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
-        if isinstance(graph_ilocs[0], StellarGraph):
-            graphs = graph_ilocs
+        if isinstance(graphs[0], StellarGraph):
+            graphs = graphs
             self._check_graphs(graphs)
         else:
-            graphs = [self.graphs[i] for i in graph_ilocs]
+            graphs = [self.graphs[i] for i in graphs]
 
         return PaddedGraphSequence(
             graphs=graphs,

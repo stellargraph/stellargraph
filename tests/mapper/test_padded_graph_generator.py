@@ -113,17 +113,17 @@ def test_generator_flow_invalid_batch_size():
     with pytest.raises(
         ValueError, match="expected batch_size.*strictly positive integer, found -1"
     ):
-        PaddedGraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=-1)
+        PaddedGraphGenerator(graphs=graphs).flow(graphs=[0], batch_size=-1)
 
     with pytest.raises(
         TypeError, match="expected batch_size.*integer type, found float"
     ):
-        PaddedGraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=2.0)
+        PaddedGraphGenerator(graphs=graphs).flow(graphs=[0], batch_size=2.0)
 
     with pytest.raises(
         ValueError, match="expected batch_size.*strictly positive integer, found 0"
     ):
-        PaddedGraphGenerator(graphs=graphs).flow(graph_ilocs=[0], batch_size=0)
+        PaddedGraphGenerator(graphs=graphs).flow(graphs=[0], batch_size=0)
 
 
 def test_generator_flow_incorrect_targets():
@@ -133,19 +133,19 @@ def test_generator_flow_incorrect_targets():
     with pytest.raises(
         ValueError, match="expected targets to be the same length as node_ids,.*1 vs 2"
     ):
-        generator.flow(graph_ilocs=[0, 1], targets=np.array([0]))
+        generator.flow(graphs=[0, 1], targets=np.array([0]))
 
     with pytest.raises(
         TypeError, match="targets: expected an iterable or None object, found int"
     ):
-        generator.flow(graph_ilocs=[0, 1], targets=1)
+        generator.flow(graphs=[0, 1], targets=1)
 
 
 def test_generator_flow_no_targets():
 
     generator = PaddedGraphGenerator(graphs=graphs)
 
-    seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2)
+    seq = generator.flow(graphs=[0, 1, 2], batch_size=2)
     assert isinstance(seq, PaddedGraphSequence)
 
     assert len(seq) == 2  # two batches
@@ -168,7 +168,7 @@ def test_generator_flow_check_padding():
 
     generator = PaddedGraphGenerator(graphs=graphs)
 
-    seq = generator.flow(graph_ilocs=[0, 2], batch_size=2)
+    seq = generator.flow(graphs=[0, 2], batch_size=2)
     assert isinstance(seq, PaddedGraphSequence)
 
     assert len(seq) == 1
@@ -189,7 +189,7 @@ def test_generator_flow_with_targets():
 
     generator = PaddedGraphGenerator(graphs=graphs)
 
-    seq = generator.flow(graph_ilocs=[1, 2], targets=np.array([0, 1]), batch_size=1)
+    seq = generator.flow(graphs=[1, 2], targets=np.array([0, 1]), batch_size=1)
     assert isinstance(seq, PaddedGraphSequence)
 
     for batch in seq:
@@ -205,9 +205,7 @@ def test_generator_adj_normalisation(symmetric_normalization):
     graph = example_graph(feature_size=4)
 
     generator = PaddedGraphGenerator(graphs=[graph])
-    seq = generator.flow(
-        graph_ilocs=[0], symmetric_normalization=symmetric_normalization
-    )
+    seq = generator.flow(graphs=[0], symmetric_normalization=symmetric_normalization)
 
     adj_norm_seq = seq.normalized_adjs[0].todense()
 
@@ -244,13 +242,13 @@ def test_generator_flow_shuffle():
         return get_batches(seq)
 
     # shuffle = False
-    seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2, shuffle=False)
+    seq = generator.flow(graphs=[0, 1, 2], batch_size=2, shuffle=False)
     batches = get_batches(seq)
     for _ in range(num_epochs_to_check):
         assert batches_all_equal(batches, get_next_epoch_batches(seq))
 
     # shuffle = True, fixed seed
-    seq = generator.flow(graph_ilocs=[0, 1, 2], batch_size=2, shuffle=True, seed=0)
+    seq = generator.flow(graphs=[0, 1, 2], batch_size=2, shuffle=True, seed=0)
     batches = get_batches(seq)
     at_least_one_different = False
     for _ in range(num_epochs_to_check):
