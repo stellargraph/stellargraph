@@ -502,6 +502,11 @@ ALGORITHMS = [
         lp=T(link="link-prediction/distmult-link-prediction"),
         rl=True,
     ),
+    Algorithm(
+        T("DGCNN", details="Deep Graph CNN"),
+        features=True,
+        gc=T(link="graph-classification/dgcnn-graph-classification"),
+    ),
 ]
 
 

@@ -166,7 +166,7 @@ print(f"Test set: loss = {loss}, accuracy = {accuracy}")
 
 This algorithm is spelled out in more detail in [its extended narrated notebook][gcn-demo]. We provide [many more algorithms, each with a detailed example][demos].
 
-[gcn-demo]: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gcn-node-classification.html
+[gcn-demo]: https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:
