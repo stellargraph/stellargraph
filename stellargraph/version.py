@@ -15,4 +15,4 @@
 # limitations under the License.
 
 # Global version information
-__version__ = "1.0.0rc2"
+__version__ = "1.0.0"
