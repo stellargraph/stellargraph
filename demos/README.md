@@ -22,7 +22,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <th><span title='Node features'>NF</span></th>
     <th><span title='Node classification'><a href='node-classification/README.md'>NC</a></span></th>
     <th><span title='Link prediction'><a href='link-prediction/README.md'>LP</a></span></th>
-    <th><span title='Representation learning'><a href='embeddings/README.md'>RL</a></span></th>
+    <th><span title='Unsupervised'><a href='embeddings/README.md'>Unsup.</a></span></th>
     <th><span title='Inductive'>Ind.</span></th>
     <th><span title='Graph classification'><a href='graph-classification/README.md'>GC</a></span></th>
   </tr>
@@ -149,8 +149,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='embeddings/graphwave-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -204,8 +204,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><a href='node-classification/node2vec-weighted-node-classification.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='node-classification/node2vec-node-classification.ipynb'>via RL</a></span></td>
-    <td><span title='via embedding vectors'><a href='link-prediction/node2vec-link-prediction.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'><a href='node-classification/node2vec-node-classification.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/node2vec-link-prediction.ipynb'>via unsup.</a></span></td>
     <td><a href='embeddings/node2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -217,8 +217,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='embeddings/metapath2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -230,8 +230,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td>yes</td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
-    <td><span title='via embedding vectors'><a href='link-prediction/ctdne-link-prediction.ipynb'>via RL</a></span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/ctdne-link-prediction.ipynb'>via unsup.</a></span></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -243,8 +243,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-embeddings.ipynb'>via RL</a></span></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-embeddings.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='embeddings/watch-your-step-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -256,7 +256,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='link-prediction/complex-link-prediction.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
@@ -269,7 +269,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'>via RL</span></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><a href='link-prediction/distmult-link-prediction.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>

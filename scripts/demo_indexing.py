@@ -295,7 +295,7 @@ TEMPORAL = T("T", details="Time-varying, temporal")
 FEATURES = T("NF", details="Node features")
 NC = index_link("NC", link="node-classification", details="Node classification")
 LP = index_link("LP", link="link-prediction", details="Link prediction")
-RL = index_link("RL", link="embeddings", details="Representation learning")
+RL = index_link("Unsup.", link="embeddings", details="Unsupervised")
 INDUCTIVE = T("Ind.", details="Inductive")
 GC = index_link("GC", link="graph-classification", details="Graph classification")
 
@@ -360,7 +360,7 @@ def rl_dgi(link="embeddings/deep-graph-infomax-embeddings"):
 
 
 def via_rl(link=None):
-    return T("via RL", link=link, details="via embedding vectors",)
+    return T("via unsup.", link=link, details="via embedding vectors",)
 
 
 ALGORITHMS = [

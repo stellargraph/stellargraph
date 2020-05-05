@@ -1,7 +1,7 @@
-Representation learning
-==========================================
+Unsupervised representation learning
+====================================
 
-`StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing node and edge representation learning on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
+`StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing unsupervised node and edge representation learning on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
 A node representation learning task computes a representation or embedding vector for each node in a graph. These vectors capture latent/hidden information about the nodes and edges, and can be used for (semi-)supervised downstream tasks like :doc:`node classification <../node-classification/index>` and :doc:`link prediction <../link-prediction/index>`, or unsupervised ones like :doc:`community detection <../community_detection/index>` or similarity searches. Representation learning is typically an unsupervised task, where the model is trained on data that does not have any ground-truth labels.
 
