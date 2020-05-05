@@ -168,6 +168,9 @@ Graph Convolution LSTM
 .. autoclass:: GraphConvolutionLSTM
   :members:
 
+.. autocalss:: FixedAdjacencyGraphConvolution
+  :members:
+
 Deep Graph Infomax
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: DeepGraphInfomax
