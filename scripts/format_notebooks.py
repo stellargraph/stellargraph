@@ -44,6 +44,9 @@ with open("stellargraph/version.py", "r") as fh:
 SG_VERSION = version["__version__"]
 
 
+PATH_RESOURCE_NAME = "notebook_path"
+
+
 class ClearWarningsPreprocessor(preprocessors.Preprocessor):
     filter_all_stderr = Bool(True, help="Remove all stderr outputs.").tag(config=True)
 
@@ -159,7 +162,6 @@ class InsertTaggedCellsPreprocessor(preprocessors.Preprocessor):
 
 
 class CloudRunnerPreprocessor(InsertTaggedCellsPreprocessor):
-    path_resource_name = "cloud_runner_path"
     metadata_tag = "CloudRunner"
     git_branch = "master"
     demos_path_prefix = "demos/"
@@ -188,7 +190,7 @@ if 'google.colab' in sys.modules:
         return f"<table><tr><td>Run the latest release of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
 
     def preprocess(self, nb, resources):
-        notebook_path = resources[self.path_resource_name]
+        notebook_path = resources[PATH_RESOURCE_NAME]
         if not notebook_path.startswith(self.demos_path_prefix):
             print(
                 f"WARNING: Notebook file path of {notebook_path} didn't start with {self.demos_path_prefix}, and may result in bad links to cloud runners."
@@ -248,8 +250,22 @@ class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
     metadata_tag = "DataLoadingLinks"
     search_tag = "DataLoading"
 
-    data_loading_description = f"""\
-(See [the "Loading from Pandas" demo](https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-pandas.html) for details on how data can be loaded.)"""
+    data_loading_description = """\
+(See [the "Loading from Pandas" demo]({}) for details on how data can be loaded.)"""
+
+    def _relative_path(self, path):
+        """
+        Find the relative path from this notebook to the Loading Pandas one.
+
+        This assumes that "demos" appears in the path, and is the root of the demos directories.
+        """
+        directories = os.path.dirname(path).split("/")
+        demos_idx = next(
+            index for index, directory in enumerate(directories) if directory == "demos"
+        )
+        nested_depth = len(directories) - (demos_idx + 1)
+        parents = "../" * nested_depth
+        return f"{parents}basics/loading-pandas.ipynb"
 
     def preprocess(self, nb, resources):
         self.remove_tagged_cells_from_notebook(nb)
@@ -263,7 +279,10 @@ class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
         )
 
         if first_data_loading is not None:
-            links_cell = nbformat.v4.new_markdown_cell(self.data_loading_description)
+            path = self._relative_path(resources[PATH_RESOURCE_NAME])
+            links_cell = nbformat.v4.new_markdown_cell(
+                self.data_loading_description.format(path)
+            )
             self.tag_cell(links_cell)
             nb.cells.insert(first_data_loading, links_cell)
 
@@ -466,7 +485,7 @@ if __name__ == "__main__":
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
         # the CloudRunnerPreprocessor needs to know the filename of this notebook
-        resources = {CloudRunnerPreprocessor.path_resource_name: str(file_loc)}
+        resources = {PATH_RESOURCE_NAME: str(file_loc)}
 
         writer = writers.FilesWriter()
 
