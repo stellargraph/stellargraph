@@ -1,6 +1,6 @@
 div.wy-nav-content {
     /* make the main content wider, for wider tables */
-    max-width: 1200px;
+    max-width: 1000px;
 }
 
 /**** override table width restrictions *****/
