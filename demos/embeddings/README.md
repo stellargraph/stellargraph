@@ -13,7 +13,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 | [Node representation learning with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/stellargraph-attri2vec-citeseer.html) | [source](stellargraph-attri2vec-citeseer.ipynb) |
 | [Node representation learning with Metapath2Vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/stellargraph-metapath2vec.html) | [source](stellargraph-metapath2vec.ipynb) |
 | [Node representation learning with Node2Vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/stellargraph-node2vec.html) | [source](stellargraph-node2vec.ipynb) |
-| [Node representation learning with Watch Your Step on Cora](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-cora-demo.html) | [source](watch-your-step-cora-demo.ipynb) |
+| [Node representation learning with Watch Your Step](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-cora-demo.html) | [source](watch-your-step-cora-demo.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->
