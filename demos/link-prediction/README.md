@@ -7,14 +7,14 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Link prediction via inductive node representations with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec/stellargraph-attri2vec-DBLP.html) | [source](attri2vec/stellargraph-attri2vec-DBLP.ipynb) |
-| [Link prediction with GCN](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn/cora-gcn-links-example.html) | [source](gcn/cora-gcn-links-example.ipynb) |
-| [Link prediction with GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage/cora-links-example.html) | [source](graphsage/cora-links-example.ipynb) |
-| [Link prediction with Heterogeneous GraphSAGE (HinSAGE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage/movielens-recommender.html) | [source](hinsage/movielens-recommender.ipynb) |
-| [Knowledge graph link prediction with ComplEx](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/knowledge-graphs/complex.html) | [source](knowledge-graphs/complex.ipynb) |
-| [Knowledge graph link prediction with DistMult](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/knowledge-graphs/distmult.html) | [source](knowledge-graphs/distmult.ipynb) |
-| [Link prediction with Node2Vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/random-walks/cora-lp-demo.html) | [source](random-walks/cora-lp-demo.ipynb) |
-| [Link prediction with Continuous-Time Dynamic Network Embeddings (CTDNE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/random-walks/ctdne-link-prediction.html) | [source](random-walks/ctdne-link-prediction.ipynb) |
+| [Link prediction via inductive node representations with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html) | [source](attri2vec-link-prediction.ipynb) |
+| [Knowledge graph link prediction with ComplEx](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html) | [source](complex-link-prediction.ipynb) |
+| [Link prediction with Continuous-Time Dynamic Network Embeddings (CTDNE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html) | [source](ctdne-link-prediction.ipynb) |
+| [Knowledge graph link prediction with DistMult](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/distmult-link-prediction.html) | [source](distmult-link-prediction.ipynb) |
+| [Link prediction with GCN](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html) | [source](gcn-link-prediction.ipynb) |
+| [Link prediction with GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html) | [source](graphsage-link-prediction.ipynb) |
+| [Link prediction with Heterogeneous GraphSAGE (HinSAGE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html) | [source](hinsage-link-prediction.ipynb) |
+| [Link prediction with Node2Vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html) | [source](node2vec-link-prediction.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

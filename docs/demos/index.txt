@@ -14,7 +14,7 @@ Find algorithms for a task
 --------------------------
 
 
-* Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): :doc:`GCN on Cora <node-classification/gcn/gcn-cora-node-classification-example>`
+* Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): :doc:`GCN on Cora <node-classification/gcn-node-classification>`
 * Predicting attributes, such as classifying as a class or label, or regressing to calculate a continuous number:
 
   * For nodes/vertices/entities: :doc:`node classification <./node-classification/index>`
@@ -59,11 +59,11 @@ Find a demo for an algorithm
      -
      - see T-GCN
      - yes
-     - :any:`demo <node-classification/gcn/gcn-cora-node-classification-example>`
-     - :any:`demo <link-prediction/gcn/cora-gcn-links-example>`
-     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - :any:`demo <node-classification/gcn-node-classification>`
+     - :any:`demo <link-prediction/gcn-link-prediction>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      - see Cluster-GCN
-     - :any:`demo <graph-classification/supervised-graph-classification>`
+     - :any:`demo <graph-classification/gcn-supervised-graph-classification>`
    *
      - Cluster-GCN
      -
@@ -71,7 +71,7 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/cluster-gcn/cluster-gcn-node-classification>`
+     - :any:`demo <node-classification/cluster-gcn-node-classification>`
      - yes
      -
      - yes
@@ -83,7 +83,7 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/rgcn/rgcn-aifb-node-classification-example>`
+     - :any:`demo <node-classification/rgcn-node-classification>`
      - yes
      -
      -
@@ -95,7 +95,7 @@ Find a demo for an algorithm
      -
      - node features
      - time series, sequence
-     - :any:`demo <time-series/gcn-lstm-LA>`
+     - :any:`demo <time-series/gcn-lstm-time-series>`
      -
      -
      -
@@ -107,9 +107,9 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/gat/gat-cora-node-classification-example>`
+     - :any:`demo <node-classification/gat-node-classification>`
      - yes
-     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *
@@ -119,7 +119,7 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/sgc/sgc-node-classification-example>`
+     - :any:`demo <node-classification/sgc-node-classification>`
      - yes
      -
      -
@@ -131,7 +131,7 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
+     - :any:`demo <node-classification/ppnp-node-classification>`
      - yes
      - UnsupervisedSampler, DeepGraphInfomax
      -
@@ -143,9 +143,9 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
+     - :any:`demo <node-classification/ppnp-node-classification>`
      - yes
-     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *
@@ -157,7 +157,7 @@ Find a demo for an algorithm
      -
      - via embedding vectors
      - via embedding vectors
-     - :any:`demo <embeddings/graphwave-barbell>`
+     - :any:`demo <embeddings/graphwave-embeddings>`
      -
      -
    *
@@ -167,22 +167,22 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/attri2vec/attri2vec-citeseer-node-classification-example>`
-     - :any:`demo <link-prediction/attri2vec/stellargraph-attri2vec-DBLP>`
-     - :any:`demo <embeddings/stellargraph-attri2vec-citeseer>`
+     - :any:`demo <node-classification/attri2vec-node-classification>`
+     - :any:`demo <link-prediction/attri2vec-link-prediction>`
+     - :any:`demo <embeddings/attri2vec-embeddings>`
      -
      -
    *
      - GraphSAGE
      - see HinSAGE
-     - :any:`demo <node-classification/graphsage/directed-graphsage-on-cora-example>`
+     - :any:`demo <node-classification/directed-graphsage-node-classification>`
      -
      -
      - yes
-     - :any:`demo <node-classification/graphsage/graphsage-cora-node-classification-example>`
-     - :any:`demo <link-prediction/graphsage/cora-links-example>`
-     - :any:`UnsupervisedSampler <embeddings/embeddings-unsupervised-graphsage-cora>`, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
-     - :any:`demo <node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example>`
+     - :any:`demo <node-classification/graphsage-node-classification>`
+     - :any:`demo <link-prediction/graphsage-link-prediction>`
+     - :any:`UnsupervisedSampler <embeddings/graphsage-unsupervised-sampler-embeddings>`, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
+     - :any:`demo <node-classification/graphsage-inductive-node-classification>`
      -
    *
      - HinSAGE
@@ -192,20 +192,20 @@ Find a demo for an algorithm
      -
      - yes
      - yes
-     - :any:`demo <link-prediction/hinsage/movielens-recommender>`
-     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-cora>`
+     - :any:`demo <link-prediction/hinsage-link-prediction>`
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      - yes
      -
    *
      - Node2Vec
      -
      -
-     - :any:`demo <node-classification/node2vec/stellargraph-node2vec-weighted-random-walks>`
+     - :any:`demo <node-classification/node2vec-weighted-node-classification>`
      -
      -
-     - :any:`via embedding vectors <node-classification/node2vec/stellargraph-node2vec-node-classification>`
-     - :any:`via embedding vectors <link-prediction/random-walks/cora-lp-demo>`
-     - :any:`demo <embeddings/stellargraph-node2vec>`
+     - :any:`via embedding vectors <node-classification/node2vec-node-classification>`
+     - :any:`via embedding vectors <link-prediction/node2vec-link-prediction>`
+     - :any:`demo <embeddings/node2vec-embeddings>`
      -
      -
    *
@@ -217,7 +217,7 @@ Find a demo for an algorithm
      -
      - via embedding vectors
      - via embedding vectors
-     - :any:`demo <embeddings/stellargraph-metapath2vec>`
+     - :any:`demo <embeddings/metapath2vec-embeddings>`
      -
      -
    *
@@ -228,7 +228,7 @@ Find a demo for an algorithm
      - yes
      -
      - via embedding vectors
-     - :any:`via embedding vectors <link-prediction/random-walks/ctdne-link-prediction>`
+     - :any:`via embedding vectors <link-prediction/ctdne-link-prediction>`
      - yes
      -
      -
@@ -239,9 +239,9 @@ Find a demo for an algorithm
      -
      -
      -
-     - :any:`via embedding vectors <embeddings/watch-your-step-cora-demo>`
+     - :any:`via embedding vectors <embeddings/watch-your-step-embeddings>`
      - via embedding vectors
-     - :any:`demo <embeddings/watch-your-step-cora-demo>`
+     - :any:`demo <embeddings/watch-your-step-embeddings>`
      -
      -
    *
@@ -252,7 +252,7 @@ Find a demo for an algorithm
      -
      -
      - via embedding vectors
-     - :any:`demo <link-prediction/knowledge-graphs/complex>`
+     - :any:`demo <link-prediction/complex-link-prediction>`
      - yes
      -
      -
@@ -264,7 +264,7 @@ Find a demo for an algorithm
      -
      -
      - via embedding vectors
-     - :any:`demo <link-prediction/knowledge-graphs/distmult>`
+     - :any:`demo <link-prediction/distmult-link-prediction>`
      - yes
      -
      -

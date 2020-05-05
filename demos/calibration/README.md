@@ -7,8 +7,8 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Calibrating a GraphSAGE link prediction model](https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-pubmed-link-prediction.html) | [source](calibration-pubmed-link-prediction.ipynb) |
-| [Calibrating a GraphSAGE node classification model](https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-pubmed-node-classification.html) | [source](calibration-pubmed-node-classification.ipynb) |
+| [Calibrating a GraphSAGE link prediction model](https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html) | [source](calibration-link-prediction.ipynb) |
+| [Calibrating a GraphSAGE node classification model](https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-node-classification.html) | [source](calibration-node-classification.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->
