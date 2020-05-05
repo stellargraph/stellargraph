@@ -7,10 +7,10 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Interpreting Nodes and Edges by Saliency Maps in GAT](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat/node-link-importance-demo-gat.html) | [source](gat/node-link-importance-demo-gat.ipynb) |
+| [Interpreting nodes and edges with saliency maps in GAT](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat/node-link-importance-demo-gat.html) | [source](gat/node-link-importance-demo-gat.ipynb) |
 | [Intepretability on Hateful Twitter Datasets](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn/hateful-twitters-interpretability.html) | [source](gcn/hateful-twitters-interpretability.ipynb) |
-| [Interpreting Nodes and Edges by Saliency Maps in GCN (sparse)](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn/node-link-importance-demo-gcn-sparse.html) | [source](gcn/node-link-importance-demo-gcn-sparse.ipynb) |
-| [Interpreting Nodes and Edges by Saliency Maps in GCN](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn/node-link-importance-demo-gcn.html) | [source](gcn/node-link-importance-demo-gcn.ipynb) |
+| [Interpreting nodes and edges with saliency maps in GCN (sparse)](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn/node-link-importance-demo-gcn-sparse.html) | [source](gcn/node-link-importance-demo-gcn-sparse.ipynb) |
+| [Interpreting nodes and edges with saliency maps in GCN](https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn/node-link-importance-demo-gcn.html) | [source](gcn/node-link-importance-demo-gcn.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

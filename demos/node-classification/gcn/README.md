@@ -7,7 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Graph Convolutional Network (GCN) on the CORA citation dataset](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn/gcn-cora-node-classification-example.html) | [source](gcn-cora-node-classification-example.ipynb) |
+| [Node classification with Graph Convolutional Network (GCN)](https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn/gcn-cora-node-classification-example.html) | [source](gcn-cora-node-classification-example.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

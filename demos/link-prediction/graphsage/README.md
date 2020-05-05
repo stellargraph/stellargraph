@@ -7,7 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Link prediction example: GraphSAGE on the Cora citation dataset](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage/cora-links-example.html) | [source](cora-links-example.ipynb) |
+| [Link prediction with GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage/cora-links-example.html) | [source](cora-links-example.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

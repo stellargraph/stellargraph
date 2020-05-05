@@ -1,4 +1,4 @@
-Node classification using Node2Vec [1]
+Node classification using Node2Vec
 ======================================
 
 This folder contains two `Jupyter <http://jupyter.org/>`_ python notebooks demonstrating the combined use of

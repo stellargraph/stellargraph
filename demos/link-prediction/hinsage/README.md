@@ -7,7 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Stellargraph example: Heterogeneous GraphSAGE on the Movielens recommendation dataset](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage/movielens-recommender.html) | [source](movielens-recommender.ipynb) |
+| [Link prediction with Heterogeneous GraphSAGE (HinSAGE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage/movielens-recommender.html) | [source](movielens-recommender.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

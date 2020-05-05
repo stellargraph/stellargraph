@@ -1,4 +1,4 @@
-Ensemble learning for graph neural network algorithms
+Ensemble learning
 =====================================================
 
 This folder contains two `Jupyter <http://jupyter.org/>`_ python notebooks demonstrating the use of ensemble learning

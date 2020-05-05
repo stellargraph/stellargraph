@@ -1,4 +1,4 @@
-Graph classification using StellarGraph
+Graph classification
 =======================================
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides algorithms for graph classification. This folder contains demos to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
