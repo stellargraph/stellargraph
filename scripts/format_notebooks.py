@@ -261,13 +261,11 @@ class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
         """
         directories = os.path.dirname(path).split("/")
         demos_idx = next(
-            index for index, directory in enumerate(directories)
-            if directory == "demos"
+            index for index, directory in enumerate(directories) if directory == "demos"
         )
         nested_depth = len(directories) - (demos_idx + 1)
         parents = "../" * nested_depth
         return f"{parents}basics/loading-pandas.ipynb"
-
 
     def preprocess(self, nb, resources):
         self.remove_tagged_cells_from_notebook(nb)
@@ -282,7 +280,9 @@ class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
 
         if first_data_loading is not None:
             path = self._relative_path(resources[PATH_RESOURCE_NAME])
-            links_cell = nbformat.v4.new_markdown_cell(self.data_loading_description.format(path))
+            links_cell = nbformat.v4.new_markdown_cell(
+                self.data_loading_description.format(path)
+            )
             self.tag_cell(links_cell)
             nb.cells.insert(first_data_loading, links_cell)
 
