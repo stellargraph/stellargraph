@@ -162,6 +162,12 @@ Deep Graph Convolutional Neural Network
 .. autoclass:: DeepGraphCNN
   :members:
 
+Graph Convolution LSTM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: GraphConvolutionLSTM
+  :members:
+
 Deep Graph Infomax
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: DeepGraphInfomax
