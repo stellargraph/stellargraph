@@ -8,19 +8,19 @@ This 1.0 release of StellarGraph is the culmination of three years of active res
 
 Jump in to this release, with the new demos and examples:
 
-- [More helpful indexing and guidance in demo READMEs](demos/)
+- [More helpful indexing and guidance for demos in our API documentation][demos-1.0.0]
 - [Loading from Neo4j][neo4j-1.0.0]
 - [More explanatory Node2Vec link prediction][n2v-lp-1.0.0]
 - [Unsupervised `GraphSAGE` and `HinSAGE` via `DeepGraphInfomax`][dgi-1.0.0]
 - Graph classification [with `GCNSupervisedGraphClassification`][gc-gcn-1.0.0] and [with `DeepGraphCNN`][gc-dgcnn-1.0.0]
 - [Time series prediction using spatial information, using `GraphConvolutionLSTM`][gcn-lstm-1.0.0] (experimental)
 
-[neo4j-1.0.0]: demos/basics/loading-saving-neo4j.ipynb
-[n2v-lp-1.0.0]: demos/link-prediction/random-walks/cora-lp-demo.ipynb
-[dgi-1.0.0]: demos/embeddings/deep-graph-infomax-cora.ipynb
-[gc-gcn-1.0.0]: demos/graph-classification/supervised-graph-classification.ipynb
-[gc-dgcnn-1.0.0]: demos/graph-classification/dgcnn-graph-classification.ipynb
-[gcn-lstm-1.0.0]: demos/spatio-temporal/gcn-lstm-LA.ipynb
+[neo4j-1.0.0]: https://stellargraph.readthedocs.io/en/v1.0.0/demos/basics/loading-saving-neo4j.html
+[n2v-lp-1.0.0]: https://stellargraph.readthedocs.io/en/v1.0.0/demos/link-prediction/node2vec-link-prediction.html
+[dgi-1.0.0]: https://stellargraph.readthedocs.io/en/v1.0.0/demos/embeddings/deep-graph-infomax-embeddings.html
+[gc-gcn-1.0.0]: https://stellargraph.readthedocs.io/en/v1.0.0/demos/graph-classification/gcn-supervised-graph-classification.html
+[gc-dgcnn-1.0.0]: https://stellargraph.readthedocs.io/en/v1.0.0/demos/graph-classification/dgcnn-graph-classification.html
+[gcn-lstm-1.0.0]: https://stellargraph.readthedocs.io/en/v1.0.0/demos/time-series/gcn-lstm-time-series.html
 
 ### Major features and improvements
 
