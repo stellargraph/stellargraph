@@ -1,9 +1,0 @@
-Hinsage
-====================================
-
-.. toctree::
-    :titlesonly:
-    :glob:
-
-    */index
-    ./*

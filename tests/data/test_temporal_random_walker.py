@@ -117,6 +117,9 @@ def test_init_parameters(temporal_graph):
     )
     rw_no_params = TemporalRandomWalk(temporal_graph)
 
-    assert rw.run(num_cw=num_cw) == rw_no_params.run(
+    run_1 = rw.run(num_cw=num_cw)
+    run_2 = rw_no_params.run(
         num_cw=num_cw, cw_size=cw_size, max_walk_length=max_walk_length, seed=seed
     )
+
+    assert np.array_equal(run_1, run_2)

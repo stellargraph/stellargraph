@@ -16,9 +16,10 @@
 
 import random
 import pytest
+import numpy as np
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph, tree_graph
+from ..test_utils.graphs import create_test_graph, tree_graph, example_graph_random
 
 
 class TestDirectedBreadthFirstNeighbours(object):
@@ -113,74 +114,80 @@ class TestDirectedBreadthFirstNeighbours(object):
     def test_one_hop(self, tree_graph):
         bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # - The following case should be [[["root"], [None], [child]]]
-        subgraph = bfw.run(nodes=["root"], n=1, in_size=[1], out_size=[1])
+        nodes = tree_graph.node_ids_to_ilocs(["root"])
+        subgraph = bfw.run(nodes=nodes, n=1, in_size=[1], out_size=[1])
         assert len(subgraph) == 1
         assert len(subgraph[0]) == 3
         assert len(subgraph[0][0]) == 1
-        assert subgraph[0][0][0] == "root"
+        assert subgraph[0][0][0] == tree_graph.node_ids_to_ilocs(["root"])[0]
         assert len(subgraph[0][1]) == 1
-        assert subgraph[0][1][0] is None
+        assert subgraph[0][1][0] == -1
         assert len(subgraph[0][2]) == 1
-        assert subgraph[0][2][0] in ["0", 1, 2]
+        assert subgraph[0][2][0] in tree_graph.node_ids_to_ilocs(["0", 1, 2])
         # - The following case should be [[["root"], [None], []]]
-        subgraph = bfw.run(nodes=["root"], n=1, in_size=[1], out_size=[0])
+        subgraph = bfw.run(nodes=nodes, n=1, in_size=[1], out_size=[0])
         assert len(subgraph) == 1
         assert len(subgraph[0]) == 3
         assert len(subgraph[0][2]) == 0
         # - The following case should be [[["root"], [], []]]
-        subgraph = bfw.run(nodes=["root"], n=1, in_size=[0], out_size=[0])
+        subgraph = bfw.run(nodes=nodes, n=1, in_size=[0], out_size=[0])
         assert len(subgraph) == 1
         assert len(subgraph[0]) == 3
         assert len(subgraph[0][1]) == 0
         # - The following case should be [[["root"], [None, None, None], [child, child, child, child]]]
-        subgraph = bfw.run(nodes=["root"], n=1, in_size=[3], out_size=[4])
+        subgraph = bfw.run(nodes=nodes, n=1, in_size=[3], out_size=[4])
         assert len(subgraph) == 1
         assert len(subgraph[0]) == 3
         assert len(subgraph[0][1]) == 3
         for child in subgraph[0][1]:
-            assert child is None
+            assert child == -1
         assert len(subgraph[0][2]) == 4
         for child in subgraph[0][2]:
-            assert child in ["0", 1, 2]
+            assert child in tree_graph.node_ids_to_ilocs(["0", 1, 2])
 
     def test_two_hops(self, tree_graph):
         bfw = DirectedBreadthFirstNeighbours(tree_graph)
         # - The following case should be [[["root"], [None], [child*2], [None], [None*2], ["root"*2], [grandchild*4]]]
         in_size = [1, 1]
         out_size = [2, 2]
-        subgraph = bfw.run(nodes=["root"], n=1, in_size=in_size, out_size=out_size)
+        node_ilocs = tree_graph.node_ids_to_ilocs(["root"])
+        subgraph = bfw.run(nodes=node_ilocs, n=1, in_size=in_size, out_size=out_size)
+
         assert len(subgraph) == 1
         assert len(subgraph[0]) == 7
         assert len(subgraph[0][1]) == in_size[0]
-        assert subgraph[0][1][0] is None
+        assert subgraph[0][1][0] == -1
         assert len(subgraph[0][2]) == out_size[0]
         for child in subgraph[0][2]:
-            assert child in ["0", 1, 2]
+            assert child in tree_graph.node_ids_to_ilocs(["0", 1, 2])
         assert len(subgraph[0][3]) == in_size[0] * in_size[1]
-        assert subgraph[0][3][0] is None
+        assert subgraph[0][3][0] == -1
         assert len(subgraph[0][4]) == in_size[0] * out_size[1]
         for child in subgraph[0][4]:
-            assert child is None
+            assert child == -1
         assert len(subgraph[0][5]) == out_size[0] * in_size[1]
         for parent in subgraph[0][5]:
-            assert parent == "root"
+            assert parent == tree_graph.node_ids_to_ilocs(["root"])[0]
         assert len(subgraph[0][6]) == out_size[0] * out_size[1]
         for grandchild in subgraph[0][6]:
-            assert grandchild in [None, "c1.1", "c2.1", "c2.2"]
+            assert (
+                grandchild in tree_graph.node_ids_to_ilocs(["c1.1", "c2.1", "c2.2"])
+                or grandchild == -1
+            )
         for idx, child in enumerate(subgraph[0][2]):
             grandchildren = subgraph[0][6][(2 * idx) : (2 * idx + 2)]
-            if child == "0":
+            if child == tree_graph.node_ids_to_ilocs(["0"])[0]:
                 for grandchild in grandchildren:
-                    assert grandchild is None
-            elif child == 1:
+                    assert grandchild == -1
+            elif child == tree_graph.node_ids_to_ilocs([1])[0]:
                 for grandchild in grandchildren:
-                    assert grandchild == "c1.1"
+                    assert grandchild == tree_graph.node_ids_to_ilocs(["c1.1"])[0]
             else:  # child == 2
                 for grandchild in grandchildren:
-                    assert grandchild in ["c2.1", "c2.2"]
+                    assert grandchild in tree_graph.node_ids_to_ilocs(["c2.1", "c2.2"])
         # - Check structure size for multiple start nodes
         # - For each start node, should be [[[node], [in], [out], [in.in], [in.out], [out.in], [out.out]]]
-        nodes = list(tree_graph.nodes())
+        nodes = tree_graph.node_ids_to_ilocs(list(tree_graph.nodes()))
         in_size = [2, 3]
         out_size = [4, 5]
         subgraph = bfw.run(nodes=nodes, n=1, in_size=in_size, out_size=out_size)
@@ -198,7 +205,7 @@ class TestDirectedBreadthFirstNeighbours(object):
     def test_three_hops(self):
         g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
-        graph_nodes = list(g.nodes())
+        graph_nodes = g.node_ids_to_ilocs(list(g.nodes()))
         for _ in range(50):
             node = random.choice(graph_nodes)
             in_size = [random.randint(0, 2) for _ in range(3)]
@@ -223,10 +230,10 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(subgraph[0][14]) == out_size[0] * out_size[1] * out_size[2]
 
     def test_benchmark_bfs_walk(self, benchmark):
-        g = create_test_graph(is_directed=True)
+        g = example_graph_random(n_nodes=100, n_edges=500, is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
-        nodes = ["0"]
+        nodes = np.arange(0, 50)
         n = 5
         in_size = [5, 5]
         out_size = [5, 5]
