@@ -632,7 +632,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             head node.
         """
 
-        return self.graph._get_index_for_nodes(head_nodes)
+        return np.array(head_nodes)
 
     def flow(self, node_ids):
         """
@@ -652,9 +652,10 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             A NodeSequence object to use with the Node2Vec model
             in the Keras method ``predict``.
         """
-
+        
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
         return NodeSequence(
-            self.sample_features, self.batch_size, node_ids, shuffle=False
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
         )
 
     def flow_from_dataframe(self, node_ids):
@@ -669,5 +670,8 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             A NodeSequence object to use with the Node2Vec model
             in the Keras method ``predict``.
         """
-
-        return NodeSequence(self.sample_features, self.batch_size, node_ids.index)
+        
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
+        return NodeSequence(
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
+        )

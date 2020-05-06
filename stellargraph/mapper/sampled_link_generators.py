@@ -550,7 +550,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
             the sampled target and context node.
         """
 
-        return [self.graph._get_index_for_nodes(ids) for ids in zip(*head_links)]
+        return [np.array(ids) for ids in zip(*head_links)]
 
 
 class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
