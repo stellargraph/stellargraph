@@ -581,7 +581,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
     def flow_from_dataframe(self, node_ids):
         """
         Creates a generator/sequence object for node representation prediction
-        with the supplied node ids.
+        by using the index of the supplied dataframe as the node ids.
 
         Args:
             node_ids: a Pandas DataFrame of node_ids.
@@ -591,7 +591,10 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             in the Keras method ``predict``.
 
         """
-        return NodeSequence(self.sample_features, self.batch_size, node_ids.index)
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids.index)
+        return NodeSequence(
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
+        )
 
 
 class Node2VecNodeGenerator(BatchedNodeGenerator):
@@ -655,7 +658,6 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             A NodeSequence object to use with the Node2Vec model
             in the Keras method ``predict``.
         """
-
         node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
         return NodeSequence(
             self.sample_features, self.batch_size, node_ilocs, shuffle=False
@@ -673,8 +675,7 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
             A NodeSequence object to use with the Node2Vec model
             in the Keras method ``predict``.
         """
-
-        node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids.index)
         return NodeSequence(
             self.sample_features, self.batch_size, node_ilocs, shuffle=False
         )

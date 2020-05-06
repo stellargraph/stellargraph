@@ -293,7 +293,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             # Get features for the sampled nodes
             batch_feats.append(
                 [
-                    self.graph.node_features(layer_nodes, node_type, use_ilocs=True,)
+                    self.graph.node_features(layer_nodes, node_type, use_ilocs=True)
                     for layer_nodes in nodes_per_hop
                 ]
             )
@@ -650,7 +650,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
                     element for sample in node_samples for element in sample[slot]
                 ]
                 features_for_slot = self.graph.node_features(
-                    nodes_in_slot, node_type, use_ilocs=True,
+                    nodes_in_slot, node_type, use_ilocs=True
                 )
 
                 features[slot] = np.reshape(
