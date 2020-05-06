@@ -587,10 +587,10 @@ def demo_indexing(action):
             # FIXME(#1139): some demos directories don't have a README
             continue
 
-        index = os.path.join("docs", directory, "index.txt")
+        index = os.path.join("docs", directory, "index.rst")
         if not os.path.exists(index):
             error(
-                f"expected each demo README to match a docs 'index.txt' file, found `{readme}` without corresponding `{index}`"
+                f"expected each demo README to match a docs 'index.rst' file, found `{readme}` without corresponding `{index}`"
             )
 
         link = f"{DOC_URL_BASE}/{directory}"
@@ -681,7 +681,7 @@ def error(message, edit_fixit=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Edits or compares the table of all algorithms and their demos in `demos/README.md` and `docs/demos/index.txt`"
+        description="Edits or compares the table of all algorithms and their demos in `demos/README.md` and `docs/demos/index.rst`"
     )
     parser.add_argument(
         "--action",
