@@ -199,7 +199,7 @@ class Rst(Format):
     def index_suffix(self, checking):
         if checking:
             # when checking links, we need to write out the exact filename
-            return "/index.txt"
+            return "/index.rst"
         return "/index"
 
     def notebook_suffix(self, checking):
