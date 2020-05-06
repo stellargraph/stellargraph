@@ -25,7 +25,7 @@ if [ "$exit_code" -ne 0 ]; then
 
   # strip out the /workdir/ references, so that the filenames are more relevant to the user
   # (relative to the repo root)
-  output="$(cat "$error_file" | sed s@/workdir/@@)"
+  output="$(sed s@/workdir/@@ "$error_file")"
 
   buildkite-agent annotate --context "sphinx-doc-build" --style error << EOF
 The sphinx build had warnings and/or errors. These may mean that the documentation doesn't display as expected and so should be fixed.
