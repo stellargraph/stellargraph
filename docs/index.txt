@@ -11,9 +11,9 @@ Welcome to StellarGraph's documentation!
    :caption: Contents:
 
    README
+   demos/index
    api
    hinsage
-   demos/index
 
 
 Indices and tables

@@ -237,8 +237,7 @@ class GCN:
     Note that currently the GCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
 
-    For more details, please see the GCN demo notebook:
-    demos/node-classification/gat/gcn-cora-node-classification-example.ipynb
+    For more details, please see `the GCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_
 
     Example:
         Creating a GCN node classification model from an existing :class:`StellarGraph`
