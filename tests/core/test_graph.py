@@ -773,9 +773,9 @@ def test_benchmark_creation(
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
         if force_adj_lists == "homogeneous":
-            sg._edges._edges_index.force_init()
+            sg._edges._adj_list.force_init()
         if force_adj_lists == "by_other_node_type":
-            sg._edges._edges_index_by_other_node_type.force_init()
+            sg._edges._adj_list_by_other_node_type.force_init()
         return sg
 
     benchmark(f)
@@ -799,9 +799,9 @@ def test_allocation_benchmark_creation(
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
         if force_adj_lists == "homogeneous":
-            sg._edges._edges_index.force_init()
+            sg._edges._adj_list.force_init()
         if force_adj_lists == "by_other_node_type":
-            sg._edges._edges_index_by_other_node_type.force_init()
+            sg._edges._adj_list_by_other_node_type.force_init()
         return sg
 
     allocation_benchmark(f)

@@ -14,15 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import itertools
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 
-from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME, NODE_TYPE_DEFAULT
+from ..globalvar import SOURCE, TARGET, WEIGHT
 from .validation import require_dataframe_has_columns, comma_sep
-from .utils import is_real_iterable
 
 
 class ExternalIdIndex:
@@ -304,7 +303,7 @@ def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
-class AdjIndex:
+class AdjList:
     def __init__(self, init_index):
         self.init_index = init_index
         self.undirected = self.ins = self.outs = None
@@ -359,10 +358,10 @@ class EdgeData(ElementData):
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
-        self._edges_index = AdjIndex(self._init_edges_index)
+        self._adj_list = AdjList(self._init_adj_list)
 
-        self._edges_index_by_other_node_type = AdjIndex(
-            self._init_edge_index_by_other_node_type
+        self._adj_list_by_other_node_type = AdjList(
+            self._init_adj_list_by_other_node_type
         )
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
@@ -370,7 +369,7 @@ class EdgeData(ElementData):
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
-    def _init_edges_index(self, *, ins, outs):
+    def _init_adj_list(self, *, ins, outs):
         index = {}
         edge_iter = enumerate(zip(self.sources, self.targets))
 
@@ -392,7 +391,7 @@ class EdgeData(ElementData):
 
         return _numpyise(index, self.dtype)
 
-    def _init_edge_index_by_other_node_type(self, *, ins, outs):
+    def _init_adj_list_by_other_node_type(self, *, ins, outs):
         index = {}
         edge_iter = enumerate(
             zip(self.sources, self.targets, self.source_types, self.target_types)
@@ -428,7 +427,7 @@ class EdgeData(ElementData):
             The in-, out- or total (summed) degree of all non-isolated nodes as a numpy array (if
             ``ret`` is the return value, ``ret[i]`` is the degree of the node with iloc ``i``)
         """
-        adj = self._edges_index.lookup(ins=ins, outs=outs)
+        adj = self._adj_list.lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
     def edge_ilocs(self, node_iloc, *, ins, outs, other_node_type=None) -> np.ndarray:
@@ -445,11 +444,11 @@ class EdgeData(ElementData):
 
         if other_node_type is not None:
             return (
-                self._edges_index_by_other_node_type.lookup(ins=ins, outs=outs)
+                self._adj_list_by_other_node_type.lookup(ins=ins, outs=outs)
                 .get(node_iloc, {})
                 .get(other_node_type, self._empty_ilocs)
             )
         else:
-            return self._edges_index.lookup(ins=ins, outs=outs).get(
+            return self._adj_list.lookup(ins=ins, outs=outs).get(
                 node_iloc, self._empty_ilocs
             )

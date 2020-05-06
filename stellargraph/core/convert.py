@@ -22,7 +22,7 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME, NODE_TYPE_DEFAULT
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
 from .validation import comma_sep, require_dataframe_has_columns
 from .utils import is_real_iterable
