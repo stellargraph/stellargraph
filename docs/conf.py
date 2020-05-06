@@ -215,6 +215,8 @@ nbsphinx_prolog = r"""
 
 nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
 
+nbsphinx_markdown_renderer = "commonmark"
+
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
