@@ -1,4 +1,4 @@
-Interpretability of node classification results using StellarGraph
+Interpretability of node classification results
 ==================================================================
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ has support for inspecting several different algorithms for :doc:`node classification <../node-classification/index>` to understand or interpret how they came to a decision. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
@@ -15,11 +15,11 @@ This table lists interpretability demos, including the algorithms used.
 
    * - demo
      - algorithm(s)
-   * - :doc:`GCN (dense) <gcn/node-link-importance-demo-gcn>`
+   * - :doc:`GCN (dense) <gcn-node-link-importance>`
      - GCN, Integrated Gradients
-   * - :doc:`GCN (sparse) <gcn/node-link-importance-demo-gcn-sparse>`
+   * - :doc:`GCN (sparse) <gcn-sparse-node-link-importance>`
      - GCN, Integrated Gradients
-   * - :doc:`GAT <gat/node-link-importance-demo-gat>`
+   * - :doc:`GAT <gat-node-link-importance>`
      - GAT, Integrated Gradients
 
 

@@ -45,7 +45,7 @@
    * [Algorithms](#algorithms)
    * [Installation](#installation)
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
-       * [Install StellarGraph in Anaconda Python](#Install-stellargraph-in-anaconda-python)
+       * [Install StellarGraph in Anaconda Python](#install-stellargraph-in-anaconda-python)
        * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
    * [Citing](#citing)
    * [References](#references)
@@ -68,7 +68,7 @@ Graph-structured data represent entities as nodes (or vertices) and relationship
 - graphs with or without data associated with nodes
 - graphs with edge weights
 
-StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras high-level API](https://www.tensorflow.org/guide/keras), as well as [Pandas](https://pandas.pydata.org) and [NumPy](https://www.numpy.org). It is thus user-friendly, modular and extensible. It interoperates smoothly with code that builds on these, such as the standard Keras layers and [scikit-learn](http://scikit-learn.github.io/stable), so it is easy to augment the core graph machine learning algorithms provided by StellarGraph. It is thus also [easy to install with `pip` or Anaconda](#Installation).
+StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras high-level API](https://www.tensorflow.org/guide/keras), as well as [Pandas](https://pandas.pydata.org) and [NumPy](https://www.numpy.org). It is thus user-friendly, modular and extensible. It interoperates smoothly with code that builds on these, such as the standard Keras layers and [scikit-learn](http://scikit-learn.github.io/stable), so it is easy to augment the core graph machine learning algorithms provided by StellarGraph. It is thus also [easy to install with `pip` or Anaconda](#installation).
 
 ## Getting Started
 
@@ -88,7 +88,7 @@ The dependencies required to run most of our demo notebooks locally can be insta
 - Using pip: `pip install stellargraph[demos]`
 - Using conda: `conda install -c stellargraph stellargraph`
 
-(See [Installation](#Installation) section for more details and more options.)
+(See [Installation](#installation) section for more details and more options.)
 
 ## Getting Help
 
@@ -166,7 +166,7 @@ print(f"Test set: loss = {loss}, accuracy = {accuracy}")
 
 This algorithm is spelled out in more detail in [its extended narrated notebook][gcn-demo]. We provide [many more algorithms, each with a detailed example][demos].
 
-[gcn-demo]: https://stellargraph.readthedocs.io/en/latest/demos/node-classification/gcn/gcn-cora-node-classification-example.html
+[gcn-demo]: https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html
 
 ## Algorithms
 The StellarGraph library currently includes the following algorithms for graph machine learning:

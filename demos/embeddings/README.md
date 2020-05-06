@@ -7,13 +7,13 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [GCN Deep Graph Infomax on CORA](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-cora.html) | [source](deep-graph-infomax-cora.ipynb) |
-| [Graph representation learning through Unsupervised GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/embeddings-unsupervised-graphsage-cora.html) | [source](embeddings-unsupervised-graphsage-cora.ipynb) |
-| [GraphWave aglorithm on a barbell graph](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphwave-barbell.html) | [source](graphwave-barbell.ipynb) |
-| [Node Representation Learning with attri2vec on Citeseer](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/stellargraph-attri2vec-citeseer.html) | [source](stellargraph-attri2vec-citeseer.ipynb) |
-| [Node representation learning with Metapath2Vec on BlogCatalog3](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/stellargraph-metapath2vec.html) | [source](stellargraph-metapath2vec.ipynb) |
-| [Node representation learning with Node2Vec on Cora](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/stellargraph-node2vec.html) | [source](stellargraph-node2vec.ipynb) |
-| [Node representation learning with Watch Your Step on Cora](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-cora-demo.html) | [source](watch-your-step-cora-demo.ipynb) |
+| [Node representation learning with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html) | [source](attri2vec-embeddings.ipynb) |
+| [Node representation learning with Deep Graph Infomax](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html) | [source](deep-graph-infomax-embeddings.ipynb) |
+| [Node representation learning with GraphSAGE and UnsupervisedSampler](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html) | [source](graphsage-unsupervised-sampler-embeddings.ipynb) |
+| [Node representations with GraphWave](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphwave-embeddings.html) | [source](graphwave-embeddings.ipynb) |
+| [Node representation learning with Metapath2Vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/metapath2vec-embeddings.html) | [source](metapath2vec-embeddings.ipynb) |
+| [Node representation learning with Node2Vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/node2vec-embeddings.html) | [source](node2vec-embeddings.ipynb) |
+| [Node representation learning with Watch Your Step](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html) | [source](watch-your-step-embeddings.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->
