@@ -27,7 +27,7 @@ if [ "$exit_code" -ne 0 ]; then
   # (relative to the repo root)
   output="$(cat "$error_file" | sed s@/workdir/@@)"
 
-  buildkite-agent annotate --context "sphinx-doc-build" --style error <<EOF
+  buildkite-agent annotate --context "sphinx-doc-build" --style error << EOF
 The sphinx build had warnings and/or errors. These may mean that the documentation doesn't display as expected and so should be fixed.
 
 ~~~terminal
