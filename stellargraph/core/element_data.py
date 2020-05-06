@@ -327,7 +327,7 @@ class FlatAdjacencyList:
 
     def items(self):
         for idx in range(len(self.splits) - 1):
-            yield ((idx, self[idx]))
+            yield (idx, self[idx])
 
 
 class EdgeData(ElementData):
