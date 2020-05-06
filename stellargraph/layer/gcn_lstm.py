@@ -56,6 +56,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         activation=None,
         use_bias=True,
         input_dim=None,
+        final_layer=None,
         kernel_initializer="glorot_uniform",
         kernel_regularizer=None,
         kernel_constraint=None,
@@ -67,10 +68,11 @@ class FixedAdjacencyGraphConvolution(Layer):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
 
-        self.units = (units,)
+        self.units = units  # (units,)
         self.adj = calculate_laplacian(A)
         self.activation = activations.get(activation)
         self.use_bias = use_bias
+        self.final_layer = final_layer
 
         self.kernel_initializer = initializers.get(kernel_initializer)
         self.kernel_regularizer = regularizers.get(kernel_regularizer)
@@ -131,7 +133,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         """
         n_nodes = input_shapes[-1]
         t_steps = input_shapes[-2]
-        self.units = t_steps
+        # self.units = t_steps
 
         self.A = self.add_weight(
             name="A",
@@ -206,7 +208,7 @@ class GraphConvolutionLSTM:
        Args:
            seq_len: No. of LSTM cells
            adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
-           gc_layers: No. of Graph Convolution  layers in the stack. The output of each layer is equal to sequence length.
+           gc_layer_size (list of int): Output sizes of Graph Convolution  layers in the stack. 
            lstm_layer_size (list of int): Output sizes of LSTM layers in the stack.
            bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
            dropout (float): Dropout rate applied to input features of each GCN layer.
@@ -226,10 +228,10 @@ class GraphConvolutionLSTM:
         self,
         seq_len,
         adj,
-        gc_layers,
+        gc_layer_size,
         lstm_layer_size,
         gc_activations,
-        lstm_activations=["tanh"],
+        lstm_activations,
         bias=True,
         dropout=0.5,
         kernel_initializer=None,
@@ -242,10 +244,11 @@ class GraphConvolutionLSTM:
 
         super(GraphConvolutionLSTM, self).__init__()
 
-        n_gc_layers = gc_layers
+        n_gc_layers = len(gc_layer_size)
         n_lstm_layers = len(lstm_layer_size)
 
         self.lstm_layer_size = lstm_layer_size
+        self.gc_layer_size = gc_layer_size
         self.bias = bias
         self.dropout = dropout
         self.outputs = adj.shape[0]
@@ -287,7 +290,9 @@ class GraphConvolutionLSTM:
         for ii in range(n_gc_layers):
             self._layers.append(
                 FixedAdjacencyGraphConvolution(
-                    units=self.seq_len, A=self.adj, activation=self.gc_activations[ii]
+                    units=self.gc_layer_size[ii],
+                    A=self.adj,
+                    activation=self.gc_activations[ii],
                 )
             )
 
