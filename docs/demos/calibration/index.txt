@@ -15,5 +15,4 @@ Table of contents
     :titlesonly:
     :glob:
 
-    */index
     ./*
