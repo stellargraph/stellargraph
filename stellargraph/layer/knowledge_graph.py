@@ -671,8 +671,12 @@ class RotatE:
             # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
 
             # (the margin is a fixed offset that doesn't affect relative ranks)
-            mod_o_pred = -np.linalg.norm((ss * rs)[None, :, :] - all_node_embs[:, None, :], axis=2)
-            mod_s_pred = -np.linalg.norm((all_node_embs)[:, None, :] * rs[None, :, :] - os[None, :, :], axis=2)
+            mod_o_pred = -np.linalg.norm(
+                (ss * rs)[None, :, :] - all_node_embs[:, None, :], axis=2
+            )
+            mod_s_pred = -np.linalg.norm(
+                (all_node_embs)[:, None, :] * rs[None, :, :] - os[None, :, :], axis=2
+            )
 
             mod_o_raw, mod_o_filt = _ranks_from_score_columns(
                 mod_o_pred,
