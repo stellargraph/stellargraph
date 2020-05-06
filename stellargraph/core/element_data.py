@@ -303,6 +303,33 @@ def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
+class FlatAdjacencyList:
+    def __init__(self, adj_dict, neighbor_counts, dtype):
+        self.splits = np.cumsum(np.append(0, neighbor_counts))
+        self.max_node_iloc = len(neighbor_counts) - 1
+
+        try:
+            self.flat = np.concatenate(list(adj_dict.values())).astype(dtype)
+        except ValueError:
+            self.flat = np.array([], dtype=np.uint8)
+
+        self.empty = np.array([], dtype=np.uint8)
+
+    def __getitem__(self, idx):
+        start, stop = self.splits[idx], self.splits[idx + 1]
+        return self.flat[start:stop]
+
+    def get(self, idx, default):
+        if idx > self.max_node_iloc:
+            return default
+        else:
+            return self[idx]
+
+    def items(self):
+        for idx in range(len(self.splits) - 1):
+            yield ((idx, self[idx]))
+
+
 class EdgeData(ElementData):
     """
     Args:
@@ -331,28 +358,54 @@ class EdgeData(ElementData):
 
     def _init_directed_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = {}
-        out_dict = {}
-
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            in_dict.setdefault(tgt, []).append(i)
-            out_dict.setdefault(src, []).append(i)
+        in_dict = dict((node, []) for node in np.sort(pd.unique(self.targets)))
+        out_dict = dict((node, []) for node in np.sort(pd.unique(self.sources)))
 
         dtype = np.min_scalar_type(len(self.sources))
-        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
-        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
+
+        if len(self.sources) > 0:
+            max_node_iloc = max(self.sources.max(), self.targets.max())
+        else:
+            max_node_iloc = 0
+        in_neighbour_counts = np.zeros(max_node_iloc + 1, dtype=dtype)
+        out_neighbour_counts = np.zeros(max_node_iloc + 1, dtype=dtype)
+
+        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
+            in_dict[tgt].append(i)
+            out_dict[src].append(i)
+            in_neighbour_counts[tgt] += 1
+            out_neighbour_counts[src] += 1
+
+        self._edges_in_dict = FlatAdjacencyList(
+            in_dict, in_neighbour_counts, dtype=dtype
+        )
+        self._edges_out_dict = FlatAdjacencyList(
+            out_dict, out_neighbour_counts, dtype=dtype
+        )
+        in_dict.clear()
+        out_dict.clear()
 
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        undirected = {}
+        node_ilocs = np.concatenate([pd.unique(self.targets), pd.unique(self.sources)])
+        undirected = dict((node, []) for node in np.sort(node_ilocs))
+        dtype = np.min_scalar_type(len(self.sources))
+
+        if len(self.sources) > 0:
+            max_node_iloc = max(self.sources.max(), self.targets.max())
+        else:
+            max_node_iloc = 0
+        neighbour_counts = np.zeros(max_node_iloc + 1, dtype=dtype)
 
         for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            undirected.setdefault(tgt, []).append(i)
+            undirected[tgt].append(i)
+            neighbour_counts[tgt] += 1
             if src != tgt:
-                undirected.setdefault(src, []).append(i)
+                undirected[src].append(i)
+                neighbour_counts[src] += 1
 
-        dtype = np.min_scalar_type(len(self.sources))
-        self._edges_dict = _numpyise(undirected, dtype=dtype)
+        self._edges_dict = FlatAdjacencyList(undirected, neighbour_counts, dtype=dtype)
+        undirected.clear()
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
