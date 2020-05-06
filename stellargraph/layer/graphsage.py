@@ -757,8 +757,8 @@ class GraphSAGE:
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
-    For more details, please see the GraphSAGE demo notebooks:
-    demos/node-classification/graphsage/graphsage-cora-node-classification-example.ipynb
+    For more details, please see `the GraphSAGE demo notebooks
+    <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`_.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.

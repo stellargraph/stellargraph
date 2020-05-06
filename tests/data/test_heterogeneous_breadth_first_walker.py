@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from stellargraph.data.explorer import SampledHeterogeneousBreadthFirstWalk
 from stellargraph.core.graph import StellarGraph
+from ..test_utils.graphs import example_graph_random
 
 
 def _recursive_items_equal(arr1, arr2):
@@ -531,11 +532,10 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         assert len(subgraphs) == n * len(nodes)
 
     def test_benchmark_sampledheterogeneousbreadthfirstwalk(self, benchmark):
-
-        g = create_test_graph(self_loop=True)
+        g = example_graph_random(n_nodes=50, n_edges=250, node_types=2, edge_types=2)
         bfw = SampledHeterogeneousBreadthFirstWalk(g)
 
-        nodes = [0]
+        nodes = np.arange(0, 50)
         n = 5
         n_size = [5, 5]
 

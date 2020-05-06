@@ -69,15 +69,15 @@ def _bfs_neighbor_query(sampling_direction):
 class Neo4JSampledBreadthFirstWalk(GraphWalk):
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
-    It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4J database.
+    It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4j database.
     """
 
     def run(self, neo4j_graphdb, nodes=None, n=1, n_size=None, seed=None):
         """
-        Send queries to Neo4J graph databases and collect sampled breadth-first walks starting from the root nodes.
+        Send queries to Neo4j graph databases and collect sampled breadth-first walks starting from the root nodes.
 
         Args:
-            neo4j_graphdb: (py2neo.Graph) the Neo4J Graph Database object
+            neo4j_graphdb: (py2neo.Graph) the Neo4j Graph Database object
             nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
             n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
@@ -109,17 +109,17 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
 class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
-    It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4J database.
+    It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4j database.
     """
 
     def run(
         self, neo4j_graphdb, nodes=None, n=1, in_size=None, out_size=None, seed=None
     ):
         """
-        Send queries to Neo4J databases and collect sampled breadth-first walks starting from the root nodes.
+        Send queries to Neo4j databases and collect sampled breadth-first walks starting from the root nodes.
 
         Args:
-            neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object
+            neo4j_graphdb (py2neo.Graph): the Neo4j Graph Database object
             nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
             n (int): Number of walks per node id.

@@ -21,7 +21,6 @@ from ..mapper import PaddedGraphGenerator
 from .gcn import GraphConvolution
 from .sort_pooling import SortPooling
 from tensorflow.keras.layers import Input, Dropout, GlobalAveragePooling1D
-from ..core.experimental import experimental
 
 
 class GCNSupervisedGraphClassification:
@@ -214,8 +213,7 @@ class GCNSupervisedGraphClassification:
     build = deprecated_model_function(in_out_tensors, "build")
 
 
-@experimental(reason="Missing unit tests and generally untested.", issues=[1297])
-class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
+class DeepGraphCNN(GCNSupervisedGraphClassification):
     """
     A stack of :class:`GraphConvolution` layers together with a `SortPooling` layer
     that implement a supervised graph classification network (DGCNN) using the GCN convolution operator
@@ -237,7 +235,7 @@ class DeepGraphConvolutionalNeuralNetwork(GCNSupervisedGraphClassification):
         connected dense layers one with dropout one used for binary classification::
 
             generator = PaddedGraphGenerator(graphs)
-            model = DeepGraphConvolutionalNeuralNetwork(
+            model = DeepGraphCNN(
                              layer_sizes=[32, 32, 32, 1],
                              activations=["tanh","tanh", "tanh", "tanh"],
                              generator=generator,

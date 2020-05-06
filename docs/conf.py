@@ -92,7 +92,15 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path .
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "requirements.txt"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "requirements.txt",
+    "demos/community_detection/*",
+    "demos/use-cases/*",
+    "demos/interpretability/hateful-twitters-interpretability.nblink",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -191,6 +199,22 @@ texinfo_documents = [
 
 # -- Extension configuration -------------------------------------------------
 
+# This is processed by Jinja2 and inserted before each notebook
+nbsphinx_prolog = r"""
+.. raw:: html
+
+    <div class="admonition info">
+      <p>
+        Execute this notebook:
+        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/master/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
+        <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
+      </p>
+    </div>
+"""
+
+nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
+
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
@@ -227,3 +251,5 @@ class RewriteLinks(docutils.transforms.Transform):
 
 def setup(app):
     app.add_transform(RewriteLinks)
+
+    app.add_stylesheet("custom.css")

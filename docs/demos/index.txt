@@ -14,7 +14,7 @@ Find algorithms for a task
 --------------------------
 
 
-* Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): :doc:`GCN on Cora <node-classification/gcn/gcn-cora-node-classification-example>`
+* Introduction to StellarGraph and its graph machine learning workflow (with TensorFlow and Keras): :doc:`GCN on Cora <node-classification/gcn-node-classification>`
 * Predicting attributes, such as classifying as a class or label, or regressing to calculate a continuous number:
 
   * For nodes/vertices/entities: :doc:`node classification <./node-classification/index>`
@@ -25,8 +25,9 @@ Find algorithms for a task
 
 * Representation learning or computing embedding vectors (including unsupervised tasks):
 
-  * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>` (and :doc:`community detection <./community_detection/index>` for using these to cluster nodes)
+  * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>`
 
+* Time series or sequence prediction for nodes within a graph (including spatio-temporal data): :doc:`time series <./time-series/index>`
 * Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
 * Loading data into a ``StellarGraph`` object, with Pandas, Neo4j or NetworkX: :doc:`basics <./basics/index>`
 * Experimental: running GraphSAGE on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
@@ -41,28 +42,28 @@ Find a demo for an algorithm
 
    *
      - Algorithm
-     - Heter.
-     - Dir.
-     - EW
-     - T
-     - NF
-     - :any:`NC <node-classification/index>`
-     - :any:`LP <link-prediction/index>`
-     - :any:`RL <embeddings/index>`
-     - Ind.
-     - :any:`GC <graph-classification/index>`
+     - Heterogeneous
+     - Directed
+     - Edge weights
+     - Time-varying, temporal
+     - Node features
+     - :any:`Node classification <node-classification/index>`
+     - :any:`Link prediction <link-prediction/index>`
+     - :any:`Unsupervised <embeddings/index>`
+     - Inductive
+     - :any:`Graph classification <graph-classification/index>`
    *
-     - GCN
+     - Graph Convolutional Network (GCN)
      - see RGCN
      -
      -
-     -
+     - see T-GCN
      - yes
-     - :any:`demo <node-classification/gcn/gcn-cora-node-classification-example>`
-     - :any:`demo <link-prediction/gcn/cora-gcn-links-example>`
-     - US :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     - :any:`demo <node-classification/gcn-node-classification>`
+     - :any:`demo <link-prediction/gcn-link-prediction>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      - see Cluster-GCN
-     - :any:`demo <graph-classification/supervised-graph-classification>`
+     - :any:`demo <graph-classification/gcn-supervised-graph-classification>`
    *
      - Cluster-GCN
      -
@@ -70,69 +71,81 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/cluster-gcn/cluster-gcn-node-classification>`
+     - :any:`demo <node-classification/cluster-gcn-node-classification>`
      - yes
      -
      - yes
      -
    *
-     - RGCN
-     - yes, edges
+     - Relational GCN (RGCN)
+     - multiple edges types
      -
      -
      -
      - yes
-     - :any:`demo <node-classification/rgcn/rgcn-aifb-node-classification-example>`
-     - yes
-     -
-     -
-     -
-   *
-     - GAT
-     -
-     -
-     -
-     -
-     - yes
-     - :any:`demo <node-classification/gat/gat-cora-node-classification-example>`
-     - yes
-     - US :any:`DGI <embeddings/deep-graph-infomax-cora>`
-     -
-     -
-   *
-     - SGC
-     -
-     -
-     -
-     -
-     - yes
-     - :any:`demo <node-classification/sgc/sgc-node-classification-example>`
+     - :any:`demo <node-classification/rgcn-node-classification>`
      - yes
      -
      -
      -
    *
-     - PPNP
+     - Temporal GCN (T-GCN), implemented as GCN-LSTM
      -
      -
      -
+     - node features
+     - time series, sequence
+     - :any:`demo <time-series/gcn-lstm-time-series>`
      -
-     - yes
-     - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
-     - yes
-     - US DGI
+     -
      -
      -
    *
-     - APPNP
+     - Graph ATtention Network (GAT)
      -
      -
      -
      -
      - yes
-     - :any:`demo <node-classification/ppnp/ppnp-cora-node-classification-example>`
+     - :any:`demo <node-classification/gat-node-classification>`
      - yes
-     - US :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
+     -
+     -
+   *
+     - Simplified Graph Convolution (SGC)
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/sgc-node-classification>`
+     - yes
+     -
+     -
+     -
+   *
+     - Personalized Propagation of Neural Predictions (PPNP)
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/ppnp-node-classification>`
+     - yes
+     - UnsupervisedSampler, DeepGraphInfomax
+     -
+     -
+   *
+     - Approximate PPNP (APPNP)
+     -
+     -
+     -
+     -
+     - yes
+     - :any:`demo <node-classification/ppnp-node-classification>`
+     - yes
+     - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *
@@ -142,9 +155,9 @@ Find a demo for an algorithm
      -
      -
      -
-     - via RL
-     - via RL
-     - :any:`demo <embeddings/graphwave-barbell>`
+     - via embedding vectors
+     - via embedding vectors
+     - :any:`demo <embeddings/graphwave-embeddings>`
      -
      -
    *
@@ -154,22 +167,22 @@ Find a demo for an algorithm
      -
      -
      - yes
-     - :any:`demo <node-classification/attri2vec/attri2vec-citeseer-node-classification-example>`
-     - :any:`demo <link-prediction/attri2vec/stellargraph-attri2vec-DBLP>`
-     - :any:`demo <embeddings/stellargraph-attri2vec-citeseer>`
+     - :any:`demo <node-classification/attri2vec-node-classification>`
+     - :any:`demo <link-prediction/attri2vec-link-prediction>`
+     - :any:`demo <embeddings/attri2vec-embeddings>`
      -
      -
    *
      - GraphSAGE
      - see HinSAGE
-     - :any:`demo <node-classification/graphsage/directed-graphsage-on-cora-example>`
+     - :any:`demo <node-classification/directed-graphsage-node-classification>`
      -
      -
      - yes
-     - :any:`demo <node-classification/graphsage/graphsage-cora-node-classification-example>`
-     - :any:`demo <link-prediction/graphsage/cora-links-example>`
-     - :any:`US <embeddings/embeddings-unsupervised-graphsage-cora>` :any:`DGI <embeddings/deep-graph-infomax-cora>`
-     - :any:`demo <node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example>`
+     - :any:`demo <node-classification/graphsage-node-classification>`
+     - :any:`demo <link-prediction/graphsage-link-prediction>`
+     - :any:`UnsupervisedSampler <embeddings/graphsage-unsupervised-sampler-embeddings>`, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
+     - :any:`demo <node-classification/graphsage-inductive-node-classification>`
      -
    *
      - HinSAGE
@@ -179,20 +192,20 @@ Find a demo for an algorithm
      -
      - yes
      - yes
-     - :any:`demo <link-prediction/hinsage/movielens-recommender>`
-     - :any:`DGI <embeddings/deep-graph-infomax-cora>`
+     - :any:`demo <link-prediction/hinsage-link-prediction>`
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      - yes
      -
    *
      - Node2Vec
      -
      -
-     - :any:`demo <node-classification/node2vec/stellargraph-node2vec-weighted-random-walks>`
+     - :any:`demo <node-classification/node2vec-weighted-node-classification>`
      -
      -
-     - :any:`via RL <node-classification/node2vec/stellargraph-node2vec-node-classification>`
-     - :any:`via RL <link-prediction/random-walks/cora-lp-demo>`
-     - :any:`demo <embeddings/stellargraph-node2vec>`
+     - :any:`via embedding vectors <node-classification/node2vec-node-classification>`
+     - :any:`via embedding vectors <link-prediction/node2vec-link-prediction>`
+     - :any:`demo <embeddings/node2vec-embeddings>`
      -
      -
    *
@@ -202,20 +215,20 @@ Find a demo for an algorithm
      -
      -
      -
-     - via RL
-     - via RL
-     - :any:`demo <embeddings/stellargraph-metapath2vec>`
+     - via embedding vectors
+     - via embedding vectors
+     - :any:`demo <embeddings/metapath2vec-embeddings>`
      -
      -
    *
-     - CTDNE
+     - Continuous-Time Dynamic Network Embeddings
      -
      -
      -
      - yes
      -
-     - via RL
-     - :any:`via RL <link-prediction/random-walks/ctdne-link-prediction>`
+     - via embedding vectors
+     - :any:`via embedding vectors <link-prediction/ctdne-link-prediction>`
      - yes
      -
      -
@@ -226,39 +239,66 @@ Find a demo for an algorithm
      -
      -
      -
-     - :any:`via RL <embeddings/watch-your-step-cora-demo>`
-     - via RL
-     - :any:`demo <embeddings/watch-your-step-cora-demo>`
+     - :any:`via embedding vectors <embeddings/watch-your-step-embeddings>`
+     - via embedding vectors
+     - :any:`demo <embeddings/watch-your-step-embeddings>`
      -
      -
    *
      - ComplEx
-     - yes, edges
+     - multiple edges types
      - yes
      -
      -
      -
-     - via RL
-     - :any:`demo <link-prediction/knowledge-graphs/complex>`
+     - via embedding vectors
+     - :any:`demo <link-prediction/complex-link-prediction>`
      - yes
      -
      -
    *
      - DistMult
-     - yes, edges
+     - multiple edges types
      - yes
      -
      -
      -
-     - via RL
-     - :any:`demo <link-prediction/knowledge-graphs/distmult>`
+     - via embedding vectors
+     - :any:`demo <link-prediction/distmult-link-prediction>`
      - yes
      -
      -
+   *
+     - Deep Graph CNN
+     -
+     -
+     -
+     -
+     - yes
+     -
+     -
+     -
+     -
+     - :any:`demo <graph-classification/dgcnn-graph-classification>`
 ..
    DEMO TABLE MARKER
 
 See :doc:`the root README <../README>` or each algorithm's documentation for the relevant citation(s).
+
+
+Download the demos
+------------------
+
+You can run download a local copy of the demos using the :code:`curl` command below:
+
+.. code-block:: console
+
+    curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
+
+The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
+
+- Using pip: :code:`pip install stellargraph[demos]`
+- Using conda: :code:`conda install -c stellargraph stellargraph`
 
 Table of contents
 -----------------

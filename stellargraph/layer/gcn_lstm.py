@@ -34,9 +34,9 @@ class FixedAdjacencyGraphConvolution(Layer):
     Notes:
       - The inputs are 3 dimensional tensors: batch size, sequence length, and number of nodes.
       - This class assumes that a simple unweighted or weighted adjacency matrix is passed to it,
-          the normalized Laplacian matrix is calculated within the class.
+        the normalized Laplacian matrix is calculated within the class.
 
-     Args:
+    Args:
         units (int): dimensionality of output feature vectors
         A (N x N): weighted/unweighted adjacency matrix
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
@@ -193,34 +193,37 @@ class FixedAdjacencyGraphConvolution(Layer):
 class GraphConvolutionLSTM:
 
     """
-        GraphConvolutionLSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
-        This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction
-                                          (https://arxiv.org/abs/1811.05320)
-        The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
-        The StellarGraph implementation is built as a stack of the following set of layers:
-           1. User specified no. of Graph Convolutional layers
-           2. User specified no. of LSTM layers
-           3. 1 Dense layer
-           4. 1 Dropout layer
-           The last two layers consistently showed better performance and regularization experimentally.
-       Args:
-           seq_len: No. of LSTM cells
-           adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
-           gc_layers: No. of Graph Convolution  layers in the stack. The output of each layer is equal to sequence length.
-           lstm_layer_size (list of int): Output sizes of LSTM layers in the stack.
-           bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
-           dropout (float): Dropout rate applied to input features of each GCN layer.
-           gc_activations (list of str or func): Activations applied to each layer's output;
-                defaults to ['relu', ..., 'relu'].
-           lstm_activations (list of str or func): Activations applied to each layer's output;
-                defaults to ['tanh', ..., 'tanh'].
-           kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
-           kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
-           kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
-           bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
-           bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
-           bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
-        """
+    GraphConvolutionLSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
+    This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction (https://arxiv.org/abs/1811.05320)
+
+    The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
+
+    The StellarGraph implementation is built as a stack of the following set of layers:
+      1. User specified no. of Graph Convolutional layers
+      2. User specified no. of LSTM layers
+      3. 1 Dense layer
+      4. 1 Dropout layer
+
+    The last two layers consistently showed better performance and regularization experimentally.
+
+    Args:
+        seq_len: No. of LSTM cells
+        adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
+        gc_layers: No. of Graph Convolution  layers in the stack. The output of each layer is equal to sequence length.
+        lstm_layer_size (list of int): Output sizes of LSTM layers in the stack.
+        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
+        dropout (float): Dropout rate applied to input features of each GCN layer.
+        gc_activations (list of str or func): Activations applied to each layer's output;
+            defaults to ['relu', ..., 'relu'].
+        lstm_activations (list of str or func): Activations applied to each layer's output;
+            defaults to ['tanh', ..., 'tanh'].
+        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+    """
 
     def __init__(
         self,

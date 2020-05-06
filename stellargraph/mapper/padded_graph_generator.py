@@ -16,6 +16,7 @@
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from .sequences import PaddedGraphSequence
+import numpy as np
 from .base import Generator
 
 
@@ -40,6 +41,12 @@ class PaddedGraphGenerator(Generator):
     def __init__(self, graphs, name=None):
 
         self.node_features_size = None
+        self._check_graphs(graphs)
+
+        self.graphs = graphs
+        self.name = name
+
+    def _check_graphs(self, graphs):
         for graph in graphs:
             if not isinstance(graph, StellarGraph):
                 raise TypeError(
@@ -70,15 +77,12 @@ class PaddedGraphGenerator(Generator):
                     f"found {self.node_features_size} vs {f_dim}"
                 )
 
-        self.graphs = graphs
-        self.name = name
-
     def num_batch_dims(self):
         return 1
 
     def flow(
         self,
-        graph_ilocs,
+        graphs,
         targets=None,
         symmetric_normalization=True,
         batch_size=1,
@@ -91,10 +95,10 @@ class PaddedGraphGenerator(Generator):
         with the supplied graph indexes and targets.
 
         Args:
-            graph_ilocs (iterable): an iterable of graph indexes in self.graphs for the graphs of interest
-                (e.g., training, validation, or test set nodes).
-            targets (2d array, optional): a 2D array of numeric graph targets with shape `(len(graph_ilocs),
-                len(targets))`.
+            graphs (iterable): an iterable of graph indexes in self.graphs or an iterable of `StellarGraph`s
+                for the graphs of interest (e.g., training, validation, or test set nodes).
+            targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graphs),
+                len(targets))``.
             symmetric_normalization (bool, optional): The type of normalization to be applied on the graph adjacency
                 matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
                 degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
@@ -116,9 +120,9 @@ class PaddedGraphGenerator(Generator):
                 )
 
             # Check targets correct shape
-            if len(targets) != len(graph_ilocs):
+            if len(targets) != len(graphs):
                 raise ValueError(
-                    f"expected targets to be the same length as node_ids, found {len(targets)} vs {len(graph_ilocs)}"
+                    f"expected targets to be the same length as node_ids, found {len(targets)} vs {len(graphs)}"
                 )
 
         if not isinstance(batch_size, int):
@@ -131,8 +135,13 @@ class PaddedGraphGenerator(Generator):
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
+        if isinstance(graphs[0], StellarGraph):
+            self._check_graphs(graphs)
+        else:
+            graphs = [self.graphs[i] for i in graphs]
+
         return PaddedGraphSequence(
-            graphs=[self.graphs[i] for i in graph_ilocs],
+            graphs=graphs,
             targets=targets,
             symmetric_normalization=symmetric_normalization,
             batch_size=batch_size,

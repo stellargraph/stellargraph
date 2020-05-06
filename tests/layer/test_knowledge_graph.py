@@ -91,7 +91,7 @@ def test_complex(knowledge_graph):
     prediction = model.predict(gen.flow(df))
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
-    assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+    assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-6)
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
