@@ -363,18 +363,12 @@ class EdgeData(ElementData):
 
         dtype = np.min_scalar_type(len(self.sources))
 
-        if len(self.sources) > 0:
-            max_node_iloc = max(self.sources.max(), self.targets.max())
-        else:
-            max_node_iloc = 0
-        in_neighbour_counts = np.zeros(max_node_iloc + 1, dtype=dtype)
-        out_neighbour_counts = np.zeros(max_node_iloc + 1, dtype=dtype)
-
         for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
             in_dict[tgt].append(i)
             out_dict[src].append(i)
-            in_neighbour_counts[tgt] += 1
-            out_neighbour_counts[src] += 1
+
+        in_neighbour_counts = np.array([len(x) for x in in_dict.values()])
+        out_neighbour_counts = np.array([len(x) for x in out_dict.values()])
 
         self._edges_in_dict = FlatAdjacencyList(
             in_dict, in_neighbour_counts, dtype=dtype
@@ -391,19 +385,12 @@ class EdgeData(ElementData):
         undirected = dict((node, []) for node in np.sort(node_ilocs))
         dtype = np.min_scalar_type(len(self.sources))
 
-        if len(self.sources) > 0:
-            max_node_iloc = max(self.sources.max(), self.targets.max())
-        else:
-            max_node_iloc = 0
-        neighbour_counts = np.zeros(max_node_iloc + 1, dtype=dtype)
-
         for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
             undirected[tgt].append(i)
-            neighbour_counts[tgt] += 1
             if src != tgt:
                 undirected[src].append(i)
-                neighbour_counts[src] += 1
 
+        neighbour_counts = np.array([len(x) for x in undirected.values()])
         self._edges_dict = FlatAdjacencyList(undirected, neighbour_counts, dtype=dtype)
         undirected.clear()
 
