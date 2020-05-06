@@ -6,7 +6,11 @@ error_file=/tmp/sphinx-errors.txt
 
 cd docs
 
-echo "--- install documentation requirements"
+echo "--- installing pandoc"
+apt update
+apt install -y pandoc
+
+echo "--- installing documentation requirements"
 pip install -r requirements.txt
 
 echo "--- listing dependency versions"
@@ -19,14 +23,18 @@ make html SPHINXOPTS="-W --keep-going -w $error_file" || exit_code="$?"
 if [ "$exit_code" -ne 0 ]; then
   echo "--- annotating build with failures"
 
+  # strip out the /workdir/ references, so that the filenames are more relevant to the user
+  # (relative to the repo root)
+  output="$(cat "$error_file" | sed s@/workdir/@@)"
+
   buildkite-agent annotate --context "sphinx-doc-build" --style error <<EOF
-The sphinx build had warning(s) and/or error(s) ([failing step](#$BUILDKITE_JOB_ID)):
+The sphinx build had warnings and/or errors. These may mean that the documentation doesn't display as expected and so should be fixed.
 
 ~~~terminal
-$(cat "$error_file")
+$output
 ~~~
 
-These may mean that the documentation doesn't display as expected and so should be fixed.
+([View all output](#$BUILDKITE_JOB_ID))
 EOF
   exit 1
 fi
