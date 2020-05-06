@@ -16,9 +16,10 @@
 
 import pandas as pd
 import pytest
+import numpy as np
 from stellargraph.data.explorer import SampledBreadthFirstWalk
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph, tree_graph
+from ..test_utils.graphs import create_test_graph, tree_graph, example_graph_random
 
 
 def expected_bfw_size(n_size):
@@ -538,10 +539,10 @@ class TestBreadthFirstWalk(object):
         assert w0 == w1
 
     def test_benchmark_bfs_walk(self, benchmark):
-        g = create_test_graph()
+        g = example_graph_random(n_nodes=100, n_edges=500)
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = [0]
+        nodes = np.arange(0, 50)
         n = 5
         n_size = [5, 5]
 

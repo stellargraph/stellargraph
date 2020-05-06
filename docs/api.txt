@@ -45,10 +45,10 @@ GraphSAGE
 .. autoclass:: MeanPoolingAggregator
   :members:
 
-.. autoclass: MaxPoolingAggregator
+.. autoclass:: MaxPoolingAggregator
   :members:
 
-.. autoclass: AttentionalAggregator
+.. autoclass:: AttentionalAggregator
   :members:
 
 
@@ -160,6 +160,15 @@ Deep Graph Convolutional Neural Network
   :members:
 
 .. autoclass:: DeepGraphCNN
+  :members:
+
+Graph Convolution LSTM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: GraphConvolutionLSTM
+  :members:
+
+.. autoclass:: FixedAdjacencyGraphConvolution
   :members:
 
 Deep Graph Infomax

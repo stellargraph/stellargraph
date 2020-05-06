@@ -19,6 +19,7 @@ import numpy as np
 import pytest
 from stellargraph.data.explorer import UniformRandomMetaPathWalk
 from stellargraph.core.graph import StellarGraph
+from ..test_utils.graphs import example_graph_random
 
 
 # FIXME (#535): Consider using graph fixtures
@@ -316,13 +317,17 @@ class TestMetaPathWalk(object):
         assert all(np.array_equal(w1, w2) for w1, w2 in zip(run_1, run_2))
 
     def test_benchmark_uniformrandommetapathwalk(self, benchmark):
-
-        g = create_test_graph()
+        g = example_graph_random(n_nodes=50, n_edges=500, node_types=2)
         mrw = UniformRandomMetaPathWalk(g)
 
-        nodes = ["0"]
+        # this should be made larger to be more realistic, when it is fast enough
+        nodes = np.arange(0, 5)
         n = 5
         length = 5
-        metapaths = [["s", "n", "n", "s"], ["n", "s", "n"], ["n", "n"]]
+        metapaths = [
+            ["n-0", "n-1", "n-1", "n-0"],
+            ["n-0", "n-1", "n-0"],
+            ["n-0", "n-0"],
+        ]
 
         benchmark(lambda: mrw.run(nodes=nodes, n=n, length=length, metapaths=metapaths))
