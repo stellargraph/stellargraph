@@ -451,7 +451,7 @@ class BiasedRandomWalk(RandomWalk):
                 current_node = node
 
                 for _ in range(length - 1):
-                    neighbours = self.graph.neighbor(
+                    neighbours = self.graph.neighbors(
                         current_node, use_ilocs=True, include_edge_weight=weighted
                     )
 
