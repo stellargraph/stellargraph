@@ -7,7 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Forecasting using spatio-temporal data with combined Graph Convolution + LSTM model](https://stellargraph.readthedocs.io/en/stable/demos/time-series/gcn-lstm-LA.html) | [source](gcn-lstm-LA.ipynb) |
+| [Forecasting using spatio-temporal data with combined Graph Convolution + LSTM model](https://stellargraph.readthedocs.io/en/stable/demos/time-series/gcn-lstm-time-series.html) | [source](gcn-lstm-time-series.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

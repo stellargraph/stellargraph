@@ -1,4 +1,4 @@
-Graph classification using StellarGraph
+Graph classification
 =======================================
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides algorithms for graph classification. This folder contains demos to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
@@ -17,7 +17,7 @@ This table lists all graph classification demos, including the algorithms traine
      - algorithm(s)
      - node features
      - inductive
-   * - :doc:`GCN Supervised Graph Classification <supervised-graph-classification>`
+   * - :doc:`GCN Supervised Graph Classification <gcn-supervised-graph-classification>`
      - GCN, mean pooling
      - yes
      - yes
@@ -36,5 +36,4 @@ Table of contents
     :titlesonly:
     :glob:
 
-    */index
     ./*

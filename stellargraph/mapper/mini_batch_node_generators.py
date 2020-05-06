@@ -34,7 +34,7 @@ from .base import Generator
 
 class ClusterNodeGenerator(Generator):
     """
-    A data generator for use with ClusterGCN models on homogeneous graphs, [1].
+    A data generator for use with ClusterGCN models on homogeneous graphs, see [1].
 
     The supplied graph G should be a StellarGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
@@ -45,17 +45,19 @@ class ClusterNodeGenerator(Generator):
 
     [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
 
-    For more information, please see `the ClusterGCN demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn/cluster-gcn-node-classification.html>`_.
+    For more information, please see `the ClusterGCN demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
-        clusters (int or list): If int then it indicates the number of clusters (default is 1 that is the given graph).
-            If clusters is greater than 1, then nodes are uniformly at random assigned to a cluster. If list,
-            then it should be a list of lists of node IDs such that each list corresponds to a cluster of nodes
-            in G. The clusters should be non-overlapping.
-        q (float): The number of clusters to combine for each mini-batch. The default is 1.
-        lam (float): The mixture coefficient for adjacency matrix normalisation.
-        name (str): an optional name of the generator
+        clusters (int or list, optional): If int, it indicates the number of clusters (default is 1, corresponding to the entire graph).
+            If `clusters` is greater than 1, then nodes are randomly assigned to a cluster.
+            If list, then it should be a list of lists of node IDs, such that each list corresponds to a cluster of nodes
+            in `G`. The clusters should be non-overlapping.
+        q (int, optional): The number of clusters to combine for each mini-batch (default is 1).
+            The total number of clusters must be divisible by `q`.
+        lam (float, optional): The mixture coefficient for adjacency matrix normalisation (default is 0.1).
+            Valid values are in the interval [0, 1].
+        name (str, optional): Name for the node generator.
     """
 
     def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
@@ -157,8 +159,8 @@ class ClusterNodeGenerator(Generator):
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A ClusterNodeSequence object to use with ClusterGCN in Keras
-            methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
+            A :class:`ClusterNodeSequence` object to use with :class:`ClusterGCN` in Keras
+            methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`.
 
         """
         if targets is not None:
@@ -194,9 +196,9 @@ class ClusterNodeSequence(Sequence):
     A Keras-compatible data generator for node inference using ClusterGCN model.
     Use this class with the Keras methods :meth:`keras.Model.fit`,
         :meth:`keras.Model.evaluate`, and
-        :meth:`keras.Model.predict`,
+        :meth:`keras.Model.predict`.
 
-    This class should be created using the `.flow(...)` method of
+    This class should be created using the :meth:`flow` method of
     :class:`ClusterNodeGenerator`.
 
     Args:

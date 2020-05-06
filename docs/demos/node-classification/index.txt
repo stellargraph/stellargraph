@@ -1,4 +1,4 @@
-Node classification using StellarGraph
+Node classification
 ======================================
 
 `StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing node classification on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
@@ -23,7 +23,7 @@ This table lists all node classification demos, including the algorithms trained
      - Edge weights
      - Inductive
      - Node embeddings
-   * - :doc:`GCN <gcn/gcn-cora-node-classification-example>`
+   * - :doc:`GCN <gcn-node-classification>`
      - GCN
      - yes
      -
@@ -31,7 +31,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`Cluster-GCN <cluster-gcn/cluster-gcn-node-classification>`
+   * - :doc:`Cluster-GCN <cluster-gcn-node-classification>`
      - Cluster-GCN
      - yes
      -
@@ -39,7 +39,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`RGCN <rgcn/rgcn-aifb-node-classification-example>`
+   * - :doc:`RGCN <rgcn-node-classification>`
      - RGCN
      - yes
      - yes, multiple edge types
@@ -47,7 +47,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`GAT <gat/gat-cora-node-classification-example>`
+   * - :doc:`GAT <gat-node-classification>`
      - GAT
      - yes
      -
@@ -55,7 +55,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`SGC <sgc/sgc-node-classification-example>`
+   * - :doc:`SGC <sgc-node-classification>`
      - SGC
      - yes
      -
@@ -63,7 +63,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`PPNP & APPNP <ppnp/ppnp-cora-node-classification-example>`
+   * - :doc:`PPNP & APPNP <ppnp-node-classification>`
      - PPNP, APPNP
      - yes
      -
@@ -71,7 +71,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      -
-   * - :doc:`Attri2Vec <attri2vec/attri2vec-citeseer-node-classification-example>`
+   * - :doc:`Attri2Vec <attri2vec-node-classification>`
      - Attri2Vec
      - yes
      -
@@ -79,7 +79,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`GraphSAGE on Cora <graphsage/graphsage-cora-node-classification-example>`
+   * - :doc:`GraphSAGE on Cora <graphsage-node-classification>`
      - GraphSAGE
      - yes
      -
@@ -87,7 +87,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`Inductive GraphSAGE <graphsage/graphsage-pubmed-inductive-node-classification-example>`
+   * - :doc:`Inductive GraphSAGE <graphsage-inductive-node-classification>`
      - GraphSAGE
      - yes
      -
@@ -95,7 +95,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      - yes
      - yes
-   * - :doc:`Directed GraphSAGE <graphsage/directed-graphsage-on-cora-example>`
+   * - :doc:`Directed GraphSAGE <directed-graphsage-node-classification>`
      - GraphSAGE
      - yes
      -
@@ -103,15 +103,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`HinSAGE <hinsage/index>`
-     - HinSAGE
-     - yes
-     - yes
-     -
-     -
-     -
-     -
-   * - :doc:`Node2Vec <node2vec/stellargraph-node2vec-node-classification>`
+   * - :doc:`Node2Vec <node2vec-node-classification>`
      - Node2Vec
      -
      -
@@ -119,7 +111,7 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`Weighted Node2Vec <node2vec/stellargraph-node2vec-weighted-random-walks>`
+   * - :doc:`Weighted Node2Vec <node2vec-weighted-node-classification>`
      - Node2Vec
      -
      -
@@ -138,5 +130,4 @@ Table of contents
     :titlesonly:
     :glob:
 
-    */index
     ./*

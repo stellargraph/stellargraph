@@ -104,7 +104,7 @@ def test_stateful():
         generator=generator, activations=activations, layer_sizes=layer_sizes
     )
 
-    train_gen = generator.flow(graph_ilocs=train_graphs, targets=targets)
+    train_gen = generator.flow(graphs=train_graphs, targets=targets)
 
     model_1 = tf.keras.Model(*gcn_graph_model.in_out_tensors())
     model_2 = tf.keras.Model(*gcn_graph_model.in_out_tensors())
@@ -165,7 +165,7 @@ def test_pooling(pooling):
             return (shift + array).sum(axis=0)
 
     train_graphs = [0, 1, 2]
-    train_gen = generator.flow(graph_ilocs=train_graphs, batch_size=2, shuffle=False)
+    train_gen = generator.flow(graphs=train_graphs, batch_size=2, shuffle=False)
     model = tf.keras.Model(*gcn_graph_model.in_out_tensors())
 
     predictions = model.predict(train_gen)
@@ -189,7 +189,7 @@ def test_pool_all_layers():
     )
 
     train_graphs = [0, 1, 2]
-    train_gen = generator.flow(graph_ilocs=train_graphs, batch_size=2)
+    train_gen = generator.flow(graphs=train_graphs, batch_size=2)
     model = tf.keras.Model(*gcn_graph_model.in_out_tensors())
 
     predictions = model.predict(train_gen)

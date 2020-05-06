@@ -33,14 +33,14 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td>see T-GCN</td>
     <td>yes</td>
-    <td><a href='node-classification/gcn/gcn-cora-node-classification-example.ipynb'>demo</a></td>
-    <td><a href='link-prediction/gcn/cora-gcn-links-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/gcn-node-classification.ipynb'>demo</a></td>
+    <td><a href='link-prediction/gcn-link-prediction.ipynb'>demo</a></td>
     <td>
       <span title='UnsupervisedSampler'>US</span>
-      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
     <td>see Cluster-GCN</td>
-    <td><a href='graph-classification/supervised-graph-classification.ipynb'>demo</a></td>
+    <td><a href='graph-classification/gcn-supervised-graph-classification.ipynb'>demo</a></td>
   </tr>
   <tr>
     <td>Cluster-GCN</td>
@@ -49,7 +49,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/cluster-gcn/cluster-gcn-node-classification.ipynb'>demo</a></td>
+    <td><a href='node-classification/cluster-gcn-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
     <td>yes</td>
@@ -62,7 +62,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/rgcn-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -75,7 +75,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td>node features</td>
     <td>time series, sequence</td>
-    <td><a href='time-series/gcn-lstm-LA.ipynb'>demo</a></td>
+    <td><a href='time-series/gcn-lstm-time-series.ipynb'>demo</a></td>
     <td></td>
     <td></td>
     <td></td>
@@ -88,11 +88,11 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/gat/gat-cora-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/gat-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
     <td>
       <span title='UnsupervisedSampler'>US</span>
-      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
     <td></td>
     <td></td>
@@ -104,7 +104,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/sgc/sgc-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/sgc-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -117,7 +117,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/ppnp/ppnp-cora-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/ppnp-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
     <td>
       <span title='UnsupervisedSampler'>US</span>
@@ -133,11 +133,11 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/ppnp/ppnp-cora-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/ppnp-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
     <td>
       <span title='UnsupervisedSampler'>US</span>
-      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
     <td></td>
     <td></td>
@@ -151,7 +151,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><a href='embeddings/graphwave-barbell.ipynb'>demo</a></td>
+    <td><a href='embeddings/graphwave-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
@@ -162,26 +162,26 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/attri2vec/attri2vec-citeseer-node-classification-example.ipynb'>demo</a></td>
-    <td><a href='link-prediction/attri2vec/stellargraph-attri2vec-DBLP.ipynb'>demo</a></td>
-    <td><a href='embeddings/stellargraph-attri2vec-citeseer.ipynb'>demo</a></td>
+    <td><a href='node-classification/attri2vec-node-classification.ipynb'>demo</a></td>
+    <td><a href='link-prediction/attri2vec-link-prediction.ipynb'>demo</a></td>
+    <td><a href='embeddings/attri2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
   <tr>
     <td>GraphSAGE</td>
     <td>see HinSAGE</td>
-    <td><a href='node-classification/graphsage/directed-graphsage-on-cora-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/directed-graphsage-node-classification.ipynb'>demo</a></td>
     <td></td>
     <td></td>
     <td>yes</td>
-    <td><a href='node-classification/graphsage/graphsage-cora-node-classification-example.ipynb'>demo</a></td>
-    <td><a href='link-prediction/graphsage/cora-links-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/graphsage-node-classification.ipynb'>demo</a></td>
+    <td><a href='link-prediction/graphsage-link-prediction.ipynb'>demo</a></td>
     <td>
-      <span title='UnsupervisedSampler'><a href='embeddings/embeddings-unsupervised-graphsage-cora.ipynb'>US</a></span>
-      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span>
+      <span title='UnsupervisedSampler'><a href='embeddings/graphsage-unsupervised-sampler-embeddings.ipynb'>US</a></span>
+      <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td><a href='node-classification/graphsage/graphsage-pubmed-inductive-node-classification-example.ipynb'>demo</a></td>
+    <td><a href='node-classification/graphsage-inductive-node-classification.ipynb'>demo</a></td>
     <td></td>
   </tr>
   <tr>
@@ -192,8 +192,8 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td>yes</td>
     <td>yes</td>
-    <td><a href='link-prediction/hinsage/movielens-recommender.ipynb'>demo</a></td>
-    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-cora.ipynb'>DGI</a></span></td>
+    <td><a href='link-prediction/hinsage-link-prediction.ipynb'>demo</a></td>
+    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span></td>
     <td>yes</td>
     <td></td>
   </tr>
@@ -201,12 +201,12 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>Node2Vec</td>
     <td></td>
     <td></td>
-    <td><a href='node-classification/node2vec/stellargraph-node2vec-weighted-random-walks.ipynb'>demo</a></td>
+    <td><a href='node-classification/node2vec-weighted-node-classification.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='node-classification/node2vec/stellargraph-node2vec-node-classification.ipynb'>via unsup.</a></span></td>
-    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/cora-lp-demo.ipynb'>via unsup.</a></span></td>
-    <td><a href='embeddings/stellargraph-node2vec.ipynb'>demo</a></td>
+    <td><span title='via embedding vectors'><a href='node-classification/node2vec-node-classification.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/node2vec-link-prediction.ipynb'>via unsup.</a></span></td>
+    <td><a href='embeddings/node2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
@@ -219,7 +219,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><a href='embeddings/stellargraph-metapath2vec.ipynb'>demo</a></td>
+    <td><a href='embeddings/metapath2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
@@ -231,7 +231,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>yes</td>
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><span title='via embedding vectors'><a href='link-prediction/random-walks/ctdne-link-prediction.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/ctdne-link-prediction.ipynb'>via unsup.</a></span></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -243,9 +243,9 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-cora-demo.ipynb'>via unsup.</a></span></td>
+    <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-embeddings.ipynb'>via unsup.</a></span></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><a href='embeddings/watch-your-step-cora-demo.ipynb'>demo</a></td>
+    <td><a href='embeddings/watch-your-step-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
   </tr>
@@ -257,7 +257,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><a href='link-prediction/knowledge-graphs/complex.ipynb'>demo</a></td>
+    <td><a href='link-prediction/complex-link-prediction.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
     <td></td>
@@ -270,7 +270,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><a href='link-prediction/knowledge-graphs/distmult.ipynb'>demo</a></td>
+    <td><a href='link-prediction/distmult-link-prediction.ipynb'>demo</a></td>
     <td>yes</td>
     <td></td>
     <td></td>
