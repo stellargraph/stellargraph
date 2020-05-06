@@ -34,7 +34,7 @@ The sphinx build had warnings and/or errors. These may mean that the documentati
 $output
 ~~~
 
-([View all output](#$BUILDKITE_JOB_ID))
+[View all output](#$BUILDKITE_JOB_ID)
 EOF
   exit 1
 fi
