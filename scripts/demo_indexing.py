@@ -512,7 +512,7 @@ ALGORITHMS = [
 
 FILES = [
     # a RST comment is a directive with an unknown type, like an empty string
-    Rst("docs/demos/index.txt", "\n..\n   DEMO TABLE MARKER\n"),
+    Rst("docs/demos/index.rst", "\n..\n   DEMO TABLE MARKER\n"),
     Html("demos/README.md", "\n<!-- DEMO TABLE MARKER -->\n"),
 ]
 
