@@ -39,3 +39,4 @@ from .knowledge_graph import *
 from .graph_classification import *
 from .deep_graph_infomax import *
 from .sort_pooling import *
+from .gcn_lstm import *

@@ -27,8 +27,7 @@ class RelationalGraphConvolution(Layer):
         Relational Graph Convolution (RGCN) Keras layer.
 
         Original paper: Modeling Relational Data with Graph Convolutional Networks.
-        Thomas N. Kipf, Michael Schlichtkrull (2017).
-            https://arxiv.org/pdf/1703.06103.pdf
+        Thomas N. Kipf, Michael Schlichtkrull (2017). https://arxiv.org/pdf/1703.06103.pdf
 
         Notes:
           - The inputs are tensors with a batch dimension of 1:
@@ -335,9 +334,7 @@ class RGCN:
     Note that currently the RGCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`RelationalFullBatchNodeGenerator` will default to sparse.
 
-    For more details, please see the RGCN demo notebook:
-
-    demos/node-classification/rgcn/rgcn-aifb-node-classification-example.ipynb
+    For more details, please see `the RGCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \

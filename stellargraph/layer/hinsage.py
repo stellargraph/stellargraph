@@ -275,8 +275,7 @@ class HinSAGE:
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
-    For more details, please see the HinSAGE demo notebooks:
-    demos/node-classification/hinsage/yelp-example.py
+    For more details, please see `the HinSAGE demo notebooks <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer

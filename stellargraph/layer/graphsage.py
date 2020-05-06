@@ -325,7 +325,7 @@ class MeanAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            [tf.Tensor]: A tensor aggregation of the input nodes features.
+            tf.Tensor: A tensor aggregation of the input nodes features.
         """
         # The first group is assumed to be the self-tensor and we do not aggregate over it
         if group_idx == 0:
@@ -413,7 +413,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            [tf.Tensor]: A tensor aggregation of the input nodes features.
+            tf.Tensor: A tensor aggregation of the input nodes features.
         """
         if group_idx == 0:
             # Do not aggregate features for head nodes
@@ -757,8 +757,8 @@ class GraphSAGE:
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
-    For more details, please see the GraphSAGE demo notebooks:
-    demos/node-classification/graphsage/graphsage-cora-node-classification-example.ipynb
+    For more details, please see `the GraphSAGE demo notebooks
+    <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`_.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.

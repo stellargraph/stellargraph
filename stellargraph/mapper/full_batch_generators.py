@@ -47,6 +47,7 @@ from . import (
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable
 from ..core.utils import GCN_Aadj_feats_op, PPNP_Aadj_feats_op
+from ..core.validation import comma_sep
 
 
 class FullBatchGenerator(Generator):
@@ -81,24 +82,14 @@ class FullBatchGenerator(Generator):
         G.check_graph_for_ml()
 
         # Check that there is only a single node type for GAT or GCN
-        node_types = list(G.node_types)
-        if len(node_types) > 1:
-            raise TypeError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        node_type = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes()
-        self.Aadj = G.to_adjacency_matrix(self.node_list)
-
-        # Function to map node IDs to indices for quicker node index lookups
-        # TODO: Move this to the graph class
-        node_index_dict = dict(zip(self.node_list, range(len(self.node_list))))
-        self._node_lookup = np.vectorize(node_index_dict.get, otypes=[np.int64])
+        self.Aadj = G.to_adjacency_matrix()
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
@@ -114,7 +105,7 @@ class FullBatchGenerator(Generator):
             self.use_sparse = sparse
 
         # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        self.features = G.node_features(node_type=node_type)
 
         if transform is not None:
             if callable(transform):
@@ -137,8 +128,8 @@ class FullBatchGenerator(Generator):
         elif self.method in ["ppnp"]:
             if self.use_sparse:
                 raise ValueError(
-                    "use_sparse=true' is incompatible with 'ppnp'."
-                    "Set 'use_sparse=True' or consider using the APPNP model instead."
+                    "sparse: method='ppnp' requires 'sparse=False', found 'sparse=True' "
+                    "(consider using the APPNP model for sparse support)"
                 )
             self.features, self.Aadj = PPNP_Aadj_feats_op(
                 features=self.features,
@@ -166,8 +157,8 @@ class FullBatchGenerator(Generator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -184,9 +175,13 @@ class FullBatchGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        node_indices = self._node_lookup(node_ids)
-
+        # find the indices of the nodes, handling both multiplicity 1 [node, node, ...] and 2
+        # [(source, target), ...]
+        node_ids = np.asarray(node_ids)
+        flat_node_ids = node_ids.reshape(-1)
+        flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
+        # back to the original shape
+        node_indices = flat_node_indices.reshape(node_ids.shape)
         if self.use_sparse:
             return SparseFullBatchSequence(
                 self.features, self.Aadj, targets, node_indices
@@ -199,9 +194,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     """
     A data generator for use with full-batch models on homogeneous graphs,
     e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
@@ -215,18 +208,18 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     'method' option should be specified with the correct pre-processing for
     each algorithm. The options are as follows:
 
-    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+    *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
         to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
         of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
-    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
+    *   ``method='ppnp'``: Calculates the personalized page rank matrix of Eq. 2 in [4].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
     [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
-    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_.
     [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
 
     Example::
@@ -241,10 +234,10 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see the `GCN, GAT, PPNP/APPNP and SGC demos <https://stellargraph.readthedocs.io/en/stable/demos/index.html>`_.
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
             'sgc', 'self_loops', or 'none'.
@@ -268,8 +261,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         Args:
             node_ids: an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -287,9 +280,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     """
     A data generator for use with full-batch models on homogeneous graphs,
     e.g., GCN, GAT, SGC.
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
     of node IDs and (optionally) targets.
@@ -303,18 +294,18 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     'method' option should be specified with the correct pre-processing for
     each algorithm. The options are as follows:
 
-    *   ``method='gcn'`` Normalizes the adjacency matrix for the GCN algorithm.
+    *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
         This implements the linearized convolution of Eq. 8 in [1].
     *   ``method='sgc'``: This replicates the k-th order smoothed adjacency matrix
         to implement the Simplified Graph Convolutions of Eq. 8 in [2].
     *   ``method='self_loops'`` or ``method='gat'``: Simply sets the diagonal elements
         of the adjacency matrix to one, effectively adding self-loops to the graph. This is
         used by the GAT algorithm of [3].
-    *   ``method='ppnp'`` Calculates the personalized page rank matrix of Eq 2 in [4].
+    *   ``method='ppnp'``: Calculates the personalized page rank matrix of Eq. 2 in [4].
 
     [1] `Kipf and Welling, 2017 <https://arxiv.org/abs/1609.02907>`_.
     [2] `Wu et al. 2019 <https://arxiv.org/abs/1902.07153>`_.
-    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_
+    [3] `Veličković et al., 2018 <https://arxiv.org/abs/1710.10903>`_.
     [4] `Klicpera et al., 2018 <https://arxiv.org/abs/1810.05997>`_.
 
     Example::
@@ -329,10 +320,10 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the GCN, GAT, PPNP/APPNP and SGC demos: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see the `GCN, GAT, PPNP/APPNP and SGC demos <https://stellargraph.readthedocs.io/en/stable/demos/index.html>`_.
 
     Args:
-        G (StellarGraphBase): a machine-learning StellarGraph-type graph
+        G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
             'sgc', 'self_loops', or 'none'.
@@ -356,8 +347,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         Args:
             link_ids: an iterable of link ids specified as tuples of node ids
                 or an array of shape (N_links, 2) specifying the links.
-            targets: a 1D or 2D array of numeric node targets with shape `(len(node_ids)`
-                or (len(node_ids), target_size)`
+            targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
+                or ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -372,9 +363,7 @@ class RelationalFullBatchNodeGenerator(Generator):
     """
     A data generator for use with full-batch models on relational graphs e.g. RGCN.
 
-    The supplied graph G should be a StellarGraph or StellarDiGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph or StellarDiGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -421,37 +410,22 @@ class RelationalFullBatchNodeGenerator(Generator):
         G.check_graph_for_ml()
 
         # extract node, feature, and edge type info from G
-        self.node_list = list(G.nodes())
+        node_types = list(G.node_types)
+        if len(node_types) != 1:
+            raise ValueError(
+                f"G: expected one node type, found {comma_sep(sorted(node_types))}",
+            )
 
-        self.features = G.node_features(self.node_list)
-
-        edge_types = sorted(set(e[-1] for e in G.edges(include_edge_type=True)))
-        self.node_index = dict(zip(self.node_list, range(len(self.node_list))))
+        self.features = G.node_features(node_type=node_types[0])
 
         # create a list of adjacency matrices - one adj matrix for each edge type
         # an adjacency matrix is created for each edge type from all edges of that type
         self.As = []
 
-        for edge_type in edge_types:
-
-            col_index = [
-                self.node_index[n1]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            row_index = [
-                self.node_index[n2]
-                for n1, n2, etype in G.edges(include_edge_type=True)
-                if etype == edge_type
-            ]
-            data = np.ones(len(col_index), np.float64)
-
+        for edge_type in G.edge_types:
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
-            A = sps.coo_matrix(
-                (data, (row_index, col_index)),
-                shape=(len(self.node_list), len(self.node_list)),
-            )
+            A = G.to_adjacency_matrix(edge_type=edge_type).transpose()
 
             if transform is None:
                 # normalize here and replace zero row sums with 1
@@ -467,9 +441,6 @@ class RelationalFullBatchNodeGenerator(Generator):
             A = A.tocoo()
             self.As.append(A)
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
-
     def num_batch_dims(self):
         return 2
 
@@ -481,7 +452,7 @@ class RelationalFullBatchNodeGenerator(Generator):
         Args:
             node_ids: and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets: a 2D array of numeric node targets with shape `(len(node_ids), target_size)`
+            targets: a 2D array of numeric node targets with shape ``(len(node_ids), target_size)``
 
         Returns:
             A NodeSequence object to use with RGCN models
@@ -498,9 +469,7 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        # The list of indices of the target nodes in self.node_list
-        # use dictionary for faster index look-up time
-        node_indices = np.array([self.node_index[n] for n in node_ids])
+        node_indices = self.graph.node_ids_to_ilocs(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices

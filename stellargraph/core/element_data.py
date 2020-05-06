@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 
-from ..globalvar import SOURCE, TARGET, WEIGHT
+from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .validation import require_dataframe_has_columns, comma_sep
 
 
@@ -101,11 +101,11 @@ class ExternalIdIndex:
             return internal_ids.astype(self._dtype)
         return internal_ids
 
-    def from_iloc(self, internal_ids) -> pd.Index:
+    def from_iloc(self, internal_ids) -> np.ndarray:
         """
         Convert integer locations to their corresponding external ID.
         """
-        return self._index[internal_ids]
+        return self._index.to_numpy()[internal_ids]
 
 
 class ElementData:
@@ -119,59 +119,52 @@ class ElementData:
     than indexing pandas dataframes, series or indices.
 
     Args:
-        shared (dict of type name to pandas DataFrame): information for the elements of each type
+        shared (pandas DataFrame): information for each element
+        type_starts (list of tuple of type name, int): the starting iloc of the elements of each type within ``shared``
     """
 
     # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
     # overridden by subclasses as appropriate)
     _SHARED_REQUIRED_COLUMNS = []
 
-    def __init__(self, shared):
-        if not isinstance(shared, dict):
-            raise TypeError(f"shared: expected dict, found {type(shared).__name__}")
-
-        for key, value in shared.items():
-            if not isinstance(value, pd.DataFrame):
-                raise TypeError(
-                    f"shared[{key!r}]: expected pandas DataFrame', found {type(value).__name__}"
-                )
-
-            require_dataframe_has_columns(
-                f"features[{key!r}]", value, self._SHARED_REQUIRED_COLUMNS
+    def __init__(self, shared, type_starts):
+        if not isinstance(shared, pd.DataFrame):
+            raise TypeError(
+                f"shared: expected pandas DataFrame, found {type(shared).__name__}"
             )
 
-        type_element_ilocs = {}
-        rows_so_far = 0
-        type_dfs = []
+        require_dataframe_has_columns("shared", shared, self._SHARED_REQUIRED_COLUMNS)
 
-        all_types = sorted(shared.keys())
-        type_sizes = []
+        if not isinstance(type_starts, list):
+            raise TypeError(
+                f"type_starts: expected list, found {type(type_starts).__name__}"
+            )
 
-        for type_name in all_types:
-            type_data = shared[type_name]
-            size = len(type_data)
+        type_ranges = {}
+        type_stops = type_starts[1:] + [(None, len(shared))]
+        consecutive_types = zip(type_starts, type_stops)
+        for idx, ((type_name, start), (_, stop)) in enumerate(consecutive_types):
+            if idx == 0 and start != 0:
+                raise ValueError(
+                    f"type_starts: expected first type ({type_name!r}) to start at index 0, found start {start}"
+                )
+            if start > stop:
+                raise TypeError(
+                    f"type_starts (for {type_name!r}): expected valid type range, found start ({start}) after stop ({stop})"
+                )
+            type_ranges[type_name] = range(start, stop)
 
-            type_element_ilocs[type_name] = range(rows_so_far, rows_so_far + size)
-            rows_so_far += size
-
-            type_sizes.append(size)
-            type_dfs.append(type_data)
-
-        if type_dfs:
-            all_columns = pd.concat(type_dfs)
-        else:
-            all_columns = pd.DataFrame(columns=self._SHARED_REQUIRED_COLUMNS)
-
-        self._id_index = ExternalIdIndex(all_columns.index)
-        self._columns = {
-            name: data.to_numpy() for name, data in all_columns.iteritems()
-        }
+        self._id_index = ExternalIdIndex(shared.index)
+        self._columns = {name: data.to_numpy() for name, data in shared.iteritems()}
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
+        all_types = [type_name for type_name, _ in type_starts]
+        type_sizes = [len(type_ranges[type_name]) for type_name in all_types]
+
         self._type_index = ExternalIdIndex(all_types)
         self._type_column = self._type_index.to_iloc(all_types).repeat(type_sizes)
-        self._type_element_ilocs = type_element_ilocs
+        self._type_element_ilocs = type_ranges
 
     def __len__(self) -> int:
         return len(self._id_index)
@@ -230,12 +223,13 @@ class ElementData:
 class NodeData(ElementData):
     """
     Args:
-        shared (dict of type name to pandas DataFrame): information for the nodes of each type
+        shared (pandas DataFrame): information for the nodes
+        type_starts (list of tuple of type name, int): the starting iloc of the nodes of each type within ``shared``
         features (dict of type name to numpy array): a 2D numpy or scipy array of feature vectors for the nodes of each type
     """
 
-    def __init__(self, shared, features):
-        super().__init__(shared)
+    def __init__(self, shared, type_starts, features):
+        super().__init__(shared, type_starts)
         if not isinstance(features, dict):
             raise TypeError(f"features: expected dict, found {type(features).__name__}")
 
@@ -258,6 +252,15 @@ class NodeData(ElementData):
                 )
 
         self._features = features
+
+    def features_of_type(self, type_name) -> np.ndarray:
+        """
+        Returns all features for a given type.
+
+        Args:
+            type_name (hashable): the name of the type
+        """
+        return self._features[type_name]
 
     def features(self, type_name, id_ilocs) -> np.ndarray:
         """
@@ -300,76 +303,69 @@ def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
-class FlatAdjacencyList:
-
-    def __init__(self, adj_dict):
-
-        self.index = pd.Index(list(adj_dict.keys()))
-        self.splits = np.cumsum([0] + list(map(len, adj_dict.values())))
-
-        try:
-            self.flat = np.concatenate(list(adj_dict.values()))
-        except ValueError:
-            self.flat = np.array([], dtype=np.uint8)
-
-        self.empty = np.array([], dtype=np.uint8)
-
-    def __getitem__(self, item):
-        idx = self.index.get_indexer([item])[0]
-        if idx == -1:
-            return self.empty
-        start, stop = self.splits[idx], self.splits[idx + 1]
-        return self.flat[start:stop]
-
-    def keys(self):
-        return self.index
-
-
 class EdgeData(ElementData):
     """
     Args:
-        shared (dict of type name to pandas DataFrame): information for the edges of each type
+        shared (pandas DataFrame): information for the edges
+        type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared):
-        super().__init__(shared)
+    def __init__(self, shared, type_starts):
+        super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
         self.sources = self._column(SOURCE)
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
 
-        # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = {}
-        out_dict = {}
-        undirected = {}
-
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            in_dict.setdefault(tgt, []).append(i)
-            out_dict.setdefault(src, []).append(i)
-
-            undirected.setdefault(tgt, []).append(i)
-            if src != tgt:
-                undirected.setdefault(src, []).append(i)
-
-        dtype = np.min_scalar_type(len(self.sources))
-        self._edges_in_dict = FlatAdjacencyList(_numpyise(in_dict, dtype=dtype))
-        self._edges_out_dict = FlatAdjacencyList(_numpyise(out_dict, dtype=dtype))
-        self._edges_dict = FlatAdjacencyList(_numpyise(undirected, dtype=dtype))
+        # These are lazily initialized, to only pay the (construction) time and memory cost when
+        # actually using them
+        self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
+    def _init_directed_adj_lists(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        in_dict = {}
+        out_dict = {}
+
+        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
+            in_dict.setdefault(tgt, []).append(i)
+            out_dict.setdefault(src, []).append(i)
+
+        dtype = np.min_scalar_type(len(self.sources))
+        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
+        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
+
+    def _init_undirected_adj_lists(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        undirected = {}
+
+        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
+            undirected.setdefault(tgt, []).append(i)
+            if src != tgt:
+                undirected.setdefault(src, []).append(i)
+
+        dtype = np.min_scalar_type(len(self.sources))
+        self._edges_dict = _numpyise(undirected, dtype=dtype)
+
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
+            if self._edges_dict is None:
+                self._init_undirected_adj_lists()
             return self._edges_dict
         if ins:
+            if self._edges_in_dict is None:
+                self._init_directed_adj_lists()
             return self._edges_in_dict
         if outs:
+            if self._edges_out_dict is None:
+                self._init_directed_adj_lists()
             return self._edges_out_dict
 
         raise ValueError(
@@ -389,7 +385,7 @@ class EdgeData(ElementData):
             ``ret`` is the return value, ``ret[i]`` is the degree of the node with iloc ``i``)
         """
         adj = self._adj_lookup(ins=ins, outs=outs)
-        return defaultdict(int, ((key, len(adj[key])) for key in adj.keys()))
+        return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
     def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
         """
@@ -403,4 +399,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs)[node_id]
+        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)

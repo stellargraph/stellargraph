@@ -36,9 +36,7 @@ class ClusterNodeGenerator(Generator):
     """
     A data generator for use with ClusterGCN models on homogeneous graphs, [1].
 
-    The supplied graph G should be a StellarGraph object that is ready for
-    machine learning. Currently the model requires node features to be available for all
-    nodes in the graph.
+    The supplied graph G should be a StellarGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -47,7 +45,7 @@ class ClusterNodeGenerator(Generator):
 
     [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
 
-    For more information, please see the ClusterGCN demo: `<https://github.com/stellargraph/stellargraph/blob/master/demos/>`_
+    For more information, please see `the ClusterGCN demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -116,13 +114,9 @@ class ClusterNodeGenerator(Generator):
         self.node_list = list(G.nodes())
 
         # Check that there is only a single node type
-        if len(G.node_types) > 1:
-            raise ValueError(
-                "{}: node generator requires graph with single node type; "
-                "a graph with multiple node types is passed. Stopping.".format(
-                    type(self).__name__
-                )
-            )
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
 
         if isinstance(clusters, int):
             # We are not given graph clusters.
@@ -158,8 +152,8 @@ class ClusterNodeGenerator(Generator):
         Args:
             node_ids (iterable): an iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
-            targets (2d array, optional): a 2D array of numeric node targets with shape `(len(node_ids),
-                target_size)`
+            targets (2d array, optional): a 2D array of numeric node targets with shape ``(len(node_ids),
+                target_size)``
             name (str, optional): An optional name for the returned generator object.
 
         Returns:

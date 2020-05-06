@@ -32,17 +32,21 @@ def is_real_iterable(x):
     return isinstance(x, collections.abc.Iterable) and not isinstance(x, (str, bytes))
 
 
-def normalize_adj(adj, symmetric=True):
+def normalize_adj(adj, symmetric=True, add_self_loops=False):
     """
     Normalize adjacency matrix.
 
     Args:
         adj: adjacency matrix
         symmetric: True if symmetric normalization or False if left-only normalization
-
+        add_self_loops: True if self loops are to be added before normalization, i.e., use A+I where A is the adjacency
+            matrix and I is a square identity matrix of the same size as A.
     Returns:
         Return a sparse normalized adjacency matrix.
     """
+
+    if add_self_loops:
+        adj = adj + sp.diags(np.ones(adj.shape[0]) - adj.diagonal())
 
     if symmetric:
         d = sp.diags(np.power(np.array(adj.sum(1)), -0.5).flatten(), 0)
@@ -68,6 +72,12 @@ def normalized_laplacian(adj, symmetric=True):
     adj_normalized = normalize_adj(adj, symmetric)
     laplacian = sp.eye(adj.shape[0]) - adj_normalized
     return laplacian
+
+
+def calculate_laplacian(adj):
+    D = np.diag(np.ravel(adj.sum(axis=0)) ** (-0.5))
+    adj = np.dot(D, np.dot(adj, D))
+    return adj
 
 
 def rescale_laplacian(laplacian):

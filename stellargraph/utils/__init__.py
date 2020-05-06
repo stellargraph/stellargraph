@@ -20,3 +20,4 @@ This contains the utility objects used by the StellarGraph library.
 """
 
 from .history import *
+from .version_validation import *
