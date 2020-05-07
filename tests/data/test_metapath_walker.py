@@ -317,11 +317,11 @@ class TestMetaPathWalk(object):
         assert all(np.array_equal(w1, w2) for w1, w2 in zip(run_1, run_2))
 
     def test_benchmark_uniformrandommetapathwalk(self, benchmark):
-        g = example_graph_random(n_nodes=50, n_edges=500, node_types=2)
+        g = example_graph_random(n_nodes=50, n_edges=2000, node_types=4)
         mrw = UniformRandomMetaPathWalk(g)
 
         # this should be made larger to be more realistic, when it is fast enough
-        nodes = np.arange(0, 5)
+        nodes = np.arange(0, 10)
         n = 5
         length = 5
         metapaths = [
