@@ -35,9 +35,8 @@ class ExternalIdIndex:
 
     def __init__(self, ids):
         self._index = pd.Index(ids)
-        self._dtype = np.min_scalar_type(
-            len(self._index) + 1
-        )  # reserve 2 ^ (n-bits) - 1 for sentinel
+        # reserve 2 ^ (n-bits) - 1 for sentinel
+        self._dtype = np.min_scalar_type(len(self._index)) 
 
         if not self._index.is_unique:
             # had some duplicated IDs, which is an error
