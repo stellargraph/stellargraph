@@ -21,7 +21,7 @@ from stellargraph.core.element_data import ExternalIdIndex
 
 @pytest.mark.parametrize(
     "count,expected_missing",
-    [(0, 0xFF), (254, 0xFF), (255, 0xFFFF), (65534, 0xFFFF), (65535, 0xFFFF_FFFF)],
+    [(0, 0xFF), (255, 0xFF), (256, 0xFFFF), (65535, 0xFFFF), (65536, 0xFFFF_FFFF)],
 )
 def test_external_id_index_to_iloc(count, expected_missing):
     values = [f"id{x}" for x in range(count)]
