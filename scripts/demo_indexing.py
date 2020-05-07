@@ -467,6 +467,11 @@ ALGORITHMS = [
         rl=T(link="embeddings/node2vec-embeddings"),
     ),
     Algorithm(
+        "Keras-Node2Vec",
+        nc=via_rl(link="node-classification/keras-node2vec-node-classification"),
+        rl=T(link="embeddings/keras-node2vec-embeddings"),
+    ),
+    Algorithm(
         "Metapath2Vec",
         heterogeneous=True,
         nc=via_rl(),

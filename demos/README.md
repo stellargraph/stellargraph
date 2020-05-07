@@ -211,6 +211,19 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
   </tr>
   <tr>
+    <td>Keras-Node2Vec</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='via embedding vectors'><a href='node-classification/keras-node2vec-node-classification.ipynb'>via unsup.</a></span></td>
+    <td></td>
+    <td><a href='embeddings/keras-node2vec-embeddings.ipynb'>demo</a></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
     <td>Metapath2Vec</td>
     <td>yes</td>
     <td></td>
