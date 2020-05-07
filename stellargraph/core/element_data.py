@@ -399,15 +399,15 @@ class EdgeData(ElementData):
 
         if ins and outs:
             for i, (src, tgt, src_type, tgt_type) in edge_iter:
-                index.setdefault(tgt, {}).setdefault(src_type, []).append(i)
+                index.setdefault(src_type, {}).setdefault(tgt, []).append(i)
                 if src != tgt:
-                    index.setdefault(src, {}).setdefault(tgt_type, []).append(i)
+                    index.setdefault(tgt_type, {}).setdefault(src, []).append(i)
         elif ins:
             for i, (src, tgt, src_type, tgt_type) in edge_iter:
-                index.setdefault(tgt, {}).setdefault(src_type, []).append(i)
+                index.setdefault(src_type, {}).setdefault(tgt, []).append(i)
         elif outs:
             for i, (src, tgt, src_type, tgt_type) in edge_iter:
-                index.setdefault(src, {}).setdefault(tgt_type, []).append(i)
+                index.setdefault(tgt_type, {}).setdefault(src, []).append(i)
         else:
             raise ValueError(
                 "expected at least one of 'ins' or 'outs' to be True, found neither"
@@ -445,8 +445,8 @@ class EdgeData(ElementData):
         if other_node_type is not None:
             return (
                 self._adj_list_by_other_node_type.lookup(ins=ins, outs=outs)
-                .get(node_iloc, {})
-                .get(other_node_type, self._empty_ilocs)
+                .get(other_node_type, {})
+                .get(node_iloc, self._empty_ilocs)
             )
         else:
             return self._adj_list.lookup(ins=ins, outs=outs).get(
