@@ -362,12 +362,15 @@ class EdgeData(ElementData):
 
     def _init_directed_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        if len(self.targets) > 0:
-            # this could be less than the true number of nodes if the node with the largest iloc is isolated
-            # but this doesn't cause issues with the code below
-            number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-        else:
-            number_of_nodes = 0
+        if len(self.targets) == 0:
+            empty_array = np.array([], dtype=np.uint8)
+            self._edges_in_dict = FlatAdjacencyList(empty_array, empty_array)
+            self._edges_out_dict = FlatAdjacencyList(empty_array, empty_array)
+            return
+
+        # this could be less than the true number of nodes if the node with the largest iloc is isolated
+        # but this doesn't cause issues with the code below
+        number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
         dtype = np.min_scalar_type(len(self.sources))
 
         flat_array = np.argsort(self.targets)
@@ -384,11 +387,13 @@ class EdgeData(ElementData):
 
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        if len(self.targets) > 0:
-            number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-        else:
-            number_of_nodes = 0
+        if len(self.targets) == 0:
+            empty_array = np.array([], dtype=np.uint8)
+            self._edges_in_dict = FlatAdjacencyList(empty_array, empty_array)
+            self._edges_out_dict = FlatAdjacencyList(empty_array, empty_array)
+            return
 
+        number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
         undirected = dict((node, []) for node in range(number_of_nodes))
         dtype = np.min_scalar_type(len(self.sources))
 
