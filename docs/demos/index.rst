@@ -308,4 +308,3 @@ Table of contents
     :glob:
 
     */index
-    ./*
