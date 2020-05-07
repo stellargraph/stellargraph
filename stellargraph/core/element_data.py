@@ -35,9 +35,8 @@ class ExternalIdIndex:
 
     def __init__(self, ids):
         self._index = pd.Index(ids)
-        self._dtype = np.min_scalar_type(
-            len(self._index) + 1
-        )  # reserve 2 ^ (n-bits) - 1 for sentinel
+        # reserve 2 ^ (n-bits) - 1 for sentinel
+        self._dtype = np.min_scalar_type(len(self._index)) 
 
         if not self._index.is_unique:
             # had some duplicated IDs, which is an error
@@ -310,7 +309,6 @@ class FlatAdjacencyList:
         self.splits = np.cumsum(np.append(0, neighbor_counts))
         self.max_node_iloc = len(neighbor_counts) - 1
         self.flat = flat_array
-        self.empty = np.array([], dtype=np.uint8)
 
     def __getitem__(self, idx):
         start, stop = self.splits[idx], self.splits[idx + 1]
