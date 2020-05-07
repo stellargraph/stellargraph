@@ -400,13 +400,13 @@ class EdgeData(ElementData):
         sentinel = np.cast[self.sources.dtype](-1)
 
         combined = np.concatenate([self.sources, self.targets])
-        combined[num_edges:][
-            self.sources == self.targets
-        ] = sentinel  # mask out self loops
+        # mask out duplicates of self loops
+        # can't remove because this would invalidate the argsort results
+        combined[num_edges:][self.sources == self.targets] = sentinel
         flat_array = np.argsort(combined)
-        flat_array = flat_array[
-            combined[flat_array] != sentinel
-        ]  # remove masked out self loops
+
+        # remove the sentinels
+        flat_array = flat_array[combined[flat_array] != sentinel]
         node_ilocs, counts = rle(combined[flat_array])
         neighbour_counts = np.zeros(number_of_nodes, dtype=dtype)
         neighbour_counts[node_ilocs] = counts
