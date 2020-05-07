@@ -385,7 +385,7 @@ class EdgeData(ElementData):
         node_ilocs, counts = rle(self.sources[flat_array])
         out_neighbour_counts = np.zeros(number_of_nodes, dtype=dtype)
         out_neighbour_counts[node_ilocs] = counts
-        self._edges_out_dict = FlatAdjacencyList(flat_array, in_neighbour_counts)
+        self._edges_out_dict = FlatAdjacencyList(flat_array, out_neighbour_counts)
 
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
