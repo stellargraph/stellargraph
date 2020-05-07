@@ -209,6 +209,18 @@ Find a demo for an algorithm
      -
      -
    *
+     - Keras-Node2Vec
+     -
+     -
+     -
+     -
+     -
+     - :any:`via embedding vectors <node-classification/keras-node2vec-node-classification>`
+     -
+     - :any:`demo <embeddings/keras-node2vec-embeddings>`
+     -
+     -
+   *
      - Metapath2Vec
      - yes
      -

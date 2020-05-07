@@ -23,6 +23,7 @@ __all__ = [
     "GraphSAGELinkGenerator",
     "HinSAGELinkGenerator",
     "Attri2VecLinkGenerator",
+    "Node2VecLinkGenerator",
     "DirectedGraphSAGELinkGenerator",
 ]
 
@@ -51,7 +52,7 @@ from .base import Generator
 
 
 class BatchedLinkGenerator(Generator):
-    def __init__(self, G, batch_size, schema=None):
+    def __init__(self, G, batch_size, schema=None, use_node_features=True):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -60,9 +61,6 @@ class BatchedLinkGenerator(Generator):
 
         # This is a link generator and requries a model with two root nodes per query
         self.multiplicity = 2
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -77,6 +75,10 @@ class BatchedLinkGenerator(Generator):
 
         # Sampler (if required)
         self.sampler = None
+
+        # Check if the graph has features
+        if use_node_features:
+            G.check_graph_for_ml()
 
     @abc.abstractmethod
     def sample_features(self, head_links, batch_num):
@@ -507,6 +509,52 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         batch_feats = [target_feats, np.array(context_feats)]
 
         return batch_feats
+
+
+class Node2VecLinkGenerator(BatchedLinkGenerator):
+    """
+    A data generator for context node prediction with Node2Vec models.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model does not require node features for
+    nodes in the graph.
+
+    Use the :meth:`.flow` method supplying the nodes and targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Node2VecLinkGenerator(G, 50)
+        data_gen = G_generator.flow(edge_ids, edge_labels)
+
+    Args:
+        G (StellarGraph): A machine-learning ready graph.
+        batch_size (int): Size of batch of links to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        super().__init__(G, batch_size, use_node_features=False)
+
+        self.name = name
+
+    def sample_features(self, head_links, batch_num):
+        """
+        Sample the ids of the target and context nodes.
+        and return these as a list of feature arrays for the Node2Vec algorithm.
+
+        Args:
+            head_links: An iterable of edges to perform sampling for.
+
+        Returns:
+            A list of feaure arrays, with each element being the ids of
+            the sampled target and context node.
+        """
+
+        return [np.array(ids) for ids in zip(*head_links)]
 
 
 class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
