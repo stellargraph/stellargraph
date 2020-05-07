@@ -676,7 +676,9 @@ class SampledBreadthFirstWalk(GraphWalk):
                         continue
 
                     neighbours = (
-                        self.neighbors(cur_node) if cur_node is not None else []
+                        self.graph.neighbor_arrays(cur_node, use_ilocs=True)
+                        if cur_node != -1
+                        else []
                     )
                     if len(neighbours) == 0:
                         # Either node is unconnected or is in directed graph with no out-nodes.
@@ -889,14 +891,14 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             The fixed-length list of neighbouring nodes (or None values
             if the neighbourhood is empty).
         """
-        if node is None:
+        if node == -1:
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [-1] * size
-        neighbours = list(
-            self.graph.in_nodes(node, use_ilocs=True)
-            if idx == 0
-            else self.graph.out_nodes(node, use_ilocs=True)
-        )
+
+        if idx == 0:
+            neighbours = self.graph.in_node_arrays(node, use_ilocs=True)
+        else:
+            neighbours = self.graph.out_node_arrays(node, use_ilocs=True)
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
             return [-1] * size
