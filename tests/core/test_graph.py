@@ -1858,3 +1858,11 @@ def test_unique_node_type():
         ValueError, match="^ABC custom message 'n-0', 'n-1', 'n-2', 'n-3' 123$"
     ):
         many_types.unique_node_type("ABC custom message %(found)s 123")
+
+
+def test_bulk_node_types():
+    sg = example_hin_1(feature_sizes={}, reverse_order=True)
+    node_ilocs = sg.nodes(use_ilocs=True)
+    node_types = sg.node_type(node_ilocs, use_ilocs=True)
+    assert (node_types[:4] == "A").all()
+    assert (node_types[4:] == "B").all()

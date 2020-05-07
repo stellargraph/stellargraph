@@ -47,6 +47,7 @@ from ..data import (
 )
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
+from ..core.validation import comma_sep
 from . import NodeSequence, Generator
 from ..random import SeededPerBatch
 
@@ -137,19 +138,16 @@ class BatchedNodeGenerator(Generator):
         else:
             expected_node_type = None
 
-        # Check all IDs are actually in the graph and are of expected type
-        for n in node_ids:
-            try:
-                node_type = self.graph.node_type(n)
-            except KeyError:
-                raise KeyError(f"Node ID {n} supplied to generator not found in graph")
-
-            if expected_node_type is not None and (node_type != expected_node_type):
-                raise ValueError(
-                    f"Node ID {n} not of expected type {expected_node_type}"
-                )
-
         node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
+        node_types = self.graph.node_type(node_ilocs, use_ilocs=True)
+        invalid = node_ilocs[node_types != expected_node_type]
+
+        if len(invalid) > 0:
+            raise ValueError(
+                f"node_ids: expected all nodes to be of type {expected_node_type}, "
+                f"found some nodes with wrong type: {comma_sep(invalid, stringify=format)}"
+            )
+
         return NodeSequence(
             self.sample_features,
             self.batch_size,
