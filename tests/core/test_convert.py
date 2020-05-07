@@ -31,7 +31,9 @@ _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
 def test_columnar_convert_type_default():
     converter = ColumnarConverter("some_name", "foo", None, {}, {}, False, {})
-    shared, type_starts, features = converter.convert(_EMPTY_DF)
+    ids, columns, type_starts, features = converter.convert(_EMPTY_DF)
+    np.testing.assert_array_equal(ids, [1, 2])
+    assert columns == {}
     assert type_starts == [("foo", 0)]
     assert "foo" in features
 
@@ -42,13 +44,14 @@ def test_columnar_convert_selected_columns():
     converter = ColumnarConverter(
         "some_name", "foo", None, {}, {"before": "after", "same": "same"}, False, {}
     )
-    shared, type_starts, features = converter.convert({"x": df, "y": df})
+    ids, columns, type_starts, features = converter.convert({"x": df, "y": df})
 
+    np.testing.assert_array_equal(ids, [1, 2, 1, 2])
     assert type_starts == [("x", 0), ("y", 2)]
 
-    assert "before" not in shared
-    assert all(shared["after"] == "abc")
-    assert all(shared["same"] == 10)
+    assert "before" not in columns
+    np.testing.assert_array_equal(columns["after"], "abc")
+    np.testing.assert_array_equal(columns["same"], 10)
 
 
 def test_columnar_convert_selected_columns_missing():
@@ -64,13 +67,12 @@ def test_columnar_convert_selected_columns_missing():
 
 def test_columnar_convert_column_default():
     converter = ColumnarConverter(
-        "some_name", "foo", None, {"before": 123}, {}, False, {}
+        "some_name", "foo", None, {"before": 123}, {"before": "before"}, False, {}
     )
-    shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    ids, columns, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
     assert type_starts == [("x", 0), ("y", 2)]
-
-    assert all(shared["before"] == 123)
+    np.testing.assert_array_equal(columns["before"], 123)
 
 
 def test_columnar_convert_column_default_selected_columns():
@@ -78,21 +80,21 @@ def test_columnar_convert_column_default_selected_columns():
     converter = ColumnarConverter(
         "x", "foo", None, {"before": 123}, {"before": "after"}, False, {}
     )
-    shared, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    ids, columns, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
 
     assert type_starts == [("x", 0), ("y", 2)]
 
-    assert "before" not in shared
-    assert all(shared["after"] == 123)
+    assert "before" not in columns
+    np.testing.assert_array_equal(columns["after"], 123)
 
 
 def test_columnar_convert_features():
     converter = ColumnarConverter("some_name", "foo", None, {}, {"x": "x"}, True, {})
     df = _EMPTY_DF.assign(a=[1, 2], b=[100, 200], x=123)
-    shared, type_starts, features = converter.convert(df)
+    ids, columns, type_starts, features = converter.convert(df)
 
     assert type_starts == [("foo", 0)]
-    assert all(shared["x"] == 123)
+    np.testing.assert_array_equal(columns["x"], 123)
     assert np.array_equal(features["foo"], [[1, 100], [2, 200]])
 
 
@@ -130,11 +132,11 @@ def test_columnar_convert_type_column():
         {"type_column": ["c", "a", "a", "c", "b"], "data": [1, 2, 3, 4, 5]},
         index=[1, 10, 100, 1000, 10000],
     )
-    shared, type_starts, features = converter.convert(df)
+    ids, columns, type_starts, features = converter.convert(df)
 
-    assert set(shared.columns) == {"D"}
-    assert list(shared.index) == [10, 100, 10000, 1, 1000]
-    assert list(shared["D"]) == [2, 3, 5, 1, 4]
+    assert columns.keys() == {"D"}
+    np.testing.assert_array_equal(ids, [10, 100, 10000, 1, 1000])
+    np.testing.assert_array_equal(columns["D"], [2, 3, 5, 1, 4])
     assert type_starts == [("a", 0), ("b", 2), ("c", 3)]
     assert features == {"a": None, "b": None, "c": None}
 
@@ -180,14 +182,16 @@ def test_columnar_convert_transform_columns():
         allow_features=False,
     )
 
-    converted, type_starts, _ = converter.convert(dfs)
+    ids, columns, type_starts, _ = converter.convert(dfs)
 
-    assert (converted.iloc[type_starts[0][1] : type_starts[1][1]]["ww"] == 2).all()
-    assert (converted[type_starts[1][1] : type_starts[2][1]]["ww"] == 3).all()
-    assert (converted[type_starts[2][1] :]["ww"] == 4).all()
+    assert columns["ww"][0] == 2
+    assert columns["ww"][1] == 3
+    assert columns["ww"][2] == 4
 
-    assert (converted["ss"] == 0).all()
-    assert (converted["tt"] == 1).all()
+    assert type_starts == [("x", 0), ("y", 1), ("z", 2)]
+
+    np.testing.assert_array_equal(columns["ss"], 0)
+    np.testing.assert_array_equal(columns["tt"], 1)
 
 
 def test_convert_edges_weights():
