@@ -358,8 +358,15 @@ class EdgeData(ElementData):
 
     def _init_directed_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = dict((node, []) for node in np.sort(pd.unique(self.targets)))
-        out_dict = dict((node, []) for node in np.sort(pd.unique(self.sources)))
+        if len(self.targets) > 0:
+            # this could be less than the true number of nodes if the node with the largest iloc is isolated
+            # but this doesn't cause issues with the code below
+            number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
+        else:
+            number_of_nodes = 0
+
+        in_dict = dict((node, []) for node in range(number_of_nodes))
+        out_dict = dict((node, []) for node in range(number_of_nodes))
 
         dtype = np.min_scalar_type(len(self.sources))
 
@@ -381,8 +388,12 @@ class EdgeData(ElementData):
 
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        node_ilocs = np.concatenate([pd.unique(self.targets), pd.unique(self.sources)])
-        undirected = dict((node, []) for node in np.sort(node_ilocs))
+        if len(self.targets) > 0:
+            number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
+        else:
+            number_of_nodes = 0
+
+        undirected = dict((node, []) for node in range(number_of_nodes))
         dtype = np.min_scalar_type(len(self.sources))
 
         for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
