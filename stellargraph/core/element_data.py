@@ -310,7 +310,6 @@ class FlatAdjacencyList:
         self.splits = np.cumsum(np.append(0, neighbor_counts))
         self.max_node_iloc = len(neighbor_counts) - 1
         self.flat = flat_array
-        self.empty = np.array([], dtype=np.uint8)
 
     def __getitem__(self, idx):
         start, stop = self.splits[idx], self.splits[idx + 1]
