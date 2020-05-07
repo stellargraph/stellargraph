@@ -35,7 +35,9 @@ class ExternalIdIndex:
 
     def __init__(self, ids):
         self._index = pd.Index(ids)
-        self._dtype = np.min_scalar_type(len(self._index))
+        self._dtype = np.min_scalar_type(
+            len(self._index) + 1
+        )  # reserve 2 ^ (n-bits) - 1 for sentinel
 
         if not self._index.is_unique:
             # had some duplicated IDs, which is an error
@@ -387,28 +389,28 @@ class EdgeData(ElementData):
 
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        if len(self.targets) == 0:
+        num_edges = len(self.targets)
+        if num_edges == 0:
             empty_array = np.array([], dtype=np.uint8)
-            self._edges_in_dict = FlatAdjacencyList(empty_array, empty_array)
-            self._edges_out_dict = FlatAdjacencyList(empty_array, empty_array)
+            self._edges_dict = FlatAdjacencyList(empty_array, empty_array)
             return
 
         number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-        undirected = dict((node, []) for node in range(number_of_nodes))
-        dtype = np.min_scalar_type(len(self.sources))
+        dtype = np.min_scalar_type(num_edges)
+        sentinel = np.cast[self.sources.dtype](-1)
 
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            undirected[tgt].append(i)
-            if src != tgt:
-                undirected[src].append(i)
-
-        neighbour_counts = np.array([len(x) for x in undirected.values()])
-        try:
-            flat_array = np.concatenate(list(undirected.values())).astype(dtype)
-        except Exception:
-            flat_array = np.array([], dtype=np.uint8)
-        self._edges_dict = FlatAdjacencyList(flat_array, neighbour_counts)
-        undirected.clear()
+        combined = np.concatenate([self.sources, self.targets])
+        combined[num_edges:][
+            self.sources == self.targets
+        ] = sentinel  # mask out self loops
+        flat_array = np.argsort(combined)
+        flat_array = flat_array[
+            combined[flat_array] != sentinel
+        ]  # remove masked out self loops
+        node_ilocs, counts = rle(combined[flat_array])
+        neighbour_counts = np.zeros(number_of_nodes, dtype=dtype)
+        neighbour_counts[node_ilocs] = counts
+        self._edges_dict = FlatAdjacencyList(flat_array % num_edges, neighbour_counts)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
