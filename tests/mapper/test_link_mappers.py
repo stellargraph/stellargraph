@@ -734,9 +734,9 @@ class Test_Attri2VecLinkGenerator:
             e1 = edges[nl[0]]
             e2 = edges[nl[1]]
             assert nf[0][0, 0] == e1[0]
-            assert nf[1][0] == G._get_index_for_nodes([e1[1]])[0]
+            assert nf[1][0] == G.node_ids_to_ilocs([e1[1]])[0]
             assert nf[0][1, 0] == e2[0]
-            assert nf[1][1] == G._get_index_for_nodes([e2[1]])[0]
+            assert nf[1][1] == G.node_ids_to_ilocs([e2[1]])[0]
 
     def test_Attri2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()
@@ -876,10 +876,10 @@ class Test_Node2VecLinkGenerator:
             nf, nl = mapper[batch]
             e1 = edges[nl[0]]
             e2 = edges[nl[1]]
-            assert nf[0][0] == G._get_index_for_nodes([e1[0]])[0]
-            assert nf[1][0] == G._get_index_for_nodes([e1[1]])[0]
-            assert nf[0][1] == G._get_index_for_nodes([e2[0]])[0]
-            assert nf[1][1] == G._get_index_for_nodes([e2[1]])[0]
+            assert nf[0][0] == G.node_ids_to_ilocs([e1[0]])[0]
+            assert nf[1][0] == G.node_ids_to_ilocs([e1[1]])[0]
+            assert nf[0][1] == G.node_ids_to_ilocs([e2[0]])[0]
+            assert nf[1][1] == G.node_ids_to_ilocs([e2[1]])[0]
 
     def test_Node2VecLinkGenerator_not_Stellargraph(self):
         G = nx.Graph()

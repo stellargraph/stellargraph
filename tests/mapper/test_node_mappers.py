@@ -800,9 +800,9 @@ def test_node2vec_nodemapper_2():
     # With no shuffle
     mapper = Node2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
     expected_node_batches = [
-        G._get_index_for_nodes([1, 2]),
-        G._get_index_for_nodes([3, 4]),
-        G._get_index_for_nodes([5]),
+        G.node_ids_to_ilocs([1, 2]),
+        G.node_ids_to_ilocs([3, 4]),
+        G.node_ids_to_ilocs([5]),
     ]
     assert len(mapper) == 3
     for ii in range(len(mapper)):
