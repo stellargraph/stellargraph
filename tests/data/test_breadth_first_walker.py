@@ -42,7 +42,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = g.node_ids_to_ilocs(["0", 1])
+        nodes = ["0", 1]
         n = 1
         n_size = [1]
 
@@ -325,7 +325,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = g.node_ids_to_ilocs(["0"])
+        nodes = ["0"]
         n = 1
         n_size = [0]
 
@@ -368,7 +368,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = g.node_ids_to_ilocs(["0", 2])
+        nodes = ["0", 2]
         n = 1
         n_size = [0]
 
@@ -506,35 +506,34 @@ class TestBreadthFirstWalk(object):
     def test_fixed_random_seed(self):
 
         g = create_test_graph()
-        _conv = g.node_ids_to_ilocs
         bfw = SampledBreadthFirstWalk(g)
 
-        w0 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=42)
-        w1 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=1010)
+        w0 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
+        w1 = bfw.run(nodes=[1], n=1, n_size=[7], seed=1010)
 
         assert len(w0) == len(w1)
         assert w0 != w1
 
-        w0 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=42)
-        w1 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=42)
+        w0 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
+        w1 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-        w0 = bfw.run(nodes=_conv([1]), n=5, n_size=[12], seed=101)
-        w1 = bfw.run(nodes=_conv([1]), n=5, n_size=[12], seed=101)
+        w0 = bfw.run(nodes=[1], n=5, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=[1], n=5, n_size=[12], seed=101)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-        w0 = bfw.run(nodes=_conv([9, "self loner"]), n=1, n_size=[12], seed=101)
-        w1 = bfw.run(nodes=_conv([9, "self loner"]), n=1, n_size=[12], seed=101)
+        w0 = bfw.run(nodes=[9, "self loner"], n=1, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=[9, "self loner"], n=1, n_size=[12], seed=101)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-        w0 = bfw.run(nodes=_conv([1, "self loner", 4]), n=5, n_size=[12], seed=101)
-        w1 = bfw.run(nodes=_conv([1, "self loner", 4]), n=5, n_size=[12], seed=101)
+        w0 = bfw.run(nodes=[1, "self loner", 4], n=5, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=[1, "self loner", 4], n=5, n_size=[12], seed=101)
 
         assert len(w0) == len(w1)
         assert w0 == w1

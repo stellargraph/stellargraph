@@ -377,19 +377,25 @@ class EdgeData(ElementData):
 
         number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
         sentinel = np.cast[self.sources.dtype](-1)
+        self_loops = self.sources == self.targets
+        num_self_loops = self_loops.sum()
 
         combined = np.concatenate([self.sources, self.targets])
         # mask out duplicates of self loops
-        # can't remove because this would invalidate the argsort results
-        combined[num_edges:][self.sources == self.targets] = sentinel
+        combined[num_edges:][self_loops] = sentinel
         flat_array = np.argsort(combined)
-        # remove the sentinels
-        flat_array = flat_array[combined[flat_array] != sentinel]
+
+        # get targets without self loops inplace
+        filtered_targets = combined[num_edges:]
+        np.sort(filtered_targets)
+
+        # remove the sentinels if there are any
+        if num_self_loops > 0:
+            flat_array = flat_array[:-num_self_loops]
+            filtered_targets = filtered_targets[:-num_self_loops]
         flat_array %= num_edges
         neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes)
-        neighbour_counts += np.bincount(
-            self.targets[self.targets != self.sources], minlength=number_of_nodes
-        )
+        neighbour_counts += np.bincount(filtered_targets, minlength=number_of_nodes)
 
         self._edges_dict = FlatAdjacencyList(flat_array, neighbour_counts)
 
