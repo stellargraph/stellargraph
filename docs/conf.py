@@ -75,9 +75,7 @@ templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = [".txt", ".md"]
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -236,7 +234,7 @@ class RewriteLinks(docutils.transforms.Transform):
             if parsed.netloc == "" and parsed.path.endswith("README.md"):
                 # the notebooks include links to READMEs so that the links work locally and on
                 # Github, but on Read the Docs, the equivalent files are 'index', not 'README'.
-                new_path = parsed.path.replace("README.md", "index.txt")
+                new_path = parsed.path.replace("README.md", "index.rst")
                 new_components = (
                     parsed.scheme,
                     parsed.netloc,
