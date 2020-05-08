@@ -91,11 +91,12 @@ class ColumnarConverter:
 
         # split the dataframe based on the columns we know about
         missing_columns = []
+
         def select_column(old_name):
             if old_name in data.columns:
                 column = data[old_name].to_numpy()
             elif old_name in self.column_defaults:
-                column = np.full_like(ids, self.column_defaults[old_name])
+                column = np.full(len(ids), self.column_defaults[old_name])
             else:
                 nonlocal missing_columns
                 missing_columns.append(old_name)
@@ -152,13 +153,17 @@ class ColumnarConverter:
         if type_ids:
             ids = np.concatenate(type_ids)
             columns = {
-                col_name: np.concatenate(col_arrays) for col_name, col_arrays in type_columns.items()
+                col_name: np.concatenate(col_arrays)
+                for col_name, col_arrays in type_columns.items()
             }
         else:
             # there was no input types and thus no input elements, so create a dummy dataframe, that
             # is maximally flexible by using a "minimal"/highly-promotable type
             ids = []
-            columns = {name: np.empty(dtype=np.uint8) for name in self.selected_columns.values()}
+            columns = {
+                name: np.empty(0, dtype=np.uint8)
+                for name in self.selected_columns.values()
+            }
 
         return ids, columns, type_starts
 
@@ -212,7 +217,9 @@ class ColumnarConverter:
         }
 
         ids, columns, type_starts = self._ids_columns_and_starts_from_singles(singles)
-        features = {type_name: features for type_name, (_, _, features) in singles.items()}
+        features = {
+            type_name: features for type_name, (_, _, features) in singles.items()
+        }
         return (ids, columns, type_starts, features)
 
 
@@ -292,13 +299,7 @@ def convert_edges(
             f"{converter.name()}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
         )
 
-    return EdgeData(
-        ids,
-        columns[SOURCE],
-        columns[TARGET],
-        weight_col,
-        type_starts,
-    )
+    return EdgeData(ids, columns[SOURCE], columns[TARGET], weight_col, type_starts)
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(

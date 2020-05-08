@@ -311,9 +311,14 @@ class EdgeData(ElementData):
                     f"{name}: expected a NumPy ndarray, found {type(column).__name__}"
                 )
 
-            if column.shape != ids.shape:
+            if len(column.shape) != 1:
                 raise TypeError(
-                    f"{name}: expected a shape of {ids.shape} to match 'ids', found {column.shape}"
+                    f"{name}: expected rank-1 array, found shape {column.shape}"
+                )
+
+            if len(column) != len(self._id_index):
+                raise TypeError(
+                    f"{name}: expected length {len(self._id_index)} to match IDs, found length {len(column)}"
                 )
 
         self.sources = sources

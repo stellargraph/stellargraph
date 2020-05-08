@@ -179,7 +179,7 @@ def test_graph_constructor_nodes_from_edges():
 
     with pytest.raises(
         ValueError,
-        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'weight'",
+        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'x'",
     ):
         StellarGraph(edges=pd.DataFrame(columns=["x"]))
 

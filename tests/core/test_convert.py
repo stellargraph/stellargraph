@@ -69,7 +69,9 @@ def test_columnar_convert_column_default():
     converter = ColumnarConverter(
         "some_name", "foo", None, {"before": 123}, {"before": "before"}, False, {}
     )
-    ids, columns, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    ids, columns, type_starts, features = converter.convert(
+        {"x": _EMPTY_DF, "y": _EMPTY_DF}
+    )
 
     assert type_starts == [("x", 0), ("y", 2)]
     np.testing.assert_array_equal(columns["before"], 123)
@@ -80,7 +82,9 @@ def test_columnar_convert_column_default_selected_columns():
     converter = ColumnarConverter(
         "x", "foo", None, {"before": 123}, {"before": "after"}, False, {}
     )
-    ids, columns, type_starts, features = converter.convert({"x": _EMPTY_DF, "y": _EMPTY_DF})
+    ids, columns, type_starts, features = converter.convert(
+        {"x": _EMPTY_DF, "y": _EMPTY_DF}
+    )
 
     assert type_starts == [("x", 0), ("y", 2)]
 
