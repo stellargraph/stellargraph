@@ -759,7 +759,7 @@ def test_benchmark_get_features(
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
-@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (1000, 5000), (20000, 100000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
 @pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
