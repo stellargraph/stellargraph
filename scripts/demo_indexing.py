@@ -199,7 +199,7 @@ class Rst(Format):
     def index_suffix(self, checking):
         if checking:
             # when checking links, we need to write out the exact filename
-            return "/index.txt"
+            return "/index.rst"
         return "/index"
 
     def notebook_suffix(self, checking):
@@ -467,6 +467,11 @@ ALGORITHMS = [
         rl=T(link="embeddings/node2vec-embeddings"),
     ),
     Algorithm(
+        "Keras-Node2Vec",
+        nc=via_rl(link="node-classification/keras-node2vec-node-classification"),
+        rl=T(link="embeddings/keras-node2vec-embeddings"),
+    ),
+    Algorithm(
         "Metapath2Vec",
         heterogeneous=True,
         nc=via_rl(),
@@ -512,7 +517,7 @@ ALGORITHMS = [
 
 FILES = [
     # a RST comment is a directive with an unknown type, like an empty string
-    Rst("docs/demos/index.txt", "\n..\n   DEMO TABLE MARKER\n"),
+    Rst("docs/demos/index.rst", "\n..\n   DEMO TABLE MARKER\n"),
     Html("demos/README.md", "\n<!-- DEMO TABLE MARKER -->\n"),
 ]
 
@@ -587,10 +592,10 @@ def demo_indexing(action):
             # FIXME(#1139): some demos directories don't have a README
             continue
 
-        index = os.path.join("docs", directory, "index.txt")
+        index = os.path.join("docs", directory, "index.rst")
         if not os.path.exists(index):
             error(
-                f"expected each demo README to match a docs 'index.txt' file, found `{readme}` without corresponding `{index}`"
+                f"expected each demo README to match a docs 'index.rst' file, found `{readme}` without corresponding `{index}`"
             )
 
         link = f"{DOC_URL_BASE}/{directory}"
@@ -681,7 +686,7 @@ def error(message, edit_fixit=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Edits or compares the table of all algorithms and their demos in `demos/README.md` and `docs/demos/index.txt`"
+        description="Edits or compares the table of all algorithms and their demos in `demos/README.md` and `docs/demos/index.rst`"
     )
     parser.add_argument(
         "--action",
