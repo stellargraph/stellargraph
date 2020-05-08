@@ -387,12 +387,13 @@ class EdgeData(ElementData):
 
         # get targets without self loops inplace
         filtered_targets = combined[num_edges:]
-        np.sort(filtered_targets)
+        np.ndarray.sort(filtered_targets)
 
         # remove the sentinels if there are any
         if num_self_loops > 0:
             flat_array = flat_array[:-num_self_loops]
             filtered_targets = filtered_targets[:-num_self_loops]
+
         flat_array %= num_edges
         neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes)
         neighbour_counts += np.bincount(filtered_targets, minlength=number_of_nodes)
