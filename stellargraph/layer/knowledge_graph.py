@@ -26,6 +26,7 @@ from .misc import deprecated_model_function
 from ..mapper.knowledge_graph import KGTripleGenerator, KGTripleSequence
 from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range, comma_sep
+from ..utils.hyperbolic import *
 
 
 class KGModel:
@@ -665,6 +666,164 @@ class RotatE(KGModel):
             generator,
             RotatEScore(margin=margin, norm_order=norm_order),
             embedding_dimension,
+            embeddings_initializer=embeddings_initializer,
+            embeddings_regularizer=embeddings_regularizer,
+        )
+
+
+class RotationHEScoring(Layer, KGScore):
+    def __init__(self, hyperbolic):
+        self._hyperbolic = hyperbolic
+        if self._hyperbolic:
+            self._convert = poincare_ball_exp_map0
+            self._add = poincare_ball_mobius_add
+            self._squared_distance = lambda c, v, w: tf.square(
+                poincare_ball_distance(c, v, w)
+            )
+        else:
+            self._convert = lambda _c, v: v
+            self._add = lambda _c, v, w: v + w
+            self._squared_distance = lambda _c, v, w: tf.reduce_sum(
+                tf.math.squared_difference(v, w), axis=-1
+            )
+
+        super().__init__()
+
+    def embeddings(
+        self, num_nodes, num_edge_types, dimension, initializer, regularizer
+    ):
+        if dimension % 2 != 0:
+            raise ValueError(
+                f"embedding_dimension: expected an even integer, found {dimension}"
+            )
+
+        def embed(count, dim=dimension):
+            return Embedding(
+                count,
+                dim,
+                embeddings_initializer=initializer,
+                embeddings_regularizer=regularizer,
+            )
+
+        nodes = [embed(num_nodes), embed(num_nodes, 1)]
+        edge_types = [embed(num_edge_types), embed(num_edge_types, dimension // 2)]
+        return nodes, edge_types
+
+    def build(self, input_shapes):
+        if self._hyperbolic:
+            self.curvature_prime = self.add_weight(shape=(1,), name="curvature_prime")
+        else:
+            self.curvature_prime = None
+
+        super().build(input_shapes)
+
+    def _curvature(self, expand=1):
+        if not self._hyperbolic:
+            return tf.constant([0.0])
+
+        return tf.math.softplus(self.curvature_prime)
+
+    def _rotate(self, theta, emb):
+        shape = tf.maximum(tf.shape(theta), tf.shape(emb))
+        # manual rotation matrix
+        cos = tf.math.cos(theta)
+        sin = tf.math.sin(theta)
+        evens = cos * emb[..., ::2] - sin * emb[..., 1::2]
+        odds = sin * emb[..., ::2] + cos * emb[..., 1::2]
+        return tf.reshape(tf.stack([evens, odds], axis=-1), shape)
+
+    def call(self, inputs):
+        e_s, b_s, r_r, theta_r, e_o, b_o = inputs
+
+        curvature = self._curvature()
+
+        b_s = tf.squeeze(b_s, axis=-1)
+        b_o = tf.squeeze(b_o, axis=-1)
+
+        eh_s = self._convert(curvature, e_s)
+        rh_r = self._convert(curvature, r_r)
+        eh_o = self._convert(curvature, e_o)
+
+        rotated_s = self._rotate(theta_r, eh_s)
+        d = self._squared_distance(
+            curvature, self._add(curvature, rotated_s, rh_r), eh_o
+        )
+
+        return -d + b_s + b_o
+
+    def bulk_scoring(
+        self, all_n_embs, _extra_data, s_embs, r_embs, o_embs,
+    ):
+        curvature = self._curvature()
+
+        e_all, b_all = all_n_embs
+        e_all = e_all[:, None, :]
+        b_all = b_all[:, None, 0]
+
+        e_s, b_s = s_embs
+        e_s = e_s[None, :, :]
+        b_s = b_s[None, :, 0]
+
+        r_r, theta_r = r_embs
+        r_r = r_r[None, :, :]
+        theta_r = theta_r[None, :, :]
+
+        e_o, b_o = o_embs
+        e_o = e_o[None, :, :]
+        b_o = b_o[None, :, 0]
+
+        eh_s = self._convert(curvature, e_s)
+        rh_r = self._convert(curvature, r_r)
+
+        rotated_s = self._rotate(theta_r, eh_s)
+        d_mod_o = self._squared_distance(
+            curvature, self._add(curvature, rotated_s, rh_r), e_all
+        )
+        mod_o_pred = -d_mod_o + b_s + b_all
+
+        del eh_s, d_mod_o, rotated_s
+
+        eh_o = self._convert(curvature, e_o)
+        eh_all = self._convert(curvature, e_all)
+
+        rotated_all = self._rotate(theta_r, eh_all)
+        d_mod_s = self._squared_distance(
+            curvature, self._add(curvature, rotated_all, rh_r), e_o
+        )
+        mod_s_pred = -d_mod_s + b_all + b_o
+
+        return mod_o_pred.numpy(), mod_s_pred.numpy()
+
+
+class RotationH(KGModel):
+    def __init__(
+        self,
+        generator,
+        embedding_dimension,
+        embeddings_initializer="normal",
+        embeddings_regularizer=None,
+    ):
+        super().__init__(
+            generator,
+            RotationHEScoring(hyperbolic=True),
+            embedding_dimension=embedding_dimension,
+            embeddings_initializer=embeddings_initializer,
+            embeddings_regularizer=embeddings_regularizer,
+        )
+
+
+class RotationE(KGModel):
+    def __init__(
+        self,
+        generator,
+        embedding_dimension,
+        embeddings_initializer="normal",
+        embeddings_regularizer=None,
+    ):
+        super().__init__(
+            generator,
+            RotationHEScoring(hyperbolic=False),
+            embedding_dimension=embedding_dimension,
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
         )
