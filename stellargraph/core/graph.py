@@ -630,9 +630,11 @@ class StellarGraph:
         """
         if not use_ilocs:
             node = self._nodes.ids.to_iloc([node])[0]
+            if other_node_type is not None:
+                other_node_type = self._nodes.types.to_iloc([other_node_type])[0]
 
         edge_ilocs = self._edges.edge_ilocs(
-            node, ins=True, outs=True, other_node_type=other_node_type
+            node, ins=True, outs=True, other_node_type_iloc=other_node_type
         )
         source = self._edges.sources[edge_ilocs]
         target = self._edges.targets[edge_ilocs]
@@ -680,8 +682,11 @@ class StellarGraph:
 
         if not use_ilocs:
             node = self._nodes.ids.to_iloc([node])[0]
+            if other_node_type is not None:
+                other_node_type = self._nodes.types.to_iloc([other_node_type])[0]
+
         edge_ilocs = self._edges.edge_ilocs(
-            node, ins=True, outs=False, other_node_type=other_node_type
+            node, ins=True, outs=False, other_node_type_iloc=other_node_type
         )
         source = self._edges.sources[edge_ilocs]
 
@@ -727,9 +732,11 @@ class StellarGraph:
 
         if not use_ilocs:
             node = self._nodes.ids.to_iloc([node])[0]
+            if other_node_type is not None:
+                other_node_type = self._nodes.types.to_iloc([other_node_type])[0]
 
         edge_ilocs = self._edges.edge_ilocs(
-            node, ins=False, outs=True, other_node_type=other_node_type
+            node, ins=False, outs=True, other_node_type_iloc=other_node_type
         )
         target = self._edges.targets[edge_ilocs]
 

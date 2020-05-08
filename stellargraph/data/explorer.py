@@ -540,13 +540,12 @@ class UniformRandomMetaPathWalk(RandomWalk):
         length = _default_if_none(length, self.length, "length")
         metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
         self._validate_walk_params(nodes, n, length)
-        self._check_metapath_values(metapaths)
+        metapaths_for_node_type = self._check_and_transform_metapaths(metapaths, length)
         rs = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
         walks = []
-        metapaths_for_node_type = self._extend_and_group_metapaths(metapaths, length)
 
         for node in nodes:
             # retrieve node type
@@ -579,17 +578,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
         return walks
 
-    def _extend_and_group_metapaths(self, metapaths, walk_length):
-        def extend_metapath(m):
-            return np.resize(m[1:], walk_length - 1)
-
-        metapaths_for_node_type = defaultdict(list)
-        for metapath in metapaths:
-            metapaths_for_node_type[metapath[0]].append(extend_metapath(metapath))
-
-        return metapaths_for_node_type
-
-    def _check_metapath_values(self, metapaths):
+    def _check_and_transform_metapaths(self, metapaths, walk_length):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -598,10 +587,19 @@ class UniformRandomMetaPathWalk(RandomWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
                 [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
                 schemas of length 3 and 5 respectively.
+            walk_length: length of metapath walk
         """
 
         def raise_error(msg):
             raise ValueError(f"metapaths: {msg}, found {metapaths}")
+
+        def extend_metapath(m):
+            return np.resize(m[1:], walk_length - 1)
+
+        def metapath_to_type_ilocs(m):
+            return self.graph._nodes.types.to_iloc(m)
+
+        metapaths_for_node_type = defaultdict(list)
 
         if type(metapaths) != list:
             raise_error("expected list of lists.")
@@ -618,6 +616,11 @@ class UniformRandomMetaPathWalk(RandomWalk):
                 raise_error(
                     "expected the first and last node type in a metapath to be the same"
                 )
+            metapaths_for_node_type[metapath[0]].append(
+                extend_metapath(metapath_to_type_ilocs(metapath))
+            )
+
+        return metapaths_for_node_type
 
 
 class SampledBreadthFirstWalk(GraphWalk):

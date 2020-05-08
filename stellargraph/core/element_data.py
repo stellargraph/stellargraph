@@ -391,8 +391,8 @@ class EdgeData(ElementData):
 
     def _init_adj_list_by_other_node_type(self, *, ins, outs):
         index = {}
-        source_types = self.node_data.type_of_iloc(self.sources)
-        target_types = self.node_data.type_of_iloc(self.targets)
+        source_types = self.node_data.type_ilocs[self.sources]
+        target_types = self.node_data.type_ilocs[self.targets]
         edge_iter = enumerate(
             zip(self.sources, self.targets, source_types, target_types)
         )
@@ -430,7 +430,9 @@ class EdgeData(ElementData):
         adj = self._adj_list.lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
-    def edge_ilocs(self, node_iloc, *, ins, outs, other_node_type=None) -> np.ndarray:
+    def edge_ilocs(
+        self, node_iloc, *, ins, outs, other_node_type_iloc=None
+    ) -> np.ndarray:
         """
         Return the integer locations of the edges for the given node iloc
 
@@ -442,10 +444,10 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node iloc.
         """
 
-        if other_node_type is not None:
+        if other_node_type_iloc is not None:
             return (
                 self._adj_list_by_other_node_type.lookup(ins=ins, outs=outs)
-                .get(other_node_type, {})
+                .get(other_node_type_iloc, {})
                 .get(node_iloc, self._empty_ilocs)
             )
         else:
