@@ -36,7 +36,7 @@ class ExternalIdIndex:
     def __init__(self, ids):
         self._index = pd.Index(ids)
         # reserve 2 ^ (n-bits) - 1 for sentinel
-        self._dtype = np.min_scalar_type(len(self._index)) 
+        self._dtype = np.min_scalar_type(len(self._index))
 
         if not self._index.is_unique:
             # had some duplicated IDs, which is an error
@@ -300,10 +300,6 @@ class NodeData(ElementData):
         }
 
 
-def _numpyise(d, dtype):
-    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
-
-
 class FlatAdjacencyList:
     def __init__(self, flat_array, neighbor_counts):
         self.splits = np.cumsum(np.append(0, neighbor_counts))
@@ -323,15 +319,6 @@ class FlatAdjacencyList:
     def items(self):
         for idx in range(len(self.splits) - 1):
             yield (idx, self[idx])
-
-
-def rle(sorted_arr):
-    diff = np.diff(sorted_arr)
-    diff = np.append(diff, 1)
-    locs = np.where(diff)[0]
-    counts = np.diff(np.append(0, locs))
-    counts[0] += 1
-    return sorted_arr[locs], counts
 
 
 class EdgeData(ElementData):
@@ -371,18 +358,13 @@ class EdgeData(ElementData):
         # this could be less than the true number of nodes if the node with the largest iloc is isolated
         # but this doesn't cause issues with the code below
         number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-        dtype = np.min_scalar_type(len(self.sources))
 
         flat_array = np.argsort(self.targets)
-        node_ilocs, counts = rle(self.targets[flat_array])
-        in_neighbour_counts = np.zeros(number_of_nodes, dtype=dtype)
-        in_neighbour_counts[node_ilocs] = counts
+        in_neighbour_counts = np.bincount(self.targets, minlength=number_of_nodes + 1)
         self._edges_in_dict = FlatAdjacencyList(flat_array, in_neighbour_counts)
 
         flat_array = np.argsort(self.sources)
-        node_ilocs, counts = rle(self.sources[flat_array])
-        out_neighbour_counts = np.zeros(number_of_nodes, dtype=dtype)
-        out_neighbour_counts[node_ilocs] = counts
+        out_neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes + 1)
         self._edges_out_dict = FlatAdjacencyList(flat_array, out_neighbour_counts)
 
     def _init_undirected_adj_lists(self):
@@ -394,7 +376,6 @@ class EdgeData(ElementData):
             return
 
         number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-        dtype = np.min_scalar_type(num_edges)
         sentinel = np.cast[self.sources.dtype](-1)
 
         combined = np.concatenate([self.sources, self.targets])
@@ -402,13 +383,15 @@ class EdgeData(ElementData):
         # can't remove because this would invalidate the argsort results
         combined[num_edges:][self.sources == self.targets] = sentinel
         flat_array = np.argsort(combined)
-
         # remove the sentinels
         flat_array = flat_array[combined[flat_array] != sentinel]
-        node_ilocs, counts = rle(combined[flat_array])
-        neighbour_counts = np.zeros(number_of_nodes, dtype=dtype)
-        neighbour_counts[node_ilocs] = counts
-        self._edges_dict = FlatAdjacencyList(flat_array % num_edges, neighbour_counts)
+        flat_array %= num_edges
+        neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes)
+        neighbour_counts += np.bincount(
+            self.targets[self.targets != self.sources], minlength=number_of_nodes
+        )
+
+        self._edges_dict = FlatAdjacencyList(flat_array, neighbour_counts)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
