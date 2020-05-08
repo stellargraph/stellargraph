@@ -157,8 +157,8 @@ class ColumnarConverter:
                 for col_name, col_arrays in type_columns.items()
             }
         else:
-            # there was no input types and thus no input elements, so create a dummy dataframe, that
-            # is maximally flexible by using a "minimal"/highly-promotable type
+            # there was no input types and thus no input elements, so create a dummy set of columns,
+            # that is maximally flexible by using a "minimal"/highly-promotable type
             ids = []
             columns = {
                 name: np.empty(0, dtype=np.uint8)
