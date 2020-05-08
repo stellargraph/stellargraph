@@ -337,21 +337,19 @@ class EdgeData(ElementData):
     Args:
         shared (pandas DataFrame): information for the edges
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
-        nodes (NodeData): node data containing node types and IDs
+        node_data (NodeData): node data containing node types and IDs
     """
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, type_starts, nodes):
+    def __init__(self, shared, type_starts, node_data):
         super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
         self.sources = self._column(SOURCE)
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
-
-        self.source_types = nodes.type_of_iloc(self.sources)
-        self.target_types = nodes.type_of_iloc(self.targets)
+        self.node_data = node_data
 
         dtype = np.min_scalar_type(len(self.sources))
         self.dtype = dtype
@@ -393,8 +391,10 @@ class EdgeData(ElementData):
 
     def _init_adj_list_by_other_node_type(self, *, ins, outs):
         index = {}
+        source_types = self.node_data.type_of_iloc(self.sources)
+        target_types = self.node_data.type_of_iloc(self.targets)
         edge_iter = enumerate(
-            zip(self.sources, self.targets, self.source_types, self.target_types)
+            zip(self.sources, self.targets, source_types, target_types)
         )
 
         if ins and outs:
