@@ -321,7 +321,7 @@ class TestMetaPathWalk(object):
         mrw = UniformRandomMetaPathWalk(g)
 
         # this should be made larger to be more realistic, when it is fast enough
-        nodes = np.arange(0, 10)
+        nodes = np.arange(0, 50)
         n = 5
         length = 5
         metapaths = [

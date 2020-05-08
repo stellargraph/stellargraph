@@ -546,7 +546,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
         walks = []
-        metapaths_for_node_type = self._augment_and_group_metapaths(metapaths, length)
+        metapaths_for_node_type = self._extend_and_group_metapaths(metapaths, length)
 
         for node in nodes:
             # retrieve node type
@@ -579,13 +579,13 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
         return walks
 
-    def _augment_and_group_metapaths(self, metapaths, walk_length):
-        def augment_metapath(m):
+    def _extend_and_group_metapaths(self, metapaths, walk_length):
+        def extend_metapath(m):
             return np.resize(m[1:], walk_length - 1)
 
         metapaths_for_node_type = defaultdict(list)
         for metapath in metapaths:
-            metapaths_for_node_type[metapath[0]].append(augment_metapath(metapath))
+            metapaths_for_node_type[metapath[0]].append(extend_metapath(metapath))
 
         return metapaths_for_node_type
 

@@ -303,15 +303,15 @@ def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
-class AdjList:
+class LazyAdjLists:
     def __init__(self, init_index):
         self.init_index = init_index
         self.undirected = self.ins = self.outs = None
 
     def force_init(self):
-        self.undirected = self.init_index(ins=True, outs=True)
-        self.ins = self.init_index(ins=True, outs=False)
-        self.outs = self.init_index(ins=False, outs=True)
+        self.lookup(ins=True, outs=True)
+        self.lookup(ins=True, outs=False)
+        self.lookup(ins=False, outs=True)
 
     def lookup(self, *, ins, outs):
         if ins and outs:
@@ -358,9 +358,9 @@ class EdgeData(ElementData):
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
-        self._adj_list = AdjList(self._init_adj_list)
+        self._adj_list = LazyAdjLists(self._init_adj_list)
 
-        self._adj_list_by_other_node_type = AdjList(
+        self._adj_list_by_other_node_type = LazyAdjLists(
             self._init_adj_list_by_other_node_type
         )
 
