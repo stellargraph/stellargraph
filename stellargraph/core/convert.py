@@ -150,7 +150,11 @@ class ColumnarConverter:
 
             rows_so_far += len(ids)
 
-        if type_ids:
+        if len(type_ids) == 1:
+            # if there's only one type, avoid copying everything in a no-op concatentation
+            ids = type_ids[0]
+            columns = {col_name: col_arrays[0] for col_name, col_arrays in type_columns.items()}
+        elif type_ids:
             ids = np.concatenate(type_ids)
             columns = {
                 col_name: np.concatenate(col_arrays)
