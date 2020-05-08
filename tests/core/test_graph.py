@@ -762,9 +762,11 @@ def test_benchmark_get_features(
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [None, "homogeneous", "by_other_node_type"])
+@pytest.mark.parametrize(
+    "adj_list_grouping", [None, "homogeneous", "by_other_node_type"]
+)
 def test_benchmark_creation(
-    benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    benchmark, feature_size, num_nodes, num_edges, adj_list_grouping
 ):
     nodes, edges = example_benchmark_graph(
         feature_size, num_nodes, num_edges, features_in_nodes=True
@@ -772,9 +774,9 @@ def test_benchmark_creation(
 
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists == "homogeneous":
+        if adj_list_grouping == "homogeneous":
             sg._edges._adj_list.force_init()
-        if force_adj_lists == "by_other_node_type":
+        if adj_list_grouping == "by_other_node_type":
             sg._edges._adj_list_by_other_node_type.force_init()
         return sg
 
@@ -788,9 +790,11 @@ def test_benchmark_creation(
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [None, "homogeneous", "by_other_node_type"])
+@pytest.mark.parametrize(
+    "adj_list_grouping", [None, "homogeneous", "by_other_node_type"]
+)
 def test_allocation_benchmark_creation(
-    allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    allocation_benchmark, feature_size, num_nodes, num_edges, adj_list_grouping,
 ):
     nodes, edges = example_benchmark_graph(
         feature_size, num_nodes, num_edges, features_in_nodes=True
@@ -798,9 +802,9 @@ def test_allocation_benchmark_creation(
 
     def f():
         sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists == "homogeneous":
+        if adj_list_grouping == "homogeneous":
             sg._edges._adj_list.force_init()
-        if force_adj_lists == "by_other_node_type":
+        if adj_list_grouping == "by_other_node_type":
             sg._edges._adj_list_by_other_node_type.force_init()
         return sg
 

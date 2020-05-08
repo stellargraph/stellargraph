@@ -391,8 +391,8 @@ class EdgeData(ElementData):
 
     def _init_adj_list_by_other_node_type(self, *, ins, outs):
         index = {}
-        source_types = self.node_data.type_of_iloc(self.sources)
-        target_types = self.node_data.type_of_iloc(self.targets)
+        source_types = self.node_data.type_ilocs[self.sources]
+        target_types = self.node_data.type_ilocs[self.targets]
         edge_iter = enumerate(
             zip(self.sources, self.targets, source_types, target_types)
         )
@@ -443,9 +443,10 @@ class EdgeData(ElementData):
         """
 
         if other_node_type is not None:
+            node_type_iloc = self.node_data.types.to_iloc([other_node_type])[0]
             return (
                 self._adj_list_by_other_node_type.lookup(ins=ins, outs=outs)
-                .get(other_node_type, {})
+                .get(node_type_iloc, {})
                 .get(node_iloc, self._empty_ilocs)
             )
         else:
