@@ -206,7 +206,7 @@ nbsphinx_prolog = r"""
     <div class="admonition info">
       <p>
         Execute this notebook:
-        {% if env.config.html_context.github_version is defined %}
+        {% if env.config.html_context.github_version is defined and env.config.release != "master" %}
           <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ env.config.html_context.github_version }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
         <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ env.config.html_context.github_version }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         {% else %}
