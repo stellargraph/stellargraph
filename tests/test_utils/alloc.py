@@ -39,19 +39,6 @@ class MallocInstant:
         diff = self._snapshot.compare_to(other._snapshot, "lineno")
         return sum(elem.size_diff for elem in diff)
 
-class MallocPeak:
-    """
-    This class wraps peak memory usage in a way that pretends to be a clock.
-
-    The __sub__ (-) operator ignores the "before" argument, because this assumes that each peak
-    recorded independently, by calling `tracemalloc.clear_traces()` to reset the traces.
-    """
-    def __init__(self, peak: int):
-        self._peak = peak
-
-    def __sub__(self, other: "MallocPeak") -> int:
-        return self._peak
-
 
 def snapshot(gc_generation=0) -> MallocInstant:
     """
@@ -63,7 +50,23 @@ def snapshot(gc_generation=0) -> MallocInstant:
         gc.collect(gc_generation)
     return MallocInstant(tracemalloc.take_snapshot())
 
-def peak(gc_generation=0) -> int:
+
+class MallocPeak:
+    """
+    This class wraps peak memory usage in a way that pretends to be a clock.
+
+    The __sub__ (-) operator ignores the "before" argument, because this assumes that each peak
+    recorded independently, by calling `tracemalloc.clear_traces()` to reset the traces.
+    """
+
+    def __init__(self, peak: int):
+        self._peak = peak
+
+    def __sub__(self, other: "MallocPeak") -> int:
+        return self._peak
+
+
+def peak() -> int:
     """
     Take a snapshot of the current "peak memory usage", similar to an allocation version of time.perf_counter() (etc.).
     """
@@ -81,7 +84,9 @@ def allocation_benchmark(request, benchmark):
     allowed_timers = [snapshot, peak]
     timer = options.get("timer")
     if timer not in allowed_timers:
-        allowed_str = ", ".join(f"{__name__}.{allowed.__name__}" for allowed in allowed_timers)
+        allowed_str = ", ".join(
+            f"{__name__}.{allowed.__name__}" for allowed in allowed_timers
+        )
         raise ValueError(
             f"allocation_benchmark fixture can only be used in functions with @pytest.mark.benchmark(..., timer=T, ...) where T is one of: {allowed_str}"
         )
