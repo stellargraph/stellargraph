@@ -215,7 +215,7 @@ nbsphinx_prolog = r"""
         <br>
         {{ env.config.release|e }}
         <br>
-        {{ env.config.html_context.readthedocs.v1.vcs.type }}
+        {{ env.config.html_context }}
         <br>
         {% if check_meta and 'github_url' in meta %}
         <a href="https://{{ github_host|default("github.com") }}/{{ github_user }}/{{ github_repo }}/{{ theme_vcs_pageview_mode|default("blob") }}/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}" class="fa fa-github"> {{ _('Edit on GitHub') }}</a>
