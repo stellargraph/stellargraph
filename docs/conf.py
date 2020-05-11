@@ -206,20 +206,14 @@ nbsphinx_prolog = r"""
     <div class="admonition info">
       <p>
         Execute this notebook:
-        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ env.config.release|e }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
-        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ env.config.release|e }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
-        <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
-        {{ docname }}
-        <br>
-        {{ env.commit }}
-        <br>
-        {{ env.config.release|e }}
-        <br>
-        {{ env.config.html_context }}
-        <br>
-        {% if check_meta and 'github_url' in meta %}
-        <a href="https://{{ github_host|default("github.com") }}/{{ github_user }}/{{ github_repo }}/{{ theme_vcs_pageview_mode|default("blob") }}/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}" class="fa fa-github"> {{ _('Edit on GitHub') }}</a>
+        {% if env.config.html_context.github_version % }
+          <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ env.config.html_context.github_version }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ env.config.html_context.github_version }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
+        {% else %}
+          <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+          <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/master/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         {% endif %}
+        <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
       </p>
     </div>
 """
