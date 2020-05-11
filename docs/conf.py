@@ -211,9 +211,7 @@ nbsphinx_prolog = r"""
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
         {{ docname }}
         <br>
-        {{ git }}
-        <br>
-        {{ commit }}
+        {{ env.commit }}
         <br>
         {{ env.config.release|e }}
         <br>
