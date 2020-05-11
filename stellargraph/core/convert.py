@@ -86,26 +86,38 @@ class ColumnarConverter:
             )
 
         existing = set(self.selected_columns).intersection(data.columns)
+
+        ids = data.index
+
         # split the dataframe based on the columns we know about
-        known = data[existing]
-        other = data.drop(columns=existing)
+        missing_columns = []
 
-        # add the defaults to for columns that need one (this will not overwrite any existing ones
-        # of the same name, because they'll be in `other`, not `known`)
-        defaults_required = {
-            name: value
-            for name, value in self.column_defaults.items()
-            if name not in existing
+        def select_column(old_name):
+            if old_name in data.columns:
+                column = data[old_name].to_numpy()
+            elif old_name in self.column_defaults:
+                column = np.full(len(ids), self.column_defaults[old_name])
+            else:
+                nonlocal missing_columns
+                missing_columns.append(old_name)
+                return None
+
+            transform = self.transform_columns.get(old_name)
+            if transform is not None:
+                column = transform(column)
+
+            return column
+
+        columns = {
+            new_name: select_column(old_name)
+            for old_name, new_name in self.selected_columns.items()
         }
-        known = known.assign(**defaults_required)
+        if missing_columns:
+            raise ValueError(
+                f"{self.name(type_name)}: expected {comma_sep(self.selected_columns)} columns, found: {comma_sep(data.columns)}"
+            )
 
-        # now verify that all of the columns needed are there (that is, the defaults have filled out appropriately)
-        require_dataframe_has_columns(
-            self.name(type_name), known, self.selected_columns
-        )
-
-        for column, transform in self.transform_columns.items():
-            known[column] = transform(known[column])
+        other = data.drop(columns=existing)
 
         if self.allow_features:
             # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
@@ -120,51 +132,69 @@ class ColumnarConverter:
                 f"{self.name(type_name)}: expected zero feature columns, found {comma_sep(other.columns)}"
             )
 
-        return known.rename(columns=self.selected_columns), features
+        return ids, columns, features
 
-    def _shared_and_starts_from_singles(self, singles):
+    def _ids_columns_and_starts_from_singles(self, singles):
         rows_so_far = 0
         type_starts = []
-        type_dfs = []
+        type_ids = []
+        type_columns = defaultdict(list)
 
         for type_name in sorted(singles.keys()):
-            type_data, _ = singles[type_name]
+            ids, columns, _ = singles[type_name]
 
             type_starts.append((type_name, rows_so_far))
-            type_dfs.append(type_data)
+            type_ids.append(ids)
+            for col_name, col_array in columns.items():
+                type_columns[col_name].append(col_array)
 
-            rows_so_far += len(type_data)
+            rows_so_far += len(ids)
 
-        if type_dfs:
-            shared = pd.concat(type_dfs)
+        if len(type_ids) == 1:
+            # if there's only one type, avoid copying everything in a no-op concatentation
+            ids = type_ids[0]
+            columns = {
+                col_name: col_arrays[0] for col_name, col_arrays in type_columns.items()
+            }
+        elif type_ids:
+            ids = np.concatenate(type_ids)
+            columns = {
+                col_name: np.concatenate(col_arrays)
+                for col_name, col_arrays in type_columns.items()
+            }
         else:
-            # there was no input types and thus no input elements, so create a dummy dataframe, that
-            # is maximally flexible by using a "minimal"/highly-promotable type
-            shared = pd.DataFrame(
-                columns=self.selected_columns.values(), dtype=np.uint8
-            )
+            # there was no input types and thus no input elements, so create a dummy set of columns,
+            # that is maximally flexible by using a "minimal"/highly-promotable type
+            ids = []
+            columns = {
+                name: np.empty(0, dtype=np.uint8)
+                for name in self.selected_columns.values()
+            }
 
-        return shared, type_starts
+        return ids, columns, type_starts
 
     def _convert_with_type_column(self, data):
         # we've got a type column, so there's no dictionaries or separate dataframes. We just need
         # to make sure things are arranged right, i.e. nodes of each type are contiguous, and
         # 'range(...)' objects describing each one.
-        known, features = self._convert_single(None, data)
+        ids, columns, features = self._convert_single(None, data)
         assert features is None
 
         # the column we see in `known` is after being selected/renamed
-        selected_type_column = self.selected_columns[self.type_column]
-
-        known.sort_values(selected_type_column, inplace=True)
+        type_column_name = self.selected_columns[self.type_column]
 
         # the shared data doesn't use the type column; that info is encoded in `type_ranges` below
-        shared = known.drop(columns=selected_type_column)
+        type_column = columns.pop(type_column_name)
+
+        sorting = np.argsort(type_column)
+
+        # arrange everything to be sorted by type
+        ids = ids[sorting]
+        type_column = type_column[sorting]
+        columns = {name: array[sorting] for name, array in columns.items()}
 
         # deduce the type ranges based on the first index of each of the known values
-        types, first_occurance = np.unique(
-            known[selected_type_column], return_index=True
-        )
+        types, first_occurance = np.unique(type_column, return_index=True)
 
         type_starts = [
             (type_name, start) for type_name, start in zip(types, first_occurance)
@@ -173,7 +203,7 @@ class ColumnarConverter:
         # per the assert above, the features are None for every type
         features = {type_name: None for type_name in types}
 
-        return shared, type_starts, features
+        return ids, columns, type_starts, features
 
     def convert(self, elements):
         if self.type_column is not None:
@@ -192,9 +222,11 @@ class ColumnarConverter:
             for type_name, data in elements.items()
         }
 
-        shared, type_starts = self._shared_and_starts_from_singles(singles)
-        features = {type_name: features for type_name, (_, features) in singles.items()}
-        return (shared, type_starts, features)
+        ids, columns, type_starts = self._ids_columns_and_starts_from_singles(singles)
+        features = {
+            type_name: features for type_name, (_, _, features) in singles.items()
+        }
+        return (ids, columns, type_starts, features)
 
 
 def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
@@ -208,8 +240,9 @@ def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
         transform_columns={},
         dtype=dtype,
     )
-    nodes, type_starts, node_features = converter.convert(data)
-    return NodeData(nodes, type_starts, node_features)
+    ids, columns, type_starts, node_features = converter.convert(data)
+    assert len(columns) == 0
+    return NodeData(ids, type_starts, node_features)
 
 
 DEFAULT_WEIGHT = np.float32(1)
@@ -261,18 +294,18 @@ def convert_edges(
         },
         allow_features=False,
     )
-    edges, type_starts, edge_features = converter.convert(data)
+    ids, columns, type_starts, edge_features = converter.convert(data)
 
     # validation:
     assert all(features is None for features in edge_features.values())
 
-    weight_col = edges[WEIGHT]
+    weight_col = columns[WEIGHT]
     if not pd.api.types.is_numeric_dtype(weight_col):
         raise TypeError(
             f"{converter.name()}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
         )
 
-    return EdgeData(edges, type_starts)
+    return EdgeData(ids, columns[SOURCE], columns[TARGET], weight_col, type_starts)
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(
