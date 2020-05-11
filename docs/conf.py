@@ -212,7 +212,8 @@ nbsphinx_prolog = r"""
         <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ env.config.release|e }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
         {{ docname }}
-        {{ env.config.tim }}
+        <br>
+        {{ env.config.release|e }}
       </p>
     </div>
 """
