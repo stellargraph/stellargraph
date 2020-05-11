@@ -39,6 +39,19 @@ class MallocInstant:
         diff = self._snapshot.compare_to(other._snapshot, "lineno")
         return sum(elem.size_diff for elem in diff)
 
+class MallocPeak:
+    """
+    This class wraps peak memory usage in a way that pretends to be a clock.
+
+    The __sub__ (-) operator ignores the "before" argument, because this assumes that each peak
+    recorded independently, by calling `tracemalloc.clear_traces()` to reset the traces.
+    """
+    def __init__(self, peak: int):
+        self._peak = peak
+
+    def __sub__(self, other: "MallocPeak") -> int:
+        return self._peak
+
 
 def snapshot(gc_generation=0) -> MallocInstant:
     """
@@ -50,17 +63,27 @@ def snapshot(gc_generation=0) -> MallocInstant:
         gc.collect(gc_generation)
     return MallocInstant(tracemalloc.take_snapshot())
 
+def peak(gc_generation=0) -> int:
+    """
+    Take a snapshot of the current "peak memory usage", similar to an allocation version of time.perf_counter() (etc.).
+    """
+    _, peak = tracemalloc.get_traced_memory()
+    # reset the peak for the next recording
+    tracemalloc.clear_traces()
+    return MallocPeak(peak)
+
 
 @pytest.fixture
 def allocation_benchmark(request, benchmark):
     # make sure the user specified the "snapshot" timer
     marker = request.node.get_closest_marker("benchmark")
     options = dict(marker.kwargs) if marker else {}
-    correct_timer = "timer" in options and options["timer"] is snapshot
-    if not correct_timer:
+    allowed_timers = [snapshot, peak]
+    timer = options.get("timer")
+    if timer not in allowed_timers:
+        allowed_str = ", ".join(f"{__name__}.{allowed.__name__}" for allowed in allowed_timers)
         raise ValueError(
-            "allocation_benchmark fixture can only be used in functions with @pytest.mark.benchmark(..., timer=%s.%s, ...)"
-            % (__name__, snapshot.__name__)
+            f"allocation_benchmark fixture can only be used in functions with @pytest.mark.benchmark(..., timer=T, ...) where T is one of: {allowed_str}"
         )
 
     # Put a note into the saved JSON files, so that future analysis can tell that these are special
@@ -69,9 +92,9 @@ def allocation_benchmark(request, benchmark):
 
     def run_it(f):
         result = benchmark.pedantic(f, iterations=1, rounds=20, warmup_rounds=3)
-        if result is None:
+        if result is None and timer is snapshot:
             raise ValueError(
-                "benchmark function returned None: allocation benchmarking is only reliable if the object(s) of interest is created inside and returned from the function being benchmarked"
+                "benchmark function returned None: allocation benchmarking with 'snapshot' is only reliable if the object(s) of interest is created inside and returned from the function being benchmarked"
             )
 
     # Running with GC disabled for an memory benchmark?
