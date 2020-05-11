@@ -199,20 +199,22 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 # This is processed by Jinja2 and inserted before each notebook
+# Uses an internal readthedocs variable to get the git commit if available - note that this is undocumented and
+# don't match those listed for future at https://docs.readthedocs.io/en/stable/development/design/theme-context.html
 nbsphinx_prolog = r"""
-{% set docname = env.doc2path(env.docname, base=None) %}
+{% if env.config.html_context.github_version is defined and env.config.release != "master" %}
+    {% set github_version = env.config.html_context.github_version %}
+{% else %}
+    {% set github_version = "master" %}
+{% endif %}
+
 .. raw:: html
 
     <div class="admonition info">
       <p>
-        Execute this notebook:
-        {% if env.config.html_context.github_version is defined and env.config.release != "master" %}
-          <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ env.config.html_context.github_version }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
-        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ env.config.html_context.github_version }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
-        {% else %}
-          <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
-          <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/master/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
-        {% endif %}
+        Execute this notebook: 
+        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ github_version }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ github_version }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
       </p>
     </div>
