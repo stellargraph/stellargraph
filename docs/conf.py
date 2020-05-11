@@ -196,8 +196,6 @@ texinfo_documents = [
     ),
 ]
 
-tim = "test"
-
 # -- Extension configuration -------------------------------------------------
 
 # This is processed by Jinja2 and inserted before each notebook
@@ -213,7 +211,15 @@ nbsphinx_prolog = r"""
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
         {{ docname }}
         <br>
+        {{ git }}
+        <br>
+        {{ commit }}
+        <br>
         {{ env.config.release|e }}
+        <br>
+        {% if check_meta and 'github_url' in meta %}
+        <a href="https://{{ github_host|default("github.com") }}/{{ github_user }}/{{ github_repo }}/{{ theme_vcs_pageview_mode|default("blob") }}/{{ github_version }}{{ conf_py_path }}{{ pagename }}{{ suffix }}" class="fa fa-github"> {{ _('Edit on GitHub') }}</a>
+        {% endif %}
       </p>
     </div>
 """
