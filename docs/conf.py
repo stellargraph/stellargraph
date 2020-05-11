@@ -196,11 +196,13 @@ texinfo_documents = [
     ),
 ]
 
+tim = "test"
 
 # -- Extension configuration -------------------------------------------------
 
 # This is processed by Jinja2 and inserted before each notebook
 nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
 .. raw:: html
 
     <div class="admonition info">
@@ -209,6 +211,8 @@ nbsphinx_prolog = r"""
         <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ env.config.release|e }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
         <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ env.config.release|e }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
+        {{ docname }}
+        {{ env.config.tim }}
       </p>
     </div>
 """
