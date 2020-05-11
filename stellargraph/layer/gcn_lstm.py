@@ -164,10 +164,8 @@ class FixedAdjacencyGraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (ndarray): node features (size B x T x N),
-                where B is the batch size,
-                      T is the sequence length, and
-                      N is the number of nodes in the graph.
+            inputs (ndarray): node features (size B x T x N), where B is the batch size, T is the
+                sequence length, and N is the number of nodes in the graph.
 
         Returns:
             Keras Tensor that represents the output of the layer.
@@ -199,10 +197,11 @@ class GraphConvolutionLSTM:
     The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
 
     The StellarGraph implementation is built as a stack of the following set of layers:
-      1. User specified no. of Graph Convolutional layers
-      2. User specified no. of LSTM layers
-      3. 1 Dense layer
-      4. 1 Dropout layer
+
+    1. User specified no. of Graph Convolutional layers
+    2. User specified no. of LSTM layers
+    3. 1 Dense layer
+    4. 1 Dropout layer
 
     The last two layers consistently showed better performance and regularization experimentally.
 

@@ -83,7 +83,7 @@ steps:
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 47
+    parallelism: 49
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -152,6 +152,18 @@ steps:
 
   - label: ":book: check demo indexing"
     command: "python scripts/demo_indexing.py --action=compare"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":book: check documentation"
+    command: ".buildkite/steps/test-documentation.sh"
     <<: *timeout
     depends_on: "runner-3_6"
     plugins:
