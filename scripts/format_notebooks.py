@@ -22,6 +22,7 @@ a machine-learning ready graph used by models.
 
 """
 import argparse
+import difflib
 import nbformat
 import re
 import shlex
@@ -41,6 +42,9 @@ version = {}
 with open("stellargraph/version.py", "r") as fh:
     exec(fh.read(), version)
 SG_VERSION = version["__version__"]
+
+
+PATH_RESOURCE_NAME = "notebook_path"
 
 
 class ClearWarningsPreprocessor(preprocessors.Preprocessor):
@@ -158,7 +162,6 @@ class InsertTaggedCellsPreprocessor(preprocessors.Preprocessor):
 
 
 class CloudRunnerPreprocessor(InsertTaggedCellsPreprocessor):
-    path_resource_name = "cloud_runner_path"
     metadata_tag = "CloudRunner"
     git_branch = "master"
     demos_path_prefix = "demos/"
@@ -176,16 +179,18 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        return f"[![Open In Binder](https://mybinder.org/badge_logo.svg)]({self._binder_url(notebook_path)})"
+        # html needed to add the target="_parent" so that the links work from Github rendered notebooks
+        return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
 
     def _colab_badge(self, notebook_path):
-        return f"[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]({self._colab_url(notebook_path)})"
+        return f'<a href="{self._colab_url(notebook_path)}" alt="Open In Colab" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>'
 
     def _badge_markdown(self, notebook_path):
-        return f"> Run the master version of this notebook: {self._binder_badge(notebook_path)} {self._colab_badge(notebook_path)}"
+        # due to limited HTML-in-markdown support in Jupyter, place badges in an html table (paragraph doesn't work)
+        return f"<table><tr><td>Run the latest release of this notebook:</td><td>{self._binder_badge(notebook_path)}</td><td>{self._colab_badge(notebook_path)}</td></tr></table>"
 
     def preprocess(self, nb, resources):
-        notebook_path = resources[self.path_resource_name]
+        notebook_path = resources[PATH_RESOURCE_NAME]
         if not notebook_path.startswith(self.demos_path_prefix):
             print(
                 f"WARNING: Notebook file path of {notebook_path} didn't start with {self.demos_path_prefix}, and may result in bad links to cloud runners."
@@ -193,6 +198,8 @@ if 'google.colab' in sys.modules:
         self.remove_tagged_cells_from_notebook(nb)
         badge_cell = nbformat.v4.new_markdown_cell(self._badge_markdown(notebook_path))
         self.tag_cell(badge_cell)
+        # badges are created separately in docs by nbsphinx prolog / epilog
+        hide_cell_from_docs(badge_cell)
         # the badges go after the first cell, unless the first cell is code
         if nb.cells[0].cell_type == "code":
             nb.cells.insert(0, badge_cell)
@@ -236,6 +243,49 @@ except AttributeError:
         self.tag_cell(version_cell)
         hide_cell_from_docs(version_cell)
         nb.cells.insert(first_code_cell_id, version_cell)
+        return nb, resources
+
+
+class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
+    metadata_tag = "DataLoadingLinks"
+    search_tag = "DataLoading"
+
+    data_loading_description = """\
+(See [the "Loading from Pandas" demo]({}) for details on how data can be loaded.)"""
+
+    def _relative_path(self, path):
+        """
+        Find the relative path from this notebook to the Loading Pandas one.
+
+        This assumes that "demos" appears in the path, and is the root of the demos directories.
+        """
+        directories = os.path.dirname(path).split("/")
+        demos_idx = next(
+            index for index, directory in enumerate(directories) if directory == "demos"
+        )
+        nested_depth = len(directories) - (demos_idx + 1)
+        parents = "../" * nested_depth
+        return f"{parents}basics/loading-pandas.ipynb"
+
+    def preprocess(self, nb, resources):
+        self.remove_tagged_cells_from_notebook(nb)
+        first_data_loading = next(
+            (
+                index
+                for index, cell in enumerate(nb.cells)
+                if self.search_tag in self.tags(cell)
+            ),
+            None,
+        )
+
+        if first_data_loading is not None:
+            path = self._relative_path(resources[PATH_RESOURCE_NAME])
+            links_cell = nbformat.v4.new_markdown_cell(
+                self.data_loading_description.format(path)
+            )
+            self.tag_cell(links_cell)
+            nb.cells.insert(first_data_loading, links_cell)
+
         return nb, resources
 
 
@@ -319,6 +369,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add or update cells that validate the version of StellarGraph",
     )
+    parser.add_argument(
+        "-l",
+        "--loading_links",
+        action="store_true",
+        help="Add or update cells that link to docs for loading data",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-o",
@@ -360,6 +416,7 @@ if __name__ == "__main__":
     cell_timeout = args.cell_timeout
     run_cloud = args.run_cloud or args.default
     version_validation = args.version_validation or args.default
+    loading_links = args.loading_links or args.default
 
     # Add preprocessors
     preprocessor_list = []
@@ -367,6 +424,8 @@ if __name__ == "__main__":
         preprocessor_list.append(CloudRunnerPreprocessor)
     if version_validation:
         preprocessor_list.append(VersionValidationPreprocessor)
+    if loading_links:
+        preprocessor_list.append(LoadingLinksPreprocessor)
     if renumber_code:
         preprocessor_list.append(RenumberCodeCellPreprocessor)
 
@@ -426,7 +485,7 @@ if __name__ == "__main__":
         in_notebook = nbformat.read(str(file_loc), as_version=4)
 
         # the CloudRunnerPreprocessor needs to know the filename of this notebook
-        resources = {CloudRunnerPreprocessor.path_resource_name: str(file_loc)}
+        resources = {PATH_RESOURCE_NAME: str(file_loc)}
 
         writer = writers.FilesWriter()
 
@@ -459,6 +518,18 @@ if __name__ == "__main__":
 
                 if original != updated:
                     check_failed.append(str(file_loc))
+
+                    if on_ci:
+                        # CI doesn't provide enough state to diagnose a peculiar or
+                        # seemingly-spurious difference, so include a diff in the logs. This allows
+                        # us to inspect the change retroactive if required, but doesn't junk up the
+                        # final output/annotation.
+                        sys.stdout.writelines(
+                            difflib.unified_diff(
+                                original.splitlines(keepends=True),
+                                updated.splitlines(keepends=True),
+                            )
+                        )
 
                 tempdir.cleanup()
 

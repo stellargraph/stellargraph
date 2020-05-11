@@ -545,8 +545,7 @@ class GAT:
                 )
             x_inp, predictions = gat.in_out_tensors()
 
-    For more details, please see the GAT demo notebook:
-    demos/node-classification/gat/gat-cora-node-classification-example.ipynb
+    For more details, please see `the GAT demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`_
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \

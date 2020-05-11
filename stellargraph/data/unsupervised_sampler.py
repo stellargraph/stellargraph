@@ -87,7 +87,7 @@ class UnsupervisedSampler:
         elif is_real_iterable(nodes):  # check whether the nodes provided are valid.
             self.nodes = list(nodes)
         else:
-            raise ValueError("nodes parameter should be an iterableof node IDs.")
+            raise ValueError("nodes parameter should be an iterable of node IDs.")
 
         # Require walks of at lease length two because to create a sample pair we need at least two nodes.
         if length < 2:
@@ -132,9 +132,9 @@ class UnsupervisedSampler:
         """
         self._check_parameter_values(batch_size)
 
-        all_nodes = list(self.graph.nodes())
+        all_nodes = list(self.graph.nodes(use_ilocs=True))
         # Use the sampling distribution as per node2vec
-        degrees = self.graph.node_degrees()
+        degrees = self.graph.node_degrees(use_ilocs=True)
         sampling_distribution = np.array([degrees[n] ** 0.75 for n in all_nodes])
         sampling_distribution_norm = sampling_distribution / np.sum(
             sampling_distribution
@@ -153,9 +153,14 @@ class UnsupervisedSampler:
             ]
         )
 
+        positive_pairs = self.graph.node_ids_to_ilocs(positive_pairs.flatten()).reshape(
+            positive_pairs.shape
+        )
+
         negative_samples = self.np_random.choice(
             all_nodes, size=len(positive_pairs), p=sampling_distribution_norm
         )
+
         negative_pairs = np.column_stack((positive_pairs[:, 0], negative_samples))
 
         pairs = np.concatenate((positive_pairs, negative_pairs), axis=0)
