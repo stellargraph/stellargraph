@@ -204,9 +204,9 @@ texinfo_documents = [
 # https://github.com/readthedocs/readthedocs.org/blob/master/readthedocs/doc_builder/templates/doc_builder/conf.py.tmpl
 nbsphinx_prolog = r"""
 {% if env.config.html_context.github_version is defined and env.config.html_context.current_version != "stable" %}
-    {% set github_version = env.config.html_context.github_version %}
+    {% set git_revision = env.config.html_context.github_version %}
 {% else %}
-    {% set github_version = "master" %}
+    {% set git_revision = "master" %}
 {% endif %}
 
 .. raw:: html
@@ -214,8 +214,8 @@ nbsphinx_prolog = r"""
     <div class="admonition info">
       <p>
         Execute this notebook:
-        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ github_version }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
-        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ github_version }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
+        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ git_revision }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ git_revision }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
       </p>
     </div>
