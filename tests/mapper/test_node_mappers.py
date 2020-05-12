@@ -716,8 +716,8 @@ def test_attri2vec_nodemapper_1():
     assert nf.shape == (1, n_feat)
 
     # This will fail as the nodes are not in the graph
-    #    with pytest.raises(KeyError):
-    Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
+    with pytest.raises(KeyError):
+        Attri2VecNodeGenerator(G1, batch_size=2).flow(["A", "B"])
 
 
 def test_attri2vec_nodemapper_2():
@@ -730,6 +730,80 @@ def test_attri2vec_nodemapper_2():
     # With no shuffle
     mapper = Attri2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
     expected_node_batches = [[1, 2], [3, 4], [5]]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf) == expected_node_batches[ii])
+
+
+def test_node2vec_nodemapper_constructor_nx():
+    """
+    Node2VecNodeGenerator requires a StellarGraph object
+    """
+    G = nx.Graph()
+    G.add_nodes_from(range(4))
+
+    with pytest.raises(TypeError):
+        Node2VecNodeGenerator(G, batch_size=2)
+
+
+def test_node2vec_nodemapper_constructor():
+
+    G = example_graph()
+
+    generator = Node2VecNodeGenerator(G, batch_size=2)
+
+    mapper = generator.flow(list(G.nodes()))
+
+    assert generator.batch_size == 2
+    assert mapper.data_size == 4
+    assert len(mapper.ids) == 4
+
+
+def test_node2vec_nodemapper_1():
+
+    n_batch = 2
+
+    # test graph
+    G1 = example_graph()
+
+    mapper1 = Node2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
+    assert len(mapper1) == 2
+
+    G2 = example_graph_2()
+
+    mapper2 = Node2VecNodeGenerator(G2, batch_size=n_batch).flow(G2.nodes())
+    assert len(mapper2) == 3
+
+    for mapper in [mapper1, mapper2]:
+        for ii in range(2):
+            nf, nl = mapper[ii]
+            assert nf.shape == (n_batch,)
+            assert nl is None
+
+    # Check beyond the graph lengh
+    with pytest.raises(IndexError):
+        nf, nl = mapper1[len(mapper1)]
+
+    # Check the last batch
+    nf, nl = mapper2[len(mapper2) - 1]
+    assert nf.shape == (1,)
+
+
+def test_node2vec_nodemapper_2():
+
+    n_batch = 2
+
+    G = example_graph_2()
+    nodes = list(G.nodes())
+
+    # With no shuffle
+    mapper = Node2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
+    expected_node_batches = [
+        G.node_ids_to_ilocs([1, 2]),
+        G.node_ids_to_ilocs([3, 4]),
+        G.node_ids_to_ilocs([5]),
+    ]
     assert len(mapper) == 3
     for ii in range(len(mapper)):
         nf, nl = mapper[ii]
