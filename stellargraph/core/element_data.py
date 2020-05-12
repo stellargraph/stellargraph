@@ -356,13 +356,14 @@ class EdgeData(ElementData):
 
     _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
 
-    def __init__(self, shared, type_starts):
+    def __init__(self, shared, type_starts, number_of_nodes):
         super().__init__(shared, type_starts)
 
         # cache these columns to avoid having to do more method and dict look-ups
         self.sources = self._column(SOURCE)
         self.targets = self._column(TARGET)
         self.weights = self._column(WEIGHT)
+        self.number_of_nodes = number_of_nodes
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
@@ -374,21 +375,17 @@ class EdgeData(ElementData):
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
     def _init_directed_adj_lists(self):
-        # record the edge ilocs of incoming, outgoing and both-direction edges
+        # record the edge ilocs of incoming and outgoing edges
         if len(self.targets) == 0:
             empty_array = np.array([], dtype=np.uint8)
             self._edges_in_dict = FlatAdjacencyList(empty_array, empty_array)
             self._edges_out_dict = FlatAdjacencyList(empty_array, empty_array)
             return
 
-        # this could be less than the true number of nodes if the node with the largest iloc is isolated
-        # but this doesn't cause issues with the code below
-        number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-
         def _to_dir_adj_list(arr):
-            neigh_counts = np.bincount(arr, minlength=number_of_nodes)
+            neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
             neigh_counts = neigh_counts.astype(self._id_index.dtype, copy=False)
-            splits = np.cumsum(neigh_counts).astype(self._id_index.dtype, copy=False)
+            splits = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
             return FlatAdjacencyList(flat, splits)
 
@@ -396,28 +393,29 @@ class EdgeData(ElementData):
         self._edges_out_dict = _to_dir_adj_list(self.sources)
 
     def _init_undirected_adj_lists(self):
-        # record the edge ilocs of incoming, outgoing and both-direction edges
+        # record the edge ilocs of both-direction edges
         num_edges = len(self.targets)
         if num_edges == 0:
             empty_array = np.array([], dtype=np.uint8)
             self._edges_dict = FlatAdjacencyList(empty_array, empty_array)
             return
 
-        number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
-        edge_iloc_dtype = np.min_scalar_type(len(self.sources))
+        # the dtype of the edge_ilocs
+        _dtype = np.min_scalar_type(2 * len(self.sources))
 
-        sentinel = np.cast[self.sources.dtype](-1)
+        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
+        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
         self_loops = self.sources == self.targets
         num_self_loops = self_loops.sum()
 
         combined = np.concatenate([self.sources, self.targets])
         # mask out duplicates of self loops
         combined[num_edges:][self_loops] = sentinel
-        flat_array = np.argsort(combined).astype(
-            np.min_scalar_type(2 * len(self.sources)), copy=False
-        )
+
+        flat_array = np.argsort(combined).astype(_dtype, copy=False)
 
         # get targets without self loops inplace
+        # sentinels are sorted to the end
         filtered_targets = combined[num_edges:]
         np.ndarray.sort(filtered_targets)
 
@@ -427,13 +425,12 @@ class EdgeData(ElementData):
             filtered_targets = filtered_targets[:-num_self_loops]
 
         flat_array %= num_edges
-        neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes).astype(
-            edge_iloc_dtype, copy=False
-        )
+        neighbour_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
         neighbour_counts += np.bincount(
-            filtered_targets, minlength=number_of_nodes
-        ).astype(edge_iloc_dtype, copy=False)
-        splits = np.cumsum(neighbour_counts).astype(edge_iloc_dtype, copy=False)
+            filtered_targets, minlength=self.number_of_nodes
+        )
+        neighbour_counts = neighbour_counts.astype(_dtype, copy=False)
+        splits = np.cumsum(neighbour_counts, dtype=_dtype)
 
         self._edges_dict = FlatAdjacencyList(flat_array, splits)
 
