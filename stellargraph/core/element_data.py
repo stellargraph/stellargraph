@@ -120,29 +120,18 @@ class ElementData:
     than indexing pandas dataframes, series or indices.
 
     Args:
-        shared (pandas DataFrame): information for each element
+        ids (sequence): the IDs of each element
         type_starts (list of tuple of type name, int): the starting iloc of the elements of each type within ``shared``
     """
 
-    # any columns that must be in the `shared` dataframes passed to `__init__` (this should be
-    # overridden by subclasses as appropriate)
-    _SHARED_REQUIRED_COLUMNS = []
-
-    def __init__(self, shared, type_starts):
-        if not isinstance(shared, pd.DataFrame):
-            raise TypeError(
-                f"shared: expected pandas DataFrame, found {type(shared).__name__}"
-            )
-
-        require_dataframe_has_columns("shared", shared, self._SHARED_REQUIRED_COLUMNS)
-
+    def __init__(self, ids, type_starts):
         if not isinstance(type_starts, list):
             raise TypeError(
                 f"type_starts: expected list, found {type(type_starts).__name__}"
             )
 
         type_ranges = {}
-        type_stops = type_starts[1:] + [(None, len(shared))]
+        type_stops = type_starts[1:] + [(None, len(ids))]
         consecutive_types = zip(type_starts, type_stops)
         for idx, ((type_name, start), (_, stop)) in enumerate(consecutive_types):
             if idx == 0 and start != 0:
@@ -155,8 +144,7 @@ class ElementData:
                 )
             type_ranges[type_name] = range(start, stop)
 
-        self._id_index = ExternalIdIndex(shared.index)
-        self._columns = {name: data.to_numpy() for name, data in shared.iteritems()}
+        self._id_index = ExternalIdIndex(ids)
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
@@ -172,9 +160,6 @@ class ElementData:
 
     def __contains__(self, item) -> bool:
         return self._id_index.contains_external(item)
-
-    def _column(self, column) -> np.ndarray:
-        return self._columns[column]
 
     @property
     def ids(self) -> ExternalIdIndex:
@@ -224,13 +209,13 @@ class ElementData:
 class NodeData(ElementData):
     """
     Args:
-        shared (pandas DataFrame): information for the nodes
+        ids (sequence): the IDs of each element
         type_starts (list of tuple of type name, int): the starting iloc of the nodes of each type within ``shared``
         features (dict of type name to numpy array): a 2D numpy or scipy array of feature vectors for the nodes of each type
     """
 
-    def __init__(self, shared, type_starts, features):
-        super().__init__(shared, type_starts)
+    def __init__(self, ids, type_starts, features):
+        super().__init__(ids, type_starts)
         if not isinstance(features, dict):
             raise TypeError(f"features: expected dict, found {type(features).__name__}")
 
@@ -349,19 +334,39 @@ class FlatAdjacencyList:
 class EdgeData(ElementData):
     """
     Args:
-        shared (pandas DataFrame): information for the edges
+        ids (sequence): the IDs of each element
+        sources (numpy.ndarray): the ilocs of the source of each edge
+        targets (numpy.ndarray): the ilocs of the target of each edge
+        weight (numpy.ndarray): the weight of each edge
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
     """
 
-    _SHARED_REQUIRED_COLUMNS = [SOURCE, TARGET, WEIGHT]
+    def __init__(self, ids, sources, targets, weights, type_starts, number_of_nodes):
+        super().__init__(ids, type_starts)
 
-    def __init__(self, shared, type_starts, number_of_nodes):
-        super().__init__(shared, type_starts)
+        for name, column in {
+            "sources": sources,
+            "targets": targets,
+            "weights": weights,
+        }.items():
+            if not isinstance(column, np.ndarray):
+                raise TypeError(
+                    f"{name}: expected a NumPy ndarray, found {type(column).__name__}"
+                )
 
-        # cache these columns to avoid having to do more method and dict look-ups
-        self.sources = self._column(SOURCE)
-        self.targets = self._column(TARGET)
-        self.weights = self._column(WEIGHT)
+            if len(column.shape) != 1:
+                raise TypeError(
+                    f"{name}: expected rank-1 array, found shape {column.shape}"
+                )
+
+            if len(column) != len(self._id_index):
+                raise TypeError(
+                    f"{name}: expected length {len(self._id_index)} to match IDs, found length {len(column)}"
+                )
+
+        self.sources = sources
+        self.targets = targets
+        self.weights = weights
         self.number_of_nodes = number_of_nodes
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
