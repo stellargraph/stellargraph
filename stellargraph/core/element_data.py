@@ -36,7 +36,7 @@ class ExternalIdIndex:
     def __init__(self, ids):
         self._index = pd.Index(ids)
         # reserve 2 ^ (n-bits) - 1 for sentinel
-        self._dtype = np.min_scalar_type(len(self._index))
+        self.dtype = np.min_scalar_type(len(self._index))
 
         if not self._index.is_unique:
             # had some duplicated IDs, which is an error
@@ -99,7 +99,7 @@ class ExternalIdIndex:
         # reduce the storage required (especially useful if this is going to be stored rather than
         # just transient)
         if smaller_type:
-            return internal_ids.astype(self._dtype)
+            return internal_ids.astype(self.dtype)
         return internal_ids
 
     def from_iloc(self, internal_ids) -> np.ndarray:
@@ -329,9 +329,11 @@ class FlatAdjacencyList:
 
     def __getitem__(self, idx):
         if idx == 0:
-            start, stop = 0, self.splits[0]
+            start = 0
+            stop = self.splits[0]
         else:
-            start, stop = self.splits[idx - 1], self.splits[idx]
+            start = self.splits[idx - 1]
+            stop = self.splits[idx]
         return self.flat[start:stop]
 
     def get(self, idx, default):
