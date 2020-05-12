@@ -199,10 +199,11 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 # This is processed by Jinja2 and inserted before each notebook
-# Uses an internal readthedocs variable to get the git commit if available - note that this is undocumented and
-# don't match those listed for future at https://docs.readthedocs.io/en/stable/development/design/theme-context.html
+# We use internal readthedocs variables to get the git version if available. Note that this is undocumented, however it
+# is shown in our readthedocs build logs, and is generated from a template:
+# https://github.com/readthedocs/readthedocs.org/blob/master/readthedocs/doc_builder/templates/doc_builder/conf.py.tmpl
 nbsphinx_prolog = r"""
-{% if env.config.html_context.github_version is defined and env.config.release != "master" %}
+{% if env.config.html_context.github_version is defined and env.config.html_context.current_version != "stable" %}
     {% set github_version = env.config.html_context.github_version %}
 {% else %}
     {% set github_version = "master" %}
@@ -216,12 +217,6 @@ nbsphinx_prolog = r"""
         <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ github_version }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
         <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ github_version }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
-        <br>
-        Github version: {{ env.config.html_context.github_version }}
-        <br>
-        Release: {{ env.config.release }} 
-        <br>
-        Current version: {{ env.config.html_context.current_version }}
       </p>
     </div>
 """
