@@ -301,6 +301,27 @@ class NodeData(ElementData):
 
 
 class FlatAdjacencyList:
+    """
+    Stores an adjacency list in one contiguous numpy array in a format similar
+    to a CSR matrix. The main difference between a CSR matrix and this data structure
+    is that this class does not store the edge weight, is only provides an `edge_ilocs`
+    which can be used to look up all other edge data.
+
+    Ths class contains:
+
+        - `self.flat`: a numpy array of edge_ilocs grouped by node
+        - `self.splits`: a numpy array used to index `self.flat`
+
+    A node's corresponding edge_ilocs are access by
+
+        ```self.flat[self.splits[node_iloc-1]: self.splits[node_iloc]]```
+
+    Where:
+        - `self.splits[node_iloc - 1]` is where the edge_ilocs corresponding to the node start
+        - `self.splits[node_iloc]` is where the edge_ilocs corresponding to the node end
+
+    """
+
     def __init__(self, flat_array, splits):
         self.splits = splits
         self.max_node_iloc = len(splits) - 1
@@ -363,13 +384,17 @@ class EdgeData(ElementData):
         edge_iloc_dtype = np.min_scalar_type(len(self.sources))
         number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
 
-        neighbour_counts = np.bincount(self.targets, minlength=number_of_nodes + 1).astype(edge_iloc_dtype, copy=False)
+        neighbour_counts = np.bincount(
+            self.targets, minlength=number_of_nodes + 1
+        ).astype(edge_iloc_dtype, copy=False)
         splits = np.cumsum(neighbour_counts).astype(edge_iloc_dtype, copy=False)
 
         flat_array = np.argsort(self.targets).astype(edge_iloc_dtype, copy=False)
         self._edges_in_dict = FlatAdjacencyList(flat_array, splits)
 
-        neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes + 1).astype(edge_iloc_dtype, copy=False)
+        neighbour_counts = np.bincount(
+            self.sources, minlength=number_of_nodes + 1
+        ).astype(edge_iloc_dtype, copy=False)
         splits = np.cumsum(neighbour_counts).astype(edge_iloc_dtype, copy=False)
 
         flat_array = np.argsort(self.sources).astype(edge_iloc_dtype, copy=False)
@@ -393,7 +418,9 @@ class EdgeData(ElementData):
         combined = np.concatenate([self.sources, self.targets])
         # mask out duplicates of self loops
         combined[num_edges:][self_loops] = sentinel
-        flat_array = np.argsort(combined).astype(np.min_scalar_type(2 * len(self.sources)), copy=False)
+        flat_array = np.argsort(combined).astype(
+            np.min_scalar_type(2 * len(self.sources)), copy=False
+        )
 
         # get targets without self loops inplace
         filtered_targets = combined[num_edges:]
@@ -405,8 +432,12 @@ class EdgeData(ElementData):
             filtered_targets = filtered_targets[:-num_self_loops]
 
         flat_array %= num_edges
-        neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes).astype(edge_iloc_dtype, copy=False)
-        neighbour_counts += np.bincount(filtered_targets, minlength=number_of_nodes).astype(edge_iloc_dtype, copy=False)
+        neighbour_counts = np.bincount(self.sources, minlength=number_of_nodes).astype(
+            edge_iloc_dtype, copy=False
+        )
+        neighbour_counts += np.bincount(
+            filtered_targets, minlength=number_of_nodes
+        ).astype(edge_iloc_dtype, copy=False)
         splits = np.cumsum(neighbour_counts).astype(edge_iloc_dtype, copy=False)
 
         self._edges_dict = FlatAdjacencyList(flat_array, splits)
