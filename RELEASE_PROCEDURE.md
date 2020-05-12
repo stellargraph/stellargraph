@@ -141,13 +141,20 @@
      ```
    - Turn branch protection back on.
 
-7. **Prompt Binder to generate the docker image**
+7. **Prompt Binder to generate the docker images**
 
-   [Binder](https://mybinder.org) uses a docker image to package up the state of a repository. It takes a long time to build, and is only built lazily, for the first user to click one of our "launch binder" buttons. It is your job to do this:
+    [Binder](https://mybinder.org) uses a docker image to package up the state of a repository. It takes a long time to build, and is only built lazily, for the first user to click one of our "launch binder" buttons. It is your job to do this:
 
-   - Find [any demo notebook](https://github.com/stellargraph/stellargraph/blob/master/demos/basics/loading-pandas.ipynb) on the `master` branch
-   - Click [the "launch binder" button](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/basics/loading-pandas.ipynb) (or just click this link)
-   - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
+   1. For the `master` branch:
+      - Find [any demo notebook](https://github.com/stellargraph/stellargraph/blob/master/demos/basics/loading-pandas.ipynb) on the `master` branch
+      - Click [the "launch binder" button](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/basics/loading-pandas.ipynb) (or just click this link)
+      - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
+
+   2. For the release tag:
+      - Find the [specific release version](https://readthedocs.org/projects/stellargraph/versions/) of documentation just built on readthedocs (eg: `v1.0.0`, not the `stable` or `latest` version).
+      - Navigate to any demo notebook in this documentation
+      - Click the "launch binder" button
+      - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
 
 ## More Information
 
