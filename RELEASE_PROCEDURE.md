@@ -149,12 +149,12 @@
       - Find [any demo notebook](https://github.com/stellargraph/stellargraph/blob/master/demos/basics/loading-pandas.ipynb) on the `master` branch
       - Click [the "launch binder" button](https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/demos/basics/loading-pandas.ipynb) (or just click this link)
       - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
-   
+
    2. For the release tag:
       - Find the [specific release version](https://readthedocs.org/projects/stellargraph/versions/) of documentation just built on readthedocs (eg: `v1.0.0`, not the `stable` or `latest` version).
       - Navigate to any demo notebook in this documentation
       - Click the "launch binder" button
-      - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment     
+      - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
 
 ## More Information
 
