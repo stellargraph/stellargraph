@@ -211,7 +211,7 @@ def test_rotate(knowledge_graph):
     assert np.array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize("model_maker", [RotatE])
+@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE])
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]

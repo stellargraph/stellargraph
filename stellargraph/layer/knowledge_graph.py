@@ -542,19 +542,17 @@ class RotatEScore(Layer):
         # expansion of s◦r - t
         re = s_re * r_re - s_im * r_im - o_re
         im = s_re * r_im + s_im * r_re - o_im
-        # norm the vector: -|| ... ||_2
-        return self._margin - tf.math.sqrt(tf.reduce_sum(re * re + im * im, axis=2))
+        # norm the vector: -|| ... ||_2^2
+        return self._margin - tf.reduce_sum(re * re + im * im, axis=2)
 
 
 @experimental(reason="demo and documentation is missing")
 class RotatE:
-    """
-    """
-
     def __init__(
         self,
         generator,
         embedding_dimension,
+        # default taken from the paper's code: https://github.com/DeepGraphLearning/KnowledgeGraphEmbedding
         margin=12.0,
         embeddings_initializer="normal",
         embeddings_regularizer=None,
@@ -598,50 +596,6 @@ class RotatE:
     def rank_edges_against_all_nodes(
         self, test_data, known_edges_graph, tie_breaking="random"
     ):
-        """
-        Returns the ranks of the true edges in ``test_data``, when scored against all other similar
-        edges.
-
-        For each input edge ``E = (s, r, o)``, the score of the *modified-object* edge ``(s, r, n)``
-        is computed for every node ``n`` in the graph, and similarly the score of the
-        *modified-subject* edge ``(n, r, o)``.
-
-        This computes "raw" and "filtered" ranks:
-
-        raw
-          The score of each edge is ranked against all of the modified-object and modified-subject
-          ones, for instance, if ``E = ("a", "X", "b")`` has score 3.14, and only one
-          modified-object edge has a higher score (e.g. ``F = ("a", "X", "c")``), then the raw
-          modified-object rank for ``E`` will be 2; if all of the ``(n, "X", "b")`` edges have score
-          less than 3.14, then the raw modified-subject rank for ``E`` will be 1.
-
-        filtered
-          The score of each edge is ranked against only the unknown modified-object and
-          modified-subject edges. An edge is considered known if it is in ``known_edges_graph``
-          which should typically hold every edge in the dataset (that is everything from the train,
-          test and validation sets, if the data has been split). For instance, continuing the raw
-          example, if the higher-scoring edge ``F`` is in the graph, then it will be ignored, giving
-          a filtered modified-object rank for ``E`` of 1. (If ``F`` was not in the graph, the
-          filtered modified-object rank would be 2.)
-
-        Args:
-            test_data: the output of :meth:`KGTripleGenerator.flow` on some test triples
-
-            known_edges_graph (StellarGraph):
-                a graph instance containing all known edges/triples
-
-            tie_breaking ('random', 'top' or 'bottom'):
-                How to rank true edges that tie with modified-object or modified-subject ones, see
-                `Sun et al. "A Re-evaluation of Knowledge Graph Completion Methods"
-                <http://arxiv.org/abs/1911.03903>`_
-
-        Returns:
-            A numpy array of integer raw ranks. It has shape ``N × 2``, where N is the number of
-            test triples in ``test_data``; the first column (``array[:, 0]``) holds the
-            modified-object ranks, and the second (``array[:, 1]``) holds the modified-subject
-            ranks.
-        """
-
         if not isinstance(test_data, KGTripleSequence):
             raise TypeError(
                 "test_data: expected KGTripleSequence; found {type(test_data).__name__}"
@@ -650,7 +604,6 @@ class RotatE:
         num_nodes = known_edges_graph.number_of_nodes()
 
         all_node_embs, all_rel_embs = self.embeddings()
-        all_node_embs_conj = all_node_embs.conj()
 
         raws = []
         filtereds = []
@@ -664,11 +617,6 @@ class RotatE:
             ss = all_node_embs[subjects, :]
             rs = all_rel_embs[rels, :]
             os = all_node_embs[objects, :]
-
-            # reproduce the scoring function for ranking the given subject and relation against all
-            # other nodes (objects), and similarly given relation and object against all
-            # subjects. The bulk operations give speeeeeeeeed.
-            # (num_nodes x k, batch_size x k) -> num_nodes x batch_size
 
             # (the margin is a fixed offset that doesn't affect relative ranks)
             mod_o_pred = -np.linalg.norm(
