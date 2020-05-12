@@ -324,7 +324,6 @@ class FlatAdjacencyList:
 
     def __init__(self, flat_array, splits):
         self.splits = splits
-        self.max_node_iloc = len(splits) - 1
         self.flat = flat_array
 
     def __getitem__(self, idx):
@@ -337,13 +336,13 @@ class FlatAdjacencyList:
         return self.flat[start:stop]
 
     def get(self, idx, default):
-        if idx > self.max_node_iloc:
+        if idx >= len(self.splits):
             return default
         else:
             return self[idx]
 
     def items(self):
-        for idx in range(len(self.splits) - 1):
+        for idx in range(len(self.splits)):
             yield (idx, self[idx])
 
 
