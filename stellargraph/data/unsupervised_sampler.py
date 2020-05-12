@@ -87,7 +87,7 @@ class UnsupervisedSampler:
         elif is_real_iterable(nodes):  # check whether the nodes provided are valid.
             self.nodes = list(nodes)
         else:
-            raise ValueError("nodes parameter should be an iterableof node IDs.")
+            raise ValueError("nodes parameter should be an iterable of node IDs.")
 
         # Require walks of at lease length two because to create a sample pair we need at least two nodes.
         if length < 2:

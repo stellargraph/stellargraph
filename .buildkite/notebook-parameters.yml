@@ -20,3 +20,6 @@ embedding_dimension: 5
 # training of fewer models for demos/graph-classification/supervised-graph-classification.ipynb
 folds: 2
 num_restarts: 2
+# a small number of random walks for demos/embeddings/stellargraph-keras-node2vec.ipynb
+# and demos/node-classification/node2vec/stellargraph-keras-node2vec-node-classification.ipynb
+walk_number: 2
