@@ -326,9 +326,13 @@ class StellarGraph:
             )
         else:
             if not edges_is_internal:
-                raise TypeError(f"edges: expected type 'EdgeData' when 'nodes' has type 'NodeData', found {type(edges).__name__}")
+                raise TypeError(
+                    f"edges: expected type 'EdgeData' when 'nodes' has type 'NodeData', found {type(edges).__name__}"
+                )
             if not nodes_is_internal:
-                raise TypeError(f"nodes: expected type 'NodeData' when 'edges' has type 'EdgeData', found {type(nodes).__name__}")
+                raise TypeError(
+                    f"nodes: expected type 'NodeData' when 'edges' has type 'EdgeData', found {type(nodes).__name__}"
+                )
 
             params = locals()
             for param, expected in self.__init__.__kwdefaults__.items():
@@ -336,7 +340,9 @@ class StellarGraph:
                     continue
 
                 if params[param] is not expected:
-                    raise ValueError(f"{param}: expected the default value ({expected!r}) when constructing from 'NodeData' and 'EdgeData', found {params[param]!r}. (All parameters except 'nodes', 'edges' and 'is_directed' must be left unset.)")
+                    raise ValueError(
+                        f"{param}: expected the default value ({expected!r}) when constructing from 'NodeData' and 'EdgeData', found {params[param]!r}. (All parameters except 'nodes', 'edges' and 'is_directed' must be left unset.)"
+                    )
 
             internal_nodes = nodes
             internal_edges = edges
