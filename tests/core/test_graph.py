@@ -21,7 +21,7 @@ import pytest
 import random
 from stellargraph.core.graph import *
 from stellargraph.core.experimental import ExperimentalWarning
-from ..test_utils.alloc import snapshot, allocation_benchmark
+from ..test_utils.alloc import snapshot, peak, allocation_benchmark
 from ..test_utils.graphs import (
     example_graph_nx,
     example_graph,
@@ -784,7 +784,7 @@ def test_benchmark_creation(
     benchmark(f)
 
 
-@pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
+@pytest.mark.benchmark(group="StellarGraph creation (size)", timer=snapshot)
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
@@ -793,6 +793,35 @@ def test_benchmark_creation(
 @pytest.mark.parametrize("feature_size", [None, 100])
 @pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation(
+    allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+):
+    nodes, edges = example_benchmark_graph(
+        feature_size, num_nodes, num_edges, features_in_nodes=True
+    )
+
+    def f():
+        sg = StellarGraph(nodes=nodes, edges=edges)
+        if force_adj_lists == "directed":
+            sg._edges._init_directed_adj_lists()
+        elif force_adj_lists == "undirected":
+            sg._edges._init_undirected_adj_lists()
+        elif force_adj_lists == "both":
+            sg._edges._init_undirected_adj_lists()
+            sg._edges._init_directed_adj_lists()
+        return sg
+
+    allocation_benchmark(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph creation (peak)", timer=peak)
+# various element counts, to give an indication of the relationship
+# between those and memory use (0,0 gives the overhead of the
+# StellarGraph object itself, without any data)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+# features or not, to capture their cost
+@pytest.mark.parametrize("feature_size", [None, 100])
+@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
+def test_allocation_benchmark_creation_peak(
     allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
 ):
     nodes, edges = example_benchmark_graph(
