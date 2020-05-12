@@ -383,24 +383,17 @@ class EdgeData(ElementData):
 
         # this could be less than the true number of nodes if the node with the largest iloc is isolated
         # but this doesn't cause issues with the code below
-        edge_iloc_dtype = np.min_scalar_type(len(self.sources))
         number_of_nodes = max(self.targets.max(), self.sources.max()) + 1
 
-        neighbour_counts = np.bincount(
-            self.targets, minlength=number_of_nodes + 1
-        ).astype(edge_iloc_dtype, copy=False)
-        splits = np.cumsum(neighbour_counts).astype(edge_iloc_dtype, copy=False)
+        def _to_dir_adj_list(arr):
+            neigh_counts = np.bincount(arr, minlength=number_of_nodes)
+            neigh_counts = neigh_counts.astype(self._id_index.dtype, copy=False)
+            splits = np.cumsum(neigh_counts).astype(self._id_index.dtype, copy=False)
+            flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
+            return FlatAdjacencyList(flat, splits)
 
-        flat_array = np.argsort(self.targets).astype(edge_iloc_dtype, copy=False)
-        self._edges_in_dict = FlatAdjacencyList(flat_array, splits)
-
-        neighbour_counts = np.bincount(
-            self.sources, minlength=number_of_nodes + 1
-        ).astype(edge_iloc_dtype, copy=False)
-        splits = np.cumsum(neighbour_counts).astype(edge_iloc_dtype, copy=False)
-
-        flat_array = np.argsort(self.sources).astype(edge_iloc_dtype, copy=False)
-        self._edges_out_dict = FlatAdjacencyList(flat_array, splits)
+        self._edges_in_dict = _to_dir_adj_list(self.targets)
+        self._edges_out_dict = _to_dir_adj_list(self.sources)
 
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
