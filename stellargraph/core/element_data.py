@@ -425,12 +425,10 @@ class EdgeData(ElementData):
             filtered_targets = filtered_targets[:-num_self_loops]
 
         flat_array %= num_edges
-        neighbour_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
-        neighbour_counts += np.bincount(
-            filtered_targets, minlength=self.number_of_nodes
-        )
-        neighbour_counts = neighbour_counts.astype(_dtype, copy=False)
-        splits = np.cumsum(neighbour_counts, dtype=_dtype)
+        neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
+        neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
+        neigh_counts = neigh_counts.astype(_dtype, copy=False)
+        splits = np.cumsum(neigh_counts, dtype=_dtype)
 
         self._edges_dict = FlatAdjacencyList(flat_array, splits)
 
