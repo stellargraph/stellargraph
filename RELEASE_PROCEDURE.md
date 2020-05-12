@@ -151,7 +151,7 @@
       - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment
    
    2. For the release tag:
-      - Find the [specific release version](https://readthedocs.org/projects/stellargraph/versions/) of documentation just build on readthedocs (eg: `v1.0.0`, not the `stable` or `latest` version).
+      - Find the [specific release version](https://readthedocs.org/projects/stellargraph/versions/) of documentation just built on readthedocs (eg: `v1.0.0`, not the `stable` or `latest` version).
       - Navigate to any demo notebook in this documentation
       - Click the "launch binder" button
       - Wait for the "Starting repository: stellargraph/stellargraph" loading screen to switch to a Jupyter environment     
