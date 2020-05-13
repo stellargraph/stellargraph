@@ -588,8 +588,8 @@ class RotatE:
         node += self._node_embeddings_real.embeddings.numpy()
 
         phase = self._edge_type_embeddings_phase.embeddings.numpy()
-        rel = 1j * np.cos(phase)
-        rel += np.sin(phase)
+        rel = 1j * np.sin(phase)
+        rel += np.cos(phase)
 
         return node, rel
 
@@ -664,8 +664,8 @@ class RotatE:
 
         r_phase = self._edge_type_embeddings_phase(r_iloc)
 
-        r_re = tf.math.sin(r_phase)
-        r_im = tf.math.cos(r_phase)
+        r_re = tf.math.cos(r_phase)
+        r_im = tf.math.sin(r_phase)
 
         o_re = self._node_embeddings_real(o_iloc)
         o_im = self._node_embeddings_imag(o_iloc)
