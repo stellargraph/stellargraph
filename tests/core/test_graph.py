@@ -905,10 +905,19 @@ def test_allocation_benchmark_creation(
 @pytest.mark.parametrize("feature_size", [None, 100])
 @pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation_peak(
-    allocation_benchmark, input_data, feature_size, num_nodes, num_edges, force_adj_lists
+    allocation_benchmark,
+    input_data,
+    feature_size,
+    num_nodes,
+    num_edges,
+    force_adj_lists,
 ):
     nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True, pandas_node_data=input_data == "pandas"
+        feature_size,
+        num_nodes,
+        num_edges,
+        features_in_nodes=True,
+        pandas_node_data=input_data == "pandas",
     )
 
     def f():
