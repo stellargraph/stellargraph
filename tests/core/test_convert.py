@@ -117,7 +117,7 @@ def test_columnar_convert_invalid_input():
         converter.convert(1)
 
     with pytest.raises(
-        TypeError, match=r"some_name\['x'\]: expected pandas DataFrame, found int",
+        TypeError, match=r"some_name\['x'\]: expected RowFrame or pandas DataFrame, found int",
     ):
         converter.convert({"x": 1})
 
@@ -263,7 +263,7 @@ def test_columnar_convert_ndarray():
 
     # check it says which type
     with pytest.raises(
-        ValueError, match="some_name['foo']: could not convert NumPy array"
+        ValueError, match=r"some_name\['foo'\]: could not convert NumPy array"
     ):
         converter.convert(np.zeros(123))
 

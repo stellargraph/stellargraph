@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 import random
 from stellargraph.core.graph import *
+from stellargraph.core.row_frame import RowFrame
 from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, allocation_benchmark
 from ..test_utils.graphs import (
@@ -173,7 +174,7 @@ def test_graph_constructor_nodes_from_edges():
         StellarGraph(edges=1)
 
     with pytest.raises(
-        TypeError, match="edges.*: expected pandas DataFrame, found int"
+        TypeError, match="edges.*: expected RowFrame or pandas DataFrame, found int"
     ):
         StellarGraph(edges={"a": 1})
 
@@ -195,6 +196,57 @@ def test_graph_constructor_edge_labels():
         (4, 0, "b"),
         (5, 2, "b"),
     ]
+
+
+@pytest.fixture(params=["RowFrame", "NumPy"])
+def rowframe_convert(request):
+    return RowFrame if request.param == "RowFrame" else (lambda arr: arr)
+
+
+def test_graph_constructor_rowframe_numpy_homogeneous(rowframe_convert):
+    empty = np.empty((0, 0))
+    g = StellarGraph(rowframe_convert(empty))
+    np.testing.assert_array_equal(g.nodes(), [])
+    assert g.node_features() is empty
+
+    arr = np.random.rand(3, 4)
+    edges = pd.DataFrame({"source": [0, 1], "target": [2, 2]})
+    g = StellarGraph(rowframe_convert(arr), edges)
+    np.testing.assert_array_equal(g.nodes(), [0, 1, 2])
+    assert g.node_features() is arr
+
+
+def test_graph_constructor_rowframe_numpy_heterogeneous(rowframe_convert):
+    arr1 = np.random.rand(3, 4)
+    arr2 = np.random.rand(6, 7)
+    frame2 = RowFrame(arr2, index=range(100, 106))
+
+    g = StellarGraph({"a": rowframe_convert(arr1), "b": arr2})
+    np.testing.assert_array_equal(g.nodes(), [0, 1, 2, 100, 101, 102, 103, 104, 105])
+    assert g.node_features(node_type="a") is arr1
+    assert g.node_features(node_type="b") is arr2.values
+
+
+def test_graph_constructor_rowframe_numpy_invalid():
+    arr1 = np.random.rand(3, 4)
+    arr2 = np.random.rand(6, 7)
+
+    with pytest.raises(ValueError, match="expected IDs .*, found .* more: 0, 1, 2"):
+        # using an array directly twice will cause the auto-range-IDs to overlap
+        StellarGraph({"a": arr1, "b": arr2})
+
+    with pytest.raises(ValueError, match="expected IDs .*, found .* more: 1"):
+        StellarGraph(RowFrame(index=[1, 1]))
+
+    with pytest.raises(ValueError, match="edges: expected all source .* found some missing: 'a'"):
+        StellarGraph(arr1, pd.DataFrame({"source": ["a"], "target": ["b"]}))
+
+    with pytest.raises(ValueError, match="edges: expected all source .* found some missing: 'b'"):
+        StellarGraph(RowFrame(index=["a", "c"]), pd.DataFrame({"source": ["a"], "target": ["b"]}))
+
+    # FIXME(#1524): this restriction on the shape should be lifted
+    with pytest.raises(ValueError, match=r"features\['default'\]: expected 2 dimensions, found 3"):
+        StellarGraph(np.random.rand(3, 4, 5))
 
 
 def test_info():
