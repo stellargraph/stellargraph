@@ -424,7 +424,7 @@ class EdgeData(ElementData):
         # get targets without self loops inplace
         # sentinels are sorted to the end
         filtered_targets = combined[num_edges:]
-        np.ndarray.sort(filtered_targets)
+        filtered_targets.sort()
 
         # remove the sentinels if there are any
         if num_self_loops > 0:
