@@ -315,13 +315,15 @@ class FlatAdjacencyList:
         if idx == 0:
             start = 0
             stop = self.splits[0]
+        elif idx < 0:
+            raise KeyError("Invalid node ilocs")
         else:
             start = self.splits[idx - 1]
             stop = self.splits[idx]
         return self.flat[start:stop]
 
     def get(self, idx, default):
-        if idx >= len(self.splits):
+        if idx >= len(self.splits) or idx < 0:
             return default
         else:
             return self[idx]
