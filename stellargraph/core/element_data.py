@@ -341,6 +341,7 @@ class EdgeData(ElementData):
         targets (numpy.ndarray): the ilocs of the target of each edge
         weight (numpy.ndarray): the weight of each edge
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
+        number_of_nodes (int): the total number of nodes in the graph
     """
 
     def __init__(self, ids, sources, targets, weights, type_starts, number_of_nodes):
