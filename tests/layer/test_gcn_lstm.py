@@ -22,11 +22,8 @@ Created on Fri May  1 13:02:32 2020
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from stellargraph.layer import GraphConvolutionLSTM
 
 import numpy as np
-from tensorflow import keras
-from tensorflow.keras import Model
 from stellargraph.layer import GraphConvolutionLSTM
 from stellargraph.layer import FixedAdjacencyGraphConvolution
 import pytest
@@ -122,3 +119,21 @@ def test_lstm_return_sequences():
     for i in range(n_gc_layers, n_layers - 3):
         assert gcn_lstm_model._layers[i].return_sequences == True
     assert gcn_lstm_model._layers[n_layers - 3].return_sequences == False
+
+
+# this will change once the graph convolution units change is merged
+def test_gcn_lstm_layers():
+    fx, fy, a = get_timeseries_graph_data()
+
+    gcn_lstm_model = GraphConvolutionLSTM(
+        seq_len=fx.shape[-2],
+        adj=a,
+        gc_layers=3,
+        gc_activations=["relu", "relu", "relu"],
+        lstm_layer_size=[8, 16, 32],
+        lstm_activations=["tanh"],
+    )
+    assert (
+        len(gcn_lstm_model._layers)
+        == len(gcn_lstm_model.gc_activations) + len(gcn_lstm_model.lstm_layer_size) + 2
+    )
