@@ -551,6 +551,7 @@ class RotatE:
     """
     Implementation of https://arxiv.org/abs/1902.10197
     """
+
     def __init__(
         self,
         generator,
