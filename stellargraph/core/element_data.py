@@ -335,6 +335,9 @@ class EdgeData(ElementData):
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
     def _init_directed_adj_lists(self):
+        self._edges_in_dict, self._edges_out_dict = self._create_directed_adj_lists()
+
+    def _create_directed_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
         in_dict = {}
         out_dict = {}
@@ -344,10 +347,12 @@ class EdgeData(ElementData):
             out_dict.setdefault(src, []).append(i)
 
         dtype = np.min_scalar_type(len(self.sources))
-        self._edges_in_dict = _numpyise(in_dict, dtype=dtype)
-        self._edges_out_dict = _numpyise(out_dict, dtype=dtype)
+        return _numpyise(in_dict, dtype=dtype), _numpyise(out_dict, dtype=dtype)
 
     def _init_undirected_adj_lists(self):
+        self._edges_dict = self._create_undirected_adj_lists()
+
+    def _create_undirected_adj_lists(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
         undirected = {}
 
@@ -357,7 +362,7 @@ class EdgeData(ElementData):
                 undirected.setdefault(src, []).append(i)
 
         dtype = np.min_scalar_type(len(self.sources))
-        self._edges_dict = _numpyise(undirected, dtype=dtype)
+        return _numpyise(undirected, dtype=dtype)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
