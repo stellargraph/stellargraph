@@ -546,7 +546,7 @@ class RotatEScore(Layer):
         return self._margin - tf.reduce_sum(re * re + im * im, axis=2)
 
 
-@experimental(reason="demo and documentation is missing", issues=[1550])
+@experimental(reason="demo and documentation is missing", issues=[1549, 1550])
 class RotatE:
     """
     Implementation of https://arxiv.org/abs/1902.10197
