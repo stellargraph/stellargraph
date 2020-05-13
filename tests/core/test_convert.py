@@ -117,7 +117,8 @@ def test_columnar_convert_invalid_input():
         converter.convert(1)
 
     with pytest.raises(
-        TypeError, match=r"some_name\['x'\]: expected RowFrame or pandas DataFrame, found int",
+        TypeError,
+        match=r"some_name\['x'\]: expected RowFrame or pandas DataFrame, found int",
     ):
         converter.convert({"x": 1})
 

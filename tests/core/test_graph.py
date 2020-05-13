@@ -54,20 +54,27 @@ def create_graph_1(is_directed=False):
 
 
 def example_benchmark_graph(
-    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
+    feature_size=None,
+    n_nodes=100,
+    n_edges=200,
+    n_types=4,
+    features_in_nodes=True,
+    pandas_node_data=True,
 ):
     node_ids = np.arange(n_nodes)
     edges = pd.DataFrame(
         np.random.randint(0, n_nodes, size=(n_edges, 2)), columns=["source", "target"]
     )
 
-    if feature_size is None:
-        features = []
-    else:
-        features = np.ones((n_nodes, feature_size))
+    features = np.ones((n_nodes, 0 if feature_size is None else feature_size))
 
-    all_nodes = pd.DataFrame(features, index=node_ids)
-    nodes = {ty: all_nodes[node_ids % n_types == ty] for ty in range(n_types)}
+    feature_cls = pd.DataFrame if pandas_node_data else RowFrame
+
+    def select_ty(ty):
+        idx = node_ids % n_types == ty
+        return feature_cls(features[idx, :], index=node_ids[idx])
+
+    nodes = {ty: select_ty(ty) for ty in range(n_types)}
 
     return nodes, edges
 
@@ -221,10 +228,10 @@ def test_graph_constructor_rowframe_numpy_heterogeneous(rowframe_convert):
     arr2 = np.random.rand(6, 7)
     frame2 = RowFrame(arr2, index=range(100, 106))
 
-    g = StellarGraph({"a": rowframe_convert(arr1), "b": arr2})
+    g = StellarGraph({"a": rowframe_convert(arr1), "b": frame2})
     np.testing.assert_array_equal(g.nodes(), [0, 1, 2, 100, 101, 102, 103, 104, 105])
     assert g.node_features(node_type="a") is arr1
-    assert g.node_features(node_type="b") is arr2.values
+    assert g.node_features(node_type="b") is arr2
 
 
 def test_graph_constructor_rowframe_numpy_invalid():
@@ -238,14 +245,22 @@ def test_graph_constructor_rowframe_numpy_invalid():
     with pytest.raises(ValueError, match="expected IDs .*, found .* more: 1"):
         StellarGraph(RowFrame(index=[1, 1]))
 
-    with pytest.raises(ValueError, match="edges: expected all source .* found some missing: 'a'"):
+    with pytest.raises(
+        ValueError, match="edges: expected all source .* found some missing: 'a'"
+    ):
         StellarGraph(arr1, pd.DataFrame({"source": ["a"], "target": ["b"]}))
 
-    with pytest.raises(ValueError, match="edges: expected all source .* found some missing: 'b'"):
-        StellarGraph(RowFrame(index=["a", "c"]), pd.DataFrame({"source": ["a"], "target": ["b"]}))
+    with pytest.raises(
+        ValueError, match="edges: expected all source .* found some missing: 'b'"
+    ):
+        StellarGraph(
+            RowFrame(index=["a", "c"]), pd.DataFrame({"source": ["a"], "target": ["b"]})
+        )
 
     # FIXME(#1524): this restriction on the shape should be lifted
-    with pytest.raises(ValueError, match=r"features\['default'\]: expected 2 dimensions, found 3"):
+    with pytest.raises(
+        ValueError, match=r"features\['default'\]: expected 2 dimensions, found 3"
+    ):
         StellarGraph(np.random.rand(3, 4, 5))
 
 
@@ -808,6 +823,7 @@ def test_benchmark_get_features(
 
 
 @pytest.mark.benchmark(group="StellarGraph creation (time)")
+@pytest.mark.parametrize("input_data", ["pandas", "rowframe"])
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
@@ -816,10 +832,14 @@ def test_benchmark_get_features(
 @pytest.mark.parametrize("feature_size", [None, 100])
 @pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_benchmark_creation(
-    benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    benchmark, input_data, feature_size, num_nodes, num_edges, force_adj_lists
 ):
     nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
+        feature_size,
+        num_nodes,
+        num_edges,
+        features_in_nodes=True,
+        pandas_node_data=input_data == "pandas",
     )
 
     def f():
@@ -837,6 +857,7 @@ def test_benchmark_creation(
 
 
 @pytest.mark.benchmark(group="StellarGraph creation (size)", timer=snapshot)
+@pytest.mark.parametrize("input_data", ["pandas", "rowframe"])
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
@@ -845,10 +866,19 @@ def test_benchmark_creation(
 @pytest.mark.parametrize("feature_size", [None, 100])
 @pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation(
-    allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    allocation_benchmark,
+    input_data,
+    feature_size,
+    num_nodes,
+    num_edges,
+    force_adj_lists,
 ):
     nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
+        feature_size,
+        num_nodes,
+        num_edges,
+        features_in_nodes=True,
+        pandas_node_data=input_data == "pandas",
     )
 
     def f():
@@ -866,6 +896,7 @@ def test_allocation_benchmark_creation(
 
 
 @pytest.mark.benchmark(group="StellarGraph creation (peak)", timer=peak)
+@pytest.mark.parametrize("input_data", ["pandas", "rowframe"])
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
@@ -874,10 +905,10 @@ def test_allocation_benchmark_creation(
 @pytest.mark.parametrize("feature_size", [None, 100])
 @pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation_peak(
-    allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    allocation_benchmark, input_data, feature_size, num_nodes, num_edges, force_adj_lists
 ):
     nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
+        feature_size, num_nodes, num_edges, features_in_nodes=True, pandas_node_data=input_data == "pandas"
     )
 
     def f():
