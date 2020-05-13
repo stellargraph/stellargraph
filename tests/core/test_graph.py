@@ -755,14 +755,16 @@ def test_benchmark_get_features(
     benchmark(f)
 
 
-
-def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges, force_adj_lists):
-    nodes, edges = example_benchmark_graph(feature_size=feature_size, n_nodes=num_nodes, n_edges=num_edges)
+def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges):
+    nodes, edges = example_benchmark_graph(
+        feature_size=feature_size, n_nodes=num_nodes, n_edges=num_edges
+    )
 
     def f():
         return StellarGraph(nodes=nodes, edges=edges)
 
     benchmarker(f)
+
 
 @pytest.mark.benchmark(group="StellarGraph creation (time)")
 # various element counts, to give an indication of the relationship
@@ -771,9 +773,7 @@ def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges, for
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (1000, 5000), (20000, 100000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-def test_benchmark_creation(
-    benchmark, feature_size, num_nodes, num_edges
-):
+def test_benchmark_creation(benchmark, feature_size, num_nodes, num_edges):
     _run_creation_benchmark(benchmark, feature_size, num_nodes, num_edges)
 
 
@@ -798,46 +798,41 @@ def test_allocation_benchmark_creation_peak(
 def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
     nodes, edges = example_benchmark_graph(n_nodes=num_nodes, n_edges=num_edges)
 
-    def setup():
-        return (StellarGraph(nodes=nodes, edges=edges),), {}
+    sg = StellarGraph(nodes=nodes, edges=edges)
 
-    def f(sg):
+    def f():
         if force_adj_lists == "directed":
-            sg._edges._init_undirected_adj_lists()
+            return sg._edges._create_undirected_adj_lists()
         elif force_adj_lists == "undirected":
-            sg._edges._init_directed_adj_lists()
-        elif force_adj_lists == "both":
-            sg._edges._init_undirected_adj_lists()
-            sg._edges._init_directed_adj_lists()
-        return sg
+            return sg._edges._create_directed_adj_lists()
 
-    benchmarker(f, setup=setup)
+    benchmarker(f)
+
 
 @pytest.mark.benchmark(group="StellarGraph adjacency lists (time)")
-@pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000), (20000, 100000)])
+@pytest.mark.parametrize(
+    "num_nodes,num_edges", [(100, 200), (1000, 5000), (20000, 100000)]
+)
 @pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
-def test_benchmark_adj_list(
-    benchmark, num_nodes, num_edges, force_adj_lists
-):
-    def benchmarker(f, setup):
-        benchmark.pedantic(f, setup=setup, iterations=1, rounds=10, warmup_rounds=3)
+def test_benchmark_adj_list(benchmark, num_nodes, num_edges, force_adj_lists):
+    _run_adj_list_benchmark(benchmark, num_nodes, num_edges, force_adj_lists)
 
-    _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists)
 
 @pytest.mark.benchmark(group="StellarGraph adjacency lists (size)", timer=snapshot)
 @pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
 @pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
 def test_allocation_benchmark_adj_list(
     allocation_benchmark, num_nodes, num_edges, force_adj_lists
-): 
+):
     _run_adj_list_benchmark(allocation_benchmark, num_nodes, num_edges, force_adj_lists)
 
-@pytest.mark.benchmark(group="StellarGraph adjacency lists (peak)", timer=peak) 
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (peak)", timer=peak)
 @pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
 @pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
-def test_allocation_benchmark_adj_list_peak( 
+def test_allocation_benchmark_adj_list_peak(
     allocation_benchmark, num_nodes, num_edges, force_adj_lists
-): 
+):
     _run_adj_list_benchmark(allocation_benchmark, num_nodes, num_edges, force_adj_lists)
 
 
