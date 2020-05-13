@@ -95,8 +95,8 @@ def allocation_benchmark(request, benchmark):
     # and the "times" aren't actually times.
     benchmark.extra_info["allocation_benchmark"] = True
 
-    def run_it(f):
-        result = benchmark.pedantic(f, iterations=1, rounds=20, warmup_rounds=3)
+    def run_it(f, setup=None):
+        result = benchmark.pedantic(f, setup=setup, iterations=1, rounds=20, warmup_rounds=3)
         if result is None and timer is snapshot:
             raise ValueError(
                 "benchmark function returned None: allocation benchmarking with 'snapshot' is only reliable if the object(s) of interest is created inside and returned from the function being benchmarked"
