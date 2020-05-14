@@ -303,21 +303,54 @@ class StellarGraph:
         if edges is None:
             edges = {}
 
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
-
         self._is_directed = is_directed
-        self._edges = convert.convert_edges(
-            edges,
-            name="edges",
-            default_type=edge_type_default,
-            source_column=source_column,
-            target_column=target_column,
-            weight_column=edge_weight_column,
-            type_column=edge_type_column,
-            nodes=self._nodes,
-        )
+
+        nodes_is_internal = isinstance(nodes, NodeData)
+        edges_is_internal = isinstance(edges, EdgeData)
+        any_internal = nodes_is_internal or edges_is_internal
+
+        if not any_internal:
+            internal_nodes = convert.convert_nodes(
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
+            )
+
+            internal_edges = convert.convert_edges(
+                edges,
+                name="edges",
+                default_type=edge_type_default,
+                source_column=source_column,
+                target_column=target_column,
+                weight_column=edge_weight_column,
+                type_column=edge_type_column,
+                nodes=internal_nodes,
+            )
+        else:
+            if not edges_is_internal:
+                raise TypeError(
+                    f"edges: expected type 'EdgeData' when 'nodes' has type 'NodeData', found {type(edges).__name__}"
+                )
+            if not nodes_is_internal:
+                raise TypeError(
+                    f"nodes: expected type 'NodeData' when 'edges' has type 'EdgeData', found {type(nodes).__name__}"
+                )
+
+            params = locals()
+            for param, expected in self.__init__.__kwdefaults__.items():
+                if param == "is_directed":
+                    continue
+
+                if params[param] is not expected:
+                    raise ValueError(
+                        f"{param}: expected the default value ({expected!r}) when constructing from 'NodeData' and 'EdgeData', found {params[param]!r}. (All parameters except 'nodes', 'edges' and 'is_directed' must be left unset.)"
+                    )
+
+            internal_nodes = nodes
+            internal_edges = edges
+
+            # FIXME: it would be good to do more validation that 'nodes' and 'edges' match here
+
+        self._nodes = internal_nodes
+        self._edges = internal_edges
 
     @staticmethod
     def _infer_nodes_from_edges(edges, source_column, target_column):

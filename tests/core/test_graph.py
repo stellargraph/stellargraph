@@ -197,6 +197,64 @@ def test_graph_constructor_edge_labels():
     ]
 
 
+def test_graph_constructor_internal():
+    orig = example_graph_random(node_types=3, edge_types=3, is_directed=True)
+    undir_g = StellarGraph(orig._nodes, orig._edges)
+    dir_g = StellarDiGraph(orig._nodes, orig._edges)
+
+    assert not undir_g.is_directed()
+    assert dir_g.is_directed()
+    for g in [undir_g, dir_g]:
+        assert g.node_types == orig.node_types
+        for t in orig.node_types:
+            np.testing.assert_array_equal(
+                g.node_features(node_type=t), orig.node_features(node_type=t)
+            )
+        assert g.edges(include_edge_type=True) == orig.edges(include_edge_type=True)
+
+    with pytest.raises(
+        TypeError, match="edges: expected type 'EdgeData' .* found dict"
+    ):
+        StellarGraph(orig._nodes, {})
+
+    with pytest.raises(
+        TypeError, match="nodes: expected type 'NodeData' .* found DataFrame"
+    ):
+        StellarGraph(pd.DataFrame(index=[0]), orig._edges)
+
+    # check that each parameter is validated as being the default. This explicitly lists the
+    # parameters, to not rely on `__kwdefaults__` since the internal implementation uses that too
+    # (at the time of writing).
+    non_default = [
+        "source_column",
+        "target_column",
+        "edge_weight_column",
+        "node_type_default",
+        "edge_type_default",
+        "edge_type_column",
+        "dtype",
+    ]
+    unchecked = {
+        # is_directed is allowed to be specified
+        "is_directed",
+        # don't check the legacy forms
+        "graph",
+        "node_type_name",
+        "edge_type_name",
+        "node_features",
+    }
+    # check that we seem to be covering all the relevant parameters. Also, if something fundamental
+    # changes with the class this will hopefully catch the testing being invalidated.
+    assert set(non_default) == set(StellarGraph.__init__.__kwdefaults__) - unchecked
+
+    for param in non_default:
+        with pytest.raises(
+            ValueError, match=f"{param}: expected the default value .* found <object"
+        ):
+            # specify a junk object
+            StellarGraph(orig._nodes, orig._edges, **{param: object()})
+
+
 def test_info():
     sg = create_graph_1()
     info_str = sg.info()
