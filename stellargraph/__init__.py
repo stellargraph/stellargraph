@@ -53,23 +53,46 @@ from stellargraph.core.graph import StellarGraph, StellarDiGraph
 from stellargraph.core.schema import GraphSchema
 import warnings
 
-# Custom layers for keras deserialization:
+# Custom layers for keras deserialization (this is computed from a manual list to make it clear
+# what's included)
+
+# the `link_inference` module is shadowed in `sg.layer` by the `link_inference` function, so these
+# layers need to be manually imported
+from .layer.link_inference import (
+    LinkEmbedding as _LinkEmbedding,
+    LeakyClippedLinear as _LeakyClippedLinear,
+)
+
 custom_keras_layers = {
-    "GraphConvolution": layer.GraphConvolution,
-    "ClusterGraphConvolution": layer.ClusterGraphConvolution,
-    "GraphAttention": layer.GraphAttention,
-    "GraphAttentionSparse": layer.GraphAttentionSparse,
-    "SqueezedSparseConversion": layer.SqueezedSparseConversion,
-    "MeanAggregator": layer.graphsage.MeanAggregator,
-    "MaxPoolingAggregator": layer.graphsage.MaxPoolingAggregator,
-    "MeanPoolingAggregator": layer.graphsage.MeanPoolingAggregator,
-    "AttentionalAggregator": layer.graphsage.AttentionalAggregator,
-    "MeanHinAggregator": layer.hinsage.MeanHinAggregator,
-    "RelationalGraphConvolution": layer.rgcn.RelationalGraphConvolution,
-    "PPNPPropagationLayer": layer.ppnp.PPNPPropagationLayer,
-    "APPNPPropagationLayer": layer.appnp.APPNPPropagationLayer,
-    "GatherIndices": layer.misc.GatherIndices,
-    "SortPooling": layer.SortPooling,
+    class_.__name__: class_
+    for class_ in [
+        layer.GraphConvolution,
+        layer.ClusterGraphConvolution,
+        layer.GraphAttention,
+        layer.GraphAttentionSparse,
+        layer.SqueezedSparseConversion,
+        layer.graphsage.MeanAggregator,
+        layer.graphsage.MaxPoolingAggregator,
+        layer.graphsage.MeanPoolingAggregator,
+        layer.graphsage.AttentionalAggregator,
+        layer.hinsage.MeanHinAggregator,
+        layer.rgcn.RelationalGraphConvolution,
+        layer.ppnp.PPNPPropagationLayer,
+        layer.appnp.APPNPPropagationLayer,
+        layer.misc.GatherIndices,
+        layer.deep_graph_infomax.DGIDiscriminator,
+        layer.deep_graph_infomax.DGIReadout,
+        layer.graphsage.GraphSAGEAggregator,
+        layer.knowledge_graph.ComplExScore,
+        layer.knowledge_graph.DistMultScore,
+        layer.preprocessing_layer.GraphPreProcessingLayer,
+        layer.preprocessing_layer.SymmetricGraphPreProcessingLayer,
+        layer.watch_your_step.AttentiveWalk,
+        layer.sort_pooling.SortPooling,
+        layer.gcn_lstm.FixedAdjacencyGraphConvolution,
+        _LinkEmbedding,
+        _LeakyClippedLinear,
+    ]
 }
 """
 A dictionary of the ``tensorflow.keras`` layers defined by StellarGraph.

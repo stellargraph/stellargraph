@@ -61,6 +61,14 @@ services:
         PYTHON_VERSION: "3.7"
         PRERELEASE_VERSIONS: *prerelease
 
+  runner-3_8:
+    <<: *runner-config
+    build:
+      <<: *runner-build
+      args:
+        PYTHON_VERSION: "3.8"
+        PRERELEASE_VERSIONS: *prerelease
+
   # a service that does nothing to use as a default depends_on for the runners
   empty-service:
     image: alpine:3.10

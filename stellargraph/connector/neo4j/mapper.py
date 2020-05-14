@@ -37,7 +37,7 @@ from ...core.experimental import experimental
 @experimental(reason="the class is not fully tested")
 class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
     """
-    Abstract base class for graph data generators from Neo4J.
+    Abstract base class for graph data generators from Neo4j.
 
     The supplied graph should be a StellarGraph object with node features.
 
@@ -46,7 +46,7 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
     Args:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
-        neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object
+        neo4j_graphdb (py2neo.Graph): the Neo4j Graph Database object
         schema (GraphSchema): [Optional] Schema for the graph, for heterogeneous graphs.
     """
 
@@ -67,8 +67,38 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
             raise TypeError(
                 f"neo4j_graphdb: expected py2neo.Graph, found {type(neo4j_graphdb)}"
             )
-        # Create Neo4J graph database object
+        # Create Neo4j graph database object
         self.neo4j_graphdb = neo4j_graphdb
+
+    def flow(self, node_ids, targets=None, shuffle=False, seed=None):
+
+        if self.head_node_types is not None:
+            expected_node_type = self.head_node_types[0]
+        else:
+            expected_node_type = None
+
+        # Check all IDs are actually in the graph and are of expected type
+        for n in node_ids:
+            try:
+                node_type = self.graph.node_type(n)
+            except KeyError:
+                raise KeyError(f"Node ID {n} supplied to generator not found in graph")
+
+            if expected_node_type is not None and (node_type != expected_node_type):
+                raise ValueError(
+                    f"Node ID {n} not of expected type {expected_node_type}"
+                )
+
+        return NodeSequence(
+            self.sample_features,
+            self.batch_size,
+            node_ids,
+            targets,
+            shuffle=shuffle,
+            seed=seed,
+        )
+
+    flow.__doc__ = BatchedNodeGenerator.flow.__doc__
 
 
 @experimental(reason="the class is not fully tested")
@@ -94,7 +124,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
-        neo4j_graphdb (py2neo.Graph): the Neo4J Graph Database object.
+        neo4j_graphdb (py2neo.Graph): the Neo4j Graph Database object.
         seed (int, optional): Random seed for the node sampler.
     """
 
@@ -120,7 +150,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
     def sample_features(self, head_nodes, batch_num):
         """
-        Collect the features of the nodes sampled from Neo4J,
+        Collect the features of the nodes sampled from Neo4j,
         and return these as a list of feature arrays for the GraphSAGE
         algorithm.
 
@@ -180,7 +210,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         batch_size (int): Size of batch to return.
         in_samples (list): The number of in-node samples per layer (hop) to take.
         out_samples (list): The number of out-node samples per layer (hop) to take.
-        neo4j_graphdb (py2neo.Graph): The Neo4J Graph database object
+        neo4j_graphdb (py2neo.Graph): The Neo4j Graph database object
         seed (int, optional) Random seed for the node sampler.
     """
 
@@ -217,7 +247,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
     def sample_features(self, head_nodes, batch_num):
         """
-        Collect the features of the sampled nodes from Neo4J,
+        Collect the features of the sampled nodes from Neo4j,
         and return these as a list of feature arrays for the GraphSAGE algorithm.
 
         Args:
