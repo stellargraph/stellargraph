@@ -319,10 +319,6 @@ class StellarGraph:
             nodes=self._nodes,
         )
 
-        nodes_from_edges = pd.unique(
-            np.concatenate([self._edges.targets, self._edges.sources])
-        )
-
     @staticmethod
     def _infer_nodes_from_edges(edges, source_column, target_column):
         # `convert_edges` nicely flags any errors in edges; inference here is lax rather than duplicate that
@@ -738,15 +734,23 @@ class StellarGraph:
         Get the type of the node
 
         Args:
-            node: Node ID
+            node: a node or iterable of nodes
+            use_ilocs: if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
 
         Returns:
-            Node type
+            Node type or numpy array of node types
         """
-        nodes = [node]
+        if is_real_iterable(node):
+            nodes = node
+        else:
+            nodes = [node]
+
         if not use_ilocs:
             nodes = self._nodes.ids.to_iloc(nodes, strict=True)
         type_sequence = self._nodes.type_of_iloc(nodes)
+
+        if is_real_iterable(node):
+            return type_sequence
 
         assert len(type_sequence) == 1
         return type_sequence[0]

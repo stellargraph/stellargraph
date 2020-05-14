@@ -95,7 +95,7 @@ class PaddedGraphGenerator(Generator):
         with the supplied graph indexes and targets.
 
         Args:
-            graphs (iterable): an iterable of graph indexes in self.graphs or an iterable of `StellarGraph`s
+            graphs (iterable): an iterable of graph indexes in self.graphs or an iterable of :class:`StellarGraph` objects
                 for the graphs of interest (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graphs),
                 len(targets))``.

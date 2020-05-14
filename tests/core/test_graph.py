@@ -21,7 +21,7 @@ import pytest
 import random
 from stellargraph.core.graph import *
 from stellargraph.core.experimental import ExperimentalWarning
-from ..test_utils.alloc import snapshot, allocation_benchmark
+from ..test_utils.alloc import snapshot, peak, allocation_benchmark
 from ..test_utils.graphs import (
     example_graph_nx,
     example_graph,
@@ -179,7 +179,7 @@ def test_graph_constructor_nodes_from_edges():
 
     with pytest.raises(
         ValueError,
-        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'weight'",
+        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'x'",
     ):
         StellarGraph(edges=pd.DataFrame(columns=["x"]))
 
@@ -755,62 +755,85 @@ def test_benchmark_get_features(
     benchmark(f)
 
 
+def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges):
+    nodes, edges = example_benchmark_graph(
+        feature_size=feature_size, n_nodes=num_nodes, n_edges=num_edges
+    )
+
+    def f():
+        return StellarGraph(nodes=nodes, edges=edges)
+
+    benchmarker(f)
+
+
 @pytest.mark.benchmark(group="StellarGraph creation (time)")
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
-@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (1000, 5000), (20000, 100000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
-def test_benchmark_creation(
-    benchmark, feature_size, num_nodes, num_edges, force_adj_lists
-):
-    nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
-    )
-
-    def f():
-        sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists == "directed":
-            sg._edges._init_directed_adj_lists()
-        elif force_adj_lists == "undirected":
-            sg._edges._init_undirected_adj_lists()
-        elif force_adj_lists == "both":
-            sg._edges._init_undirected_adj_lists()
-            sg._edges._init_directed_adj_lists()
-        return sg
-
-    benchmark(f)
+def test_benchmark_creation(benchmark, feature_size, num_nodes, num_edges):
+    _run_creation_benchmark(benchmark, feature_size, num_nodes, num_edges)
 
 
-@pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
-# various element counts, to give an indication of the relationship
-# between those and memory use (0,0 gives the overhead of the
-# StellarGraph object itself, without any data)
+@pytest.mark.benchmark(group="StellarGraph creation (size)", timer=snapshot)
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
-# features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation(
-    allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    allocation_benchmark, feature_size, num_nodes, num_edges
 ):
-    nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
-    )
+    _run_creation_benchmark(allocation_benchmark, feature_size, num_nodes, num_edges)
+
+
+@pytest.mark.benchmark(group="StellarGraph creation (peak)", timer=peak)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+@pytest.mark.parametrize("feature_size", [None, 100])
+def test_allocation_benchmark_creation_peak(
+    allocation_benchmark, feature_size, num_nodes, num_edges
+):
+    _run_creation_benchmark(allocation_benchmark, feature_size, num_nodes, num_edges)
+
+
+def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
+    nodes, edges = example_benchmark_graph(n_nodes=num_nodes, n_edges=num_edges)
+
+    sg = StellarGraph(nodes=nodes, edges=edges)
 
     def f():
-        sg = StellarGraph(nodes=nodes, edges=edges)
         if force_adj_lists == "directed":
-            sg._edges._init_directed_adj_lists()
+            return sg._edges._create_undirected_adj_lists()
         elif force_adj_lists == "undirected":
-            sg._edges._init_undirected_adj_lists()
-        elif force_adj_lists == "both":
-            sg._edges._init_undirected_adj_lists()
-            sg._edges._init_directed_adj_lists()
-        return sg
+            return sg._edges._create_directed_adj_lists()
 
-    allocation_benchmark(f)
+    benchmarker(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (time)")
+@pytest.mark.parametrize(
+    "num_nodes,num_edges", [(100, 200), (1000, 5000), (20000, 100000)]
+)
+@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+def test_benchmark_adj_list(benchmark, num_nodes, num_edges, force_adj_lists):
+    _run_adj_list_benchmark(benchmark, num_nodes, num_edges, force_adj_lists)
+
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (size)", timer=snapshot)
+@pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
+@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+def test_allocation_benchmark_adj_list(
+    allocation_benchmark, num_nodes, num_edges, force_adj_lists
+):
+    _run_adj_list_benchmark(allocation_benchmark, num_nodes, num_edges, force_adj_lists)
+
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (peak)", timer=peak)
+@pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
+@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+def test_allocation_benchmark_adj_list_peak(
+    allocation_benchmark, num_nodes, num_edges, force_adj_lists
+):
+    _run_adj_list_benchmark(allocation_benchmark, num_nodes, num_edges, force_adj_lists)
 
 
 def example_weighted_hin(is_directed=True):
@@ -1858,3 +1881,11 @@ def test_unique_node_type():
         ValueError, match="^ABC custom message 'n-0', 'n-1', 'n-2', 'n-3' 123$"
     ):
         many_types.unique_node_type("ABC custom message %(found)s 123")
+
+
+def test_bulk_node_types():
+    sg = example_hin_1(feature_sizes={}, reverse_order=True)
+    node_ilocs = sg.nodes(use_ilocs=True)
+    node_types = sg.node_type(node_ilocs, use_ilocs=True)
+    assert (node_types[:4] == "A").all()
+    assert (node_types[4:] == "B").all()
