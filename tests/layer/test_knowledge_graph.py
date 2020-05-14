@@ -164,7 +164,9 @@ def test_rotate(knowledge_graph):
 
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    rotate_model = RotatE(gen, 5, margin=margin, norm_order=norm_order, embeddings_initializer=init)
+    rotate_model = RotatE(
+        gen, 5, margin=margin, norm_order=norm_order, embeddings_initializer=init
+    )
     x_inp, x_out = rotate_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
