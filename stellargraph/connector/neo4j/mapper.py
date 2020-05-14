@@ -17,6 +17,7 @@
 __all__ = [
     "Neo4JGraphSAGENodeGenerator",
     "Neo4JDirectedGraphSAGENodeGenerator",
+    "Neo4jClusterNodeGenerator",
 ]
 
 import warnings
@@ -31,7 +32,9 @@ from .sampler import (
 from ...core.graph import StellarGraph, GraphSchema
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
+from ...mapper.mini_batch_node_generators import ClusterNodeGenerator
 from ...core.experimental import experimental
+from .graph import Neo4jStellarGraph
 
 
 @experimental(reason="the class is not fully tested")
@@ -289,3 +292,22 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             )
 
         return features
+
+
+@experimental(reason="the class is not fully tested")
+class Neo4jClusterNodeGenerator(ClusterNodeGenerator):
+    def __init__(self, graph, clusters=1, q=1, lam=0.1, name=None):
+
+        if not isinstance(graph, Neo4jStellarGraph):
+            raise TypeError(
+                f"graph: expected Neo4jStellarGraph found {str(type(graph))}."
+            )
+
+        if not isinstance(clusters, list):
+            raise TypeError(f"{clusters}: expect list found {str(type(clusters))}.")
+
+        self.graph = graph
+        self.name = name
+        self.q = q  # The number of clusters to sample per mini-batch
+        self.lam = lam
+        self.clusters = clusters
