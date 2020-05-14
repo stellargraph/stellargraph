@@ -13,6 +13,8 @@ class Neo4jStellarGraph:
         self._is_directed = is_directed
 
     def nodes(self):
+        # FIXME: don't assume stellargraphs "ID"s are in the Neo4j graph
+        # use id() instead
         node_ids_query = f"""    
             CALL apoc.cypher.run(
                 'MATCH (n)
