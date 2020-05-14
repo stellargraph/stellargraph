@@ -155,7 +155,8 @@ def test_distmult(knowledge_graph):
 
 
 def test_rotate(knowledge_graph):
-    margin = 123.4
+    margin = 2.34
+    norm_order = 1.234
 
     # this test creates a random untrained model and predicts every possible edge in the graph, and
     # compares that to a direct implementation of the scoring method in the paper
@@ -163,7 +164,7 @@ def test_rotate(knowledge_graph):
 
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    rotate_model = RotatE(gen, 5, margin=margin, embeddings_initializer=init)
+    rotate_model = RotatE(gen, 5, margin=margin, norm_order=norm_order, embeddings_initializer=init)
     x_inp, x_out = rotate_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
@@ -198,7 +199,7 @@ def test_rotate(knowledge_graph):
     # every edge-type embedding should be a unit rotation
     np.testing.assert_allclose(np.abs(w_r), 1)
 
-    actual = margin - np.linalg.norm(e_s * w_r - e_o, axis=1) ** 2
+    actual = margin - np.linalg.norm(e_s * w_r - e_o, ord=norm_order, axis=1)
 
     # predict every edge using the model
     prediction = model.predict(gen.flow(df))

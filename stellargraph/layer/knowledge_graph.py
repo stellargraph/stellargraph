@@ -530,20 +530,27 @@ class DistMult:
 
 
 class RotatEScore(Layer):
-    def __init__(self, margin, **kwargs):
+    def __init__(self, margin, norm_order, **kwargs):
         super().__init__(**kwargs)
         self._margin = margin
+        self._norm_order = norm_order
 
     def get_config(self):
-        return {**super().get_config(), "margin": self._margin}
+        return {
+            **super().get_config(),
+            "margin": self._margin,
+            "norm_order": self._norm_order,
+        }
 
     def call(self, inputs):
         s_re, s_im, r_re, r_im, o_re, o_im = inputs
         # expansion of s◦r - t
         re = s_re * r_re - s_im * r_im - o_re
         im = s_re * r_im + s_im * r_re - o_im
-        # norm the vector: -|| ... ||_2^2
-        return self._margin - tf.reduce_sum(re * re + im * im, axis=2)
+        # norm the vector: -|| ... ||_p
+        return self._margin - tf.norm(
+            tf.sqrt(re * re + im * im), ord=self._norm_order, axis=2
+        )
 
 
 @experimental(reason="demo and documentation is missing", issues=[1549, 1550])
@@ -558,6 +565,8 @@ class RotatE:
         embedding_dimension,
         # default taken from the paper's code: https://github.com/DeepGraphLearning/KnowledgeGraphEmbedding
         margin=12.0,
+        # default taken from the paper's code: https://github.com/DeepGraphLearning/KnowledgeGraphEmbedding
+        norm_order=2,
         embeddings_initializer="normal",
         embeddings_regularizer=None,
     ):
@@ -571,7 +580,7 @@ class RotatE:
         self.num_edge_types = len(graph._edges.types)
         self.embedding_dimension = embedding_dimension
 
-        self._scoring = RotatEScore(margin=margin)
+        self._scoring = RotatEScore(margin=margin, norm_order=norm_order)
 
         def embed(count):
             return Embedding(
@@ -585,7 +594,13 @@ class RotatE:
         # for node types, and just the phase for edge types (since they have |x| = 1)
         self._node_embeddings_real = embed(self.num_nodes)
         self._node_embeddings_imag = embed(self.num_nodes)
-        self._edge_type_embeddings_phase = embed(self.num_edge_types)
+
+        # it doesn't make sense to regularize the phase, because it's circular
+        self._edge_type_embeddings_phase = Embedding(
+            self.num_edge_types,
+            embedding_dimension,
+            embeddings_initializer=embeddings_initializer,
+        )
 
     def embeddings(self):
         node = 1j * self._node_embeddings_imag.embeddings.numpy()
