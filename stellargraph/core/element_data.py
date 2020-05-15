@@ -300,24 +300,21 @@ class FlatAdjacencyList:
         self.flat = flat_array
 
     def __getitem__(self, idx):
-        if idx == 0:
-            start = 0
-            stop = self.splits[0]
-        elif idx < 0:
+        if idx < 0:
             raise KeyError("Invalid node ilocs")
         else:
-            start = self.splits[idx - 1]
-            stop = self.splits[idx]
+            start = self.splits[idx]
+            stop = self.splits[idx + 1]
         return self.flat[start:stop]
 
     def get(self, idx, default):
-        if idx >= len(self.splits) or idx < 0:
+        if idx >= (len(self.splits) - 1) or idx < 0:
             return default
         else:
             return self[idx]
 
     def items(self):
-        for idx in range(len(self.splits)):
+        for idx in range(len(self.splits) - 1):
             yield (idx, self[idx])
 
 
@@ -374,7 +371,8 @@ class EdgeData(ElementData):
 
         def _to_dir_adj_list(arr):
             neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
-            splits = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+            splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
+            splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
             return FlatAdjacencyList(flat, splits)
 
@@ -416,7 +414,8 @@ class EdgeData(ElementData):
         flat_array %= num_edges
         neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
         neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
-        splits = np.cumsum(neigh_counts, dtype=dtype)
+        splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
+        splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
 
         self._edges_dict = FlatAdjacencyList(flat_array, splits)
 
