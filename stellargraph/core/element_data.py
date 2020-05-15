@@ -407,7 +407,7 @@ class EdgeData(ElementData):
             return
 
         # the dtype of the edge_ilocs
-        _dtype = np.min_scalar_type(2 * len(self.sources))
+        dtype = np.min_scalar_type(2 * len(self.sources))
 
         # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
         sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
@@ -418,7 +418,7 @@ class EdgeData(ElementData):
         # mask out duplicates of self loops
         combined[num_edges:][self_loops] = sentinel
 
-        flat_array = np.argsort(combined).astype(_dtype, copy=False)
+        flat_array = np.argsort(combined).astype(dtype, copy=False)
 
         # get targets without self loops inplace
         # sentinels are sorted to the end
@@ -433,7 +433,7 @@ class EdgeData(ElementData):
         flat_array %= num_edges
         neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
         neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
-        splits = np.cumsum(neigh_counts, dtype=_dtype)
+        splits = np.cumsum(neigh_counts, dtype=dtype)
 
         self._edges_dict = FlatAdjacencyList(flat_array, splits)
 
