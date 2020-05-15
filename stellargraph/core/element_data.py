@@ -292,18 +292,6 @@ class FlatAdjacencyList:
     is that this class does not store the edge weight, is only provides an `edge_ilocs`
     which can be used to look up all other edge data.
 
-    Ths class contains:
-
-        - `self.flat`: a numpy array of edge_ilocs grouped by node
-        - `self.splits`: a numpy array used to index `self.flat`
-
-    A node's corresponding edge_ilocs are access by
-
-        ```self.flat[self.splits[node_iloc-1]: self.splits[node_iloc]]```
-
-    Where:
-        - `self.splits[node_iloc - 1]` is where the edge_ilocs corresponding to the node start
-        - `self.splits[node_iloc]` is where the edge_ilocs corresponding to the node end
 
     """
 
