@@ -5,7 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph
-  :members: StellarGraph, StellarDiGraph, GraphSchema,
+  :members: StellarGraph, StellarDiGraph, GraphSchema
 
 .. autodata:: custom_keras_layers
    :annotation: = {...}
@@ -22,7 +22,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: Generator, FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, PaddedGraphGenerator, KGTripleGenerator
+  :members: Generator, FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, Node2VecNodeGenerator, Node2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, PaddedGraphGenerator, KGTripleGenerator
 
 
 Layers and models
@@ -59,6 +59,13 @@ HinSAGE
   :members:
 
 .. autoclass:: MeanHinAggregator
+  :members:
+
+
+Node2Vec
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autoclass:: Node2Vec
   :members:
 
 
@@ -145,6 +152,12 @@ Knowledge Graph models
   :members:
 
 .. autoclass:: DistMultScore
+  :members:
+
+.. autoclass:: RotatE
+  :members:
+
+.. autoclass:: RotatEScore
   :members:
 
 GCN Supervised Graph Classification
