@@ -383,11 +383,6 @@ class EdgeData(ElementData):
 
     def _init_directed_adj_lists(self):
         # record the edge ilocs of incoming and outgoing edges
-        if len(self.targets) == 0:
-            empty_array = np.array([], dtype=np.uint8)
-            self._edges_in_dict = FlatAdjacencyList(empty_array, empty_array)
-            self._edges_out_dict = FlatAdjacencyList(empty_array, empty_array)
-            return
 
         def _to_dir_adj_list(arr):
             neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
@@ -401,10 +396,6 @@ class EdgeData(ElementData):
     def _init_undirected_adj_lists(self):
         # record the edge ilocs of both-direction edges
         num_edges = len(self.targets)
-        if num_edges == 0:
-            empty_array = np.array([], dtype=np.uint8)
-            self._edges_dict = FlatAdjacencyList(empty_array, empty_array)
-            return
 
         # the dtype of the edge_ilocs
         # the argsort results in integers in [0, 2 * num_edges),
