@@ -1858,7 +1858,7 @@ def test_node_degrees(use_ilocs):
     degrees = g.node_degrees(use_ilocs=use_ilocs)
 
     # expected node degrees - keys are node ids
-    expected = {0: 1, 1: 2, 2: 1, 3: 1, 4: 4, 5: 3, 6:0}
+    expected = {0: 1, 1: 2, 2: 1, 3: 1, 4: 4, 5: 3, 6: 0}
     if use_ilocs:
         for node_id in expected.keys():
             node_iloc = g.node_ids_to_ilocs([node_id])[0]
@@ -1912,4 +1912,3 @@ def test_correct_adjacency_list_type():
     assert min(sg.node_degrees().values()) == 2
     assert max(sg.node_degrees().values()) == 2
     assert sg._edges._edges_dict.flat.dtype == np.uint16
-
