@@ -391,7 +391,6 @@ class EdgeData(ElementData):
 
         def _to_dir_adj_list(arr):
             neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
-            neigh_counts = neigh_counts.astype(self._id_index.dtype, copy=False)
             splits = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
             return FlatAdjacencyList(flat, splits)
@@ -434,7 +433,6 @@ class EdgeData(ElementData):
         flat_array %= num_edges
         neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
         neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
-        neigh_counts = neigh_counts.astype(_dtype, copy=False)
         splits = np.cumsum(neigh_counts, dtype=_dtype)
 
         self._edges_dict = FlatAdjacencyList(flat_array, splits)
