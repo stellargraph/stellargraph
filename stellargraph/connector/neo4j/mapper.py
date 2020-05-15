@@ -22,6 +22,7 @@ __all__ = [
 
 import warnings
 import numpy as np
+import random
 import itertools as it
 
 from .sampler import (
@@ -303,11 +304,71 @@ class Neo4jClusterNodeGenerator(ClusterNodeGenerator):
                 f"graph: expected Neo4jStellarGraph found {str(type(graph))}."
             )
 
-        if not isinstance(clusters, list):
-            raise TypeError(f"{clusters}: expect list found {str(type(clusters))}.")
+        if isinstance(clusters, list):
+            self.k = len(clusters)
+        elif isinstance(clusters, int):
+            if clusters <= 0:
+                raise ValueError(
+                    "{}: clusters must be greater than 0.".format(type(self).__name__)
+                )
+            self.k = clusters
+        else:
+            raise TypeError(
+                "{}: clusters must be either int or list type.".format(
+                    type(self).__name__
+                )
+            )
+
+        if not isinstance(lam, float):
+            raise TypeError("{}: lam must be a float type.".format(type(self).__name__))
+
+        if lam < 0 or lam > 1:
+            raise ValueError(
+                "{}: lam must be in the range [0, 1].".format(type(self).__name__)
+            )
+
+        if not isinstance(q, int):
+            raise TypeError("{}: q must be integer type.".format(type(self).__name__))
+
+        if q <= 0:
+            raise ValueError(
+                "{}: q must be greater than 0.".format(type(self).__name__)
+            )
+
+        if self.k % q != 0:
+            raise ValueError(
+                "{}: the number of clusters must be exactly divisible by q.".format(
+                    type(self).__name__
+                )
+            )
+
+        self.node_list = list(graph.nodes())
+
+        if isinstance(clusters, int):
+            # We are not given graph clusters.
+            # We are going to split the graph into self.k random clusters
+            all_nodes = self.node_list.copy()
+            random.shuffle(all_nodes)
+            cluster_size = len(all_nodes) // self.k
+            self.clusters = [
+                all_nodes[i : i + cluster_size]
+                for i in range(0, len(all_nodes), cluster_size)
+            ]
+            if len(self.clusters) > self.k:
+                # for the case that the number of nodes is not exactly divisible by k, we combine
+                # the last cluster with the second last one
+                self.clusters[-2].extend(self.clusters[-1])
+                del self.clusters[-1]
+        else:
+            self.clusters = clusters
+
+        print(f"Number of clusters {self.k}")
+        for i, c in enumerate(self.clusters):
+            print(f"{i} cluster has size {len(c)}")
 
         self.graph = graph
         self.name = name
         self.q = q  # The number of clusters to sample per mini-batch
         self.lam = lam
-        self.clusters = clusters
+        # store features of one node to feed ClusterGCN the feature shape
+        self.features = self.graph.node_features(self.node_list[0])

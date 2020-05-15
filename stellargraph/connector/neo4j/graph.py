@@ -5,7 +5,7 @@ import scipy.sparse as sps
 from ...core.experimental import experimental
 
 
-@experimental(reason="the class is not fully tested")
+@experimental(reason="the class is not fully tested and lacks documentation")
 class Neo4jStellarGraph:
     def __init__(self, graph_db, is_directed=False):
 
@@ -26,7 +26,7 @@ class Neo4jStellarGraph:
             """
         result = self.graph_db.run(node_ids_query)
 
-        return np.array(result.data()[0]["node_ids"])
+        return result.data()[0]["node_ids"]
 
     def node_features(self, node_ids):
         feature_query = f"""
