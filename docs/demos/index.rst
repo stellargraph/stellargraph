@@ -39,6 +39,7 @@ Find a demo for an algorithm
    DEMO TABLE MARKER
 .. list-table::
    :header-rows: 1
+   :class: longtable
 
    *
      - Algorithm

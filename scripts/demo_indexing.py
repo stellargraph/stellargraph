@@ -208,7 +208,7 @@ class Rst(Format):
         return ""
 
     def render(self, headings, algorithms):
-        result = [".. list-table::", "   :header-rows: 1", ""]
+        result = [".. list-table::", "   :header-rows: 1", "   :class: longtable", ""]
 
         new_row = "   *"
         new_item = "     -"
