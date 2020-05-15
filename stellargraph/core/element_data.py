@@ -407,6 +407,8 @@ class EdgeData(ElementData):
             return
 
         # the dtype of the edge_ilocs
+        # the argsort results in integers in [0, 2 * num_edges),
+        # so the dtype potentially needs to be slightly larger
         dtype = np.min_scalar_type(2 * len(self.sources))
 
         # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs

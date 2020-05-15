@@ -1895,3 +1895,21 @@ def test_bulk_node_types():
     node_types = sg.node_type(node_ilocs, use_ilocs=True)
     assert (node_types[:4] == "A").all()
     assert (node_types[4:] == "B").all()
+
+
+def test_correct_adjacency_list_type():
+
+    # the dtype of index into "sg._edges._edges_dict"
+    # can be larger than "sg._edges.ids.dtype"
+    # because there are 2 undirected edges for every (non-self loop) directed edge
+    # this test checks this edge case
+    cycle_graph = nx.cycle_graph(200)
+    sg = StellarGraph.from_networkx(cycle_graph)
+    sg._edges._init_undirected_adj_lists()
+
+    assert sg.number_of_edges() == 200
+    assert sg._edges.ids.dtype == np.uint8
+    assert min(sg.node_degrees().values()) == 2
+    assert max(sg.node_degrees().values()) == 2
+    assert sg._edges._edges_dict.flat.dtype == np.uint16
+
