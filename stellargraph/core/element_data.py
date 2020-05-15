@@ -406,7 +406,9 @@ class EdgeData(ElementData):
         filtered_targets = combined[num_edges:]
         filtered_targets.sort()
 
-        # remove the sentinels if there are any
+        # remove the sentinels if there are any (the full array will be retained
+        # forever; we're assume that there's self loops are a small fraction
+        # of the total number of edges)
         if num_self_loops > 0:
             flat_array = flat_array[:-num_self_loops]
             filtered_targets = filtered_targets[:-num_self_loops]
