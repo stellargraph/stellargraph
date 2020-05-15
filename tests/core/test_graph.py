@@ -810,7 +810,7 @@ def test_benchmark_get_neighbours(benchmark, use_ilocs):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i, use_ilocs=use_ilocs)
+            sg.neighbor_arrays(i, use_ilocs=use_ilocs)
 
     benchmark(f)
 
