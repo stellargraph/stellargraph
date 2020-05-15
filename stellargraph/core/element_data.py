@@ -367,6 +367,9 @@ class EdgeData(ElementData):
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
     def _init_directed_adj_lists(self):
+        self._edges_in_dict, self._edges_out_dict = self._create_directed_adj_lists()
+
+    def _create_undirected_adj_lists(self):
         # record the edge ilocs of incoming and outgoing edges
 
         def _to_dir_adj_list(arr):
@@ -376,10 +379,12 @@ class EdgeData(ElementData):
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
             return FlatAdjacencyList(flat, splits)
 
-        self._edges_in_dict = _to_dir_adj_list(self.targets)
-        self._edges_out_dict = _to_dir_adj_list(self.sources)
+        return _to_dir_adj_list(self.targets), _to_dir_adj_list(self.sources)
 
     def _init_undirected_adj_lists(self):
+        self._edges_dict = self._create_undirected_adj_lists()
+
+    def _create_undirected_adj_lists(self):
         # record the edge ilocs of both-direction edges
         num_edges = len(self.targets)
 
@@ -417,7 +422,7 @@ class EdgeData(ElementData):
         splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
         splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
 
-        self._edges_dict = FlatAdjacencyList(flat_array, splits)
+        return FlatAdjacencyList(flat_array, splits)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
