@@ -369,7 +369,7 @@ class EdgeData(ElementData):
     def _init_directed_adj_lists(self):
         self._edges_in_dict, self._edges_out_dict = self._create_directed_adj_lists()
 
-    def _create_undirected_adj_lists(self):
+    def _create_directed_adj_lists(self):
         # record the edge ilocs of incoming and outgoing edges
 
         def _to_dir_adj_list(arr):
