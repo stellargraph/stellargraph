@@ -1909,6 +1909,6 @@ def test_correct_adjacency_list_type():
 
     assert sg.number_of_edges() == 200
     assert sg._edges.ids.dtype == np.uint8
-    assert min(sg.node_degrees().values()) == 2
+    assert all(deg == 2 for deg in sg.node_degrees().values())
     assert max(sg.node_degrees().values()) == 2
     assert sg._edges._edges_dict.flat.dtype == np.uint16
