@@ -21,7 +21,7 @@ class Neo4jStellarGraph:
 
         result = self.graph_db.run(node_ids_query)
         data = result.data()
-        return np.array([row["node_id"] for row in data])
+        return [row["node_id"] for row in data]
 
     def node_features(self, node_ids):
         feature_query = f"""
