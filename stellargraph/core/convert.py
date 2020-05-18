@@ -24,7 +24,7 @@ import pandas as pd
 
 from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
-from .row_frame import RowFrame
+from .indexed_array import IndexedArray
 from .validation import comma_sep, require_dataframe_has_columns
 from .utils import is_real_iterable
 
@@ -83,11 +83,11 @@ class ColumnarConverter:
     def _convert_single(self, type_name, data):
         if isinstance(data, pd.DataFrame):
             return self._convert_pandas(type_name, data)
-        elif isinstance(data, (RowFrame, np.ndarray)):
+        elif isinstance(data, (IndexedArray, np.ndarray)):
             return self._convert_rowframe(type_name, data)
         else:
             raise TypeError(
-                f"{self.name(type_name)}: expected RowFrame or pandas DataFrame, found {type(data).__name__}"
+                f"{self.name(type_name)}: expected IndexedArray or pandas DataFrame, found {type(data).__name__}"
             )
 
     def _convert_pandas(self, type_name, data):
@@ -142,7 +142,7 @@ class ColumnarConverter:
         return ids, columns, features
 
     def _convert_rowframe(self, type_name, data):
-        assert isinstance(data, (RowFrame, np.ndarray))
+        assert isinstance(data, (IndexedArray, np.ndarray))
         if self.selected_columns:
             raise ValueError(
                 f"{self.name(type_name)}: expected a Pandas DataFrame when selecting columns {comma_sep(self.selected_columns)}, found {type(data).__name__}"
@@ -150,10 +150,10 @@ class ColumnarConverter:
 
         if isinstance(data, np.ndarray):
             try:
-                data = RowFrame(data)
+                data = IndexedArray(data)
             except Exception as e:
                 raise ValueError(
-                    f"{self.name(type_name)}: could not convert NumPy array to a RowFrame, see other error"
+                    f"{self.name(type_name)}: could not convert NumPy array to a IndexedArray, see other error"
                 )
 
         # selected_columns must be empty, so we better be allowing features
@@ -236,7 +236,7 @@ class ColumnarConverter:
         if self.type_column is not None:
             return self._convert_with_type_column(elements)
 
-        if isinstance(elements, (pd.DataFrame, RowFrame, np.ndarray)):
+        if isinstance(elements, (pd.DataFrame, IndexedArray, np.ndarray)):
             elements = {self.default_type: elements}
 
         if not isinstance(elements, dict):

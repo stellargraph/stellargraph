@@ -50,7 +50,7 @@ from stellargraph import (
 
 # Top-level imports
 from stellargraph.core.graph import StellarGraph, StellarDiGraph
-from stellargraph.core.row_frame import RowFrame
+from stellargraph.core.indexed_array import IndexedArray
 from stellargraph.core.schema import GraphSchema
 import warnings
 

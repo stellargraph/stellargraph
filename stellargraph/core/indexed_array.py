@@ -17,29 +17,30 @@
 import numpy as np
 
 
-class RowFrame:
+class IndexedArray:
     """
-    A frame of labelled "rows" of data.
+    An array where the first dimension is indexed.
 
     This is a reduced Pandas DataFrame. It has:
 
-    - multidimensional data support, where each row ``values[idx, ...]`` can be a vector, matrix or
+    - multidimensional data support, where each element ``values[idx, ...]`` can be a vector, matrix or
       even higher rank object
 
     - a requirement that all values have the same type
 
-    - labels for rows, meaning an index that corresponds to the first axis of the data,
-      e.g. ``index[0]`` is the label for the ``values[0, ...]`` row.
+    - labels for the elements of the first axis e.g. ``index[0]`` is the label for the ``values[0,
+      ...]`` element.
 
-    - no labels for columns or other axis
+    - no labels for other axes
 
     - less overhead (but less API) than a Pandas DataFrame
 
     Args:
-        values (numpy.ndarray, optional): an array of rank at least 2 of data, where the first axis corresponds to "rows"
+        values (numpy.ndarray, optional): an array of rank at least 2 of data, where the first axis
+            is indexed.
 
-        index (sequence, optional): a sequence of labels or IDs, one for each row. If not specified, this
-            defaults to sequential integers starting at 0
+        index (sequence, optional): a sequence of labels or IDs, one for each element of the first
+            axis. If not specified, this defaults to sequential integers starting at 0
     """
 
     def __init__(self, values=None, index=None):

@@ -20,7 +20,7 @@ import pandas as pd
 import pytest
 import random
 from stellargraph.core.graph import *
-from stellargraph.core.row_frame import RowFrame
+from stellargraph.core.indexed_array import IndexedArray
 from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, peak, allocation_benchmark
 from ..test_utils.graphs import (
@@ -68,7 +68,7 @@ def example_benchmark_graph(
 
     features = np.ones((n_nodes, 0 if feature_size is None else feature_size))
 
-    feature_cls = pd.DataFrame if pandas_node_data else RowFrame
+    feature_cls = pd.DataFrame if pandas_node_data else IndexedArray
 
     def select_ty(ty):
         idx = node_ids % n_types == ty
@@ -181,7 +181,7 @@ def test_graph_constructor_nodes_from_edges():
         StellarGraph(edges=1)
 
     with pytest.raises(
-        TypeError, match="edges.*: expected RowFrame or pandas DataFrame, found int"
+        TypeError, match="edges.*: expected IndexedArray or pandas DataFrame, found int"
     ):
         StellarGraph(edges={"a": 1})
 
@@ -205,9 +205,9 @@ def test_graph_constructor_edge_labels():
     ]
 
 
-@pytest.fixture(params=["RowFrame", "NumPy"])
+@pytest.fixture(params=["IndexedArray", "NumPy"])
 def rowframe_convert(request):
-    return RowFrame if request.param == "RowFrame" else (lambda arr: arr)
+    return IndexedArray if request.param == "IndexedArray" else (lambda arr: arr)
 
 
 def test_graph_constructor_rowframe_numpy_homogeneous(rowframe_convert):
@@ -226,7 +226,7 @@ def test_graph_constructor_rowframe_numpy_homogeneous(rowframe_convert):
 def test_graph_constructor_rowframe_numpy_heterogeneous(rowframe_convert):
     arr1 = np.random.rand(3, 4)
     arr2 = np.random.rand(6, 7)
-    frame2 = RowFrame(arr2, index=range(100, 106))
+    frame2 = IndexedArray(arr2, index=range(100, 106))
 
     g = StellarGraph({"a": rowframe_convert(arr1), "b": frame2})
     np.testing.assert_array_equal(g.nodes(), [0, 1, 2, 100, 101, 102, 103, 104, 105])
@@ -243,7 +243,7 @@ def test_graph_constructor_rowframe_numpy_invalid():
         StellarGraph({"a": arr1, "b": arr2})
 
     with pytest.raises(ValueError, match="expected IDs .*, found .* more: 1"):
-        StellarGraph(RowFrame(index=[1, 1]))
+        StellarGraph(IndexedArray(index=[1, 1]))
 
     with pytest.raises(
         ValueError, match="edges: expected all source .* found some missing: 'a'"
@@ -254,7 +254,7 @@ def test_graph_constructor_rowframe_numpy_invalid():
         ValueError, match="edges: expected all source .* found some missing: 'b'"
     ):
         StellarGraph(
-            RowFrame(index=["a", "c"]), pd.DataFrame({"source": ["a"], "target": ["b"]})
+            IndexedArray(index=["a", "c"]), pd.DataFrame({"source": ["a"], "target": ["b"]})
         )
 
     # FIXME(#1524): this restriction on the shape should be lifted

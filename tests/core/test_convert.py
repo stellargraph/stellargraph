@@ -25,7 +25,7 @@ from stellargraph.core.convert import (
     convert_edges,
     from_networkx,
 )
-from stellargraph.core.row_frame import RowFrame
+from stellargraph.core.indexed_array import IndexedArray
 
 _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
@@ -118,7 +118,7 @@ def test_columnar_convert_invalid_input():
 
     with pytest.raises(
         TypeError,
-        match=r"some_name\['x'\]: expected RowFrame or pandas DataFrame, found int",
+        match=r"some_name\['x'\]: expected IndexedArray or pandas DataFrame, found int",
     ):
         converter.convert({"x": 1})
 
@@ -211,8 +211,8 @@ def test_columnar_convert_rowframe():
         allow_features=True,
     )
 
-    frame1 = RowFrame(np.random.rand(3, 4, 5), index=[1111, -222, 33])
-    frame2 = RowFrame(np.random.rand(6, 7))
+    frame1 = IndexedArray(np.random.rand(3, 4, 5), index=[1111, -222, 33])
+    frame2 = IndexedArray(np.random.rand(6, 7))
 
     ids, columns, type_starts, features = converter.convert(frame1)
 
@@ -280,11 +280,11 @@ def test_columnar_convert_rowframe_ndarray_invalid():
         allow_features=True,
     )
 
-    frame = RowFrame(np.random.rand(3, 4, 5))
+    frame = IndexedArray(np.random.rand(3, 4, 5))
 
     with pytest.raises(
         ValueError,
-        match=r"some_name\['foo'\]: expected a Pandas DataFrame when selecting columns 'bar', found RowFrame",
+        match=r"some_name\['foo'\]: expected a Pandas DataFrame when selecting columns 'bar', found IndexedArray",
     ):
         converter.convert(frame)
 
