@@ -59,7 +59,7 @@ class Neo4jStellarGraph:
                 'MATCH(cur_node) WHERE cur_node.ID = $node_id
 
                 // find the neighbors
-                MATCH (cur_node)--(neighbors)
+                MATCH (cur_node)-->(neighbors)
                 WITH collect(neighbors.ID) AS neigh_ids
                 RETURN neigh_ids',
                 {{node_id: node_id}}) YIELD value
