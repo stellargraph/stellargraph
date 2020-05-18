@@ -38,7 +38,7 @@ class SlidingFeaturesNodeGenerator(Generator):
         )
         self._features = G.node_features(node_type=node_type)
 
-        self._window_size = window_size
+        self.window_size = window_size
         self._batch_size = batch_size
 
     def num_batch_dims(self):
@@ -47,7 +47,7 @@ class SlidingFeaturesNodeGenerator(Generator):
     def flow(self, sequence_iloc_slice, target_distance=None):
         return SlidingFeaturesNodeSequence(
             self._features,
-            self._window_size,
+            self.window_size,
             self._batch_size,
             sequence_iloc_slice,
             target_distance,
