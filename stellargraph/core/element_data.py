@@ -288,11 +288,7 @@ class NodeData(ElementData):
 class FlatAdjacencyList:
     """
     Stores an adjacency list in one contiguous numpy array in a format similar
-    to a CSR matrix. The main difference between a CSR matrix and this data structure
-    is that this class does not store the edge weight, is only provides an `edge_ilocs`
-    which can be used to look up all other edge data.
-
-
+    to a ragged tensor (https://www.tensorflow.org/guide/ragged_tensor).
     """
 
     def __init__(self, flat_array, splits):
