@@ -154,6 +154,12 @@ Knowledge Graph models
 .. autoclass:: DistMultScore
   :members:
 
+.. autoclass:: RotatE
+  :members:
+
+.. autoclass:: RotatEScore
+  :members:
+
 GCN Supervised Graph Classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
