@@ -31,18 +31,9 @@ class Neo4jStellarGraph:
     def node_features(self, node_ids):
         feature_query = f"""
             UNWIND $node_id_list AS node_id
-
-            // for each node id in every row, collect the random list of its neighbors.
-            CALL apoc.cypher.run(
-
-                'MATCH(cur_node) WHERE cur_node.ID = $node_id
-                RETURN cur_node.features as features',
-                {{node_id: node_id}}
-            ) YIELD value
-
-            RETURN collect(value.features) as features
+            MATCH(node) WHERE node.ID = node_id
+            RETURN collect(node.features) as features
             """
-
         result = self.graph_db.run(
             feature_query, parameters={"node_id_list": node_ids},
         )
