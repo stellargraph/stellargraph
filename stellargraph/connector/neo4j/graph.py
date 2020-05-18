@@ -16,32 +16,33 @@ class Neo4jStellarGraph:
     def nodes(self):
         node_ids_query = f"""    
             MATCH (n)
-            RETURN collect(n.ID) as node_ids
+            RETURN n.ID as node_id
             """
-        result = self.graph_db.run(node_ids_query)
 
-        return result.data()[0]["node_ids"]
+        result = self.graph_db.run(node_ids_query)
+        data = result.data()
+        return np.array([row["node_id"] for row in data])
 
     def node_features(self, node_ids):
         feature_query = f"""
             UNWIND $node_id_list AS node_id
             MATCH(node) WHERE node.ID = node_id
-            RETURN collect(node.features) as features
+            RETURN node.features as features
             """
         result = self.graph_db.run(
             feature_query, parameters={"node_id_list": node_ids},
         )
-
-        return np.array(result.data()[0]["features"])
+        features = np.array([row["features"] for row in result.data()])
+        return features
 
     def to_adjacency_matrix(self, node_ids):
         # neo4j optimizes this query to be O(edges incident to nodes)
         # not O(E) as it appears
         subgraph_query = f"""
-                MATCH (source)-->(target)
-                WHERE source.ID IN $node_id_list AND target.ID IN $node_id_list
-                RETURN collect(source.ID) AS sources, collect(target.ID) as targets
-                """
+            MATCH (source)-->(target)
+            WHERE source.ID IN $node_id_list AND target.ID IN $node_id_list
+            RETURN collect(source.ID) AS sources, collect(target.ID) as targets
+            """
 
         result = self.graph_db.run(
             subgraph_query, parameters={"node_id_list": node_ids}
