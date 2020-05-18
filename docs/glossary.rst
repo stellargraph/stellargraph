@@ -2,6 +2,7 @@ Glossary
 ========
 
 .. glossary::
+   :sorted:
 
    edge
    link
