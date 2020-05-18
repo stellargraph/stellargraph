@@ -313,7 +313,8 @@ def test_graph_constructor_rowframe_numpy_invalid():
         ValueError, match="edges: expected all source .* found some missing: 'b'"
     ):
         StellarGraph(
-            IndexedArray(index=["a", "c"]), pd.DataFrame({"source": ["a"], "target": ["b"]})
+            IndexedArray(index=["a", "c"]),
+            pd.DataFrame({"source": ["a"], "target": ["b"]}),
         )
 
     # FIXME(#1524): this restriction on the shape should be lifted

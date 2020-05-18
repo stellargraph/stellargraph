@@ -76,5 +76,7 @@ def test_indexed_array_invalid():
     with pytest.raises(TypeError, match="index: expected a sequence .* found int"):
         IndexedArray(values, index=123)
 
-    with pytest.raises(ValueError, match="values: expected the index length 2 .* found 3 rows"):
+    with pytest.raises(
+        ValueError, match="values: expected the index length 2 .* found 3 rows"
+    ):
         IndexedArray(values, index=range(0, 3, 2))
