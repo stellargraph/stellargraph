@@ -30,4 +30,4 @@ Glossary
 
    iloc
    integer location
-      Similar to Pandas, ilocs are sequential integers that allow for efficient storage and indexing. The :class:`StellarGraph` class typically stores external IDs as ilocs internally.
+      Similar to Pandas, ilocs are sequential integers that allow for efficient storage and indexing. The :class:`stellargraph.StellarGraph` class typically stores external IDs as ilocs internally.
