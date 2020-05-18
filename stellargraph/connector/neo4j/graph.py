@@ -14,13 +14,8 @@ class Neo4jStellarGraph:
 
     def nodes(self):
         node_ids_query = f"""    
-            CALL apoc.cypher.run(
-                'MATCH (n)
-                RETURN n.ID as node_ids',
-                {{}}
-            ) YIELD value
-
-            RETURN collect(value.node_ids) as node_ids
+            MATCH (n)
+            RETURN collect(n.ID) as node_ids
             """
         result = self.graph_db.run(node_ids_query)
 
