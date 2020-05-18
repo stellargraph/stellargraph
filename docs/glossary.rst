@@ -16,7 +16,7 @@ Glossary
 
    node attribute inference
    node classification
-     A task that predicts properties of individual :term:`nodes` in a graph. For example, predicting the subject of an academic paper, or the flowering time of a crop. Despite the "classification" in the name, this includes regression tasks.
+     A task that predicts properties of individual :term:`nodes <node>` in a graph. For example, predicting the subject of an academic paper, or the flowering time of a crop. Despite the "classification" in the name, this includes regression tasks.
 
      .. seealso:: :doc:`demos/node-classification/index`
 
