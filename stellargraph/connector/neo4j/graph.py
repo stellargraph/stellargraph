@@ -2,6 +2,7 @@ __all__ = ["Neo4jStellarGraph"]
 
 import numpy as np
 import scipy.sparse as sps
+import pandas as pd
 from ...core.experimental import experimental
 
 
@@ -34,41 +35,30 @@ class Neo4jStellarGraph:
         return np.array(result.data()[0]["features"])
 
     def to_adjacency_matrix(self, node_ids):
+        # neo4j optimizes this query to be O(edges incident to nodes)
+        # not O(E) as it appears
         subgraph_query = f"""
-            UNWIND $node_id_list AS node_id
+                MATCH (source)-->(target)
+                WHERE source.ID IN $node_id_list AND target.ID IN $node_id_list
+                RETURN collect(source.ID) AS sources, collect(target.ID) as targets
+                """
 
-            // for each node id in every row, collect the random list of its neighbors.
-            CALL apoc.cypher.run(
-
-                'MATCH(cur_node) WHERE cur_node.ID = $node_id
-
-                // find the neighbors
-                MATCH (cur_node)-->(neighbors)
-                WITH collect(neighbors.ID) AS neigh_ids
-                RETURN neigh_ids',
-                {{node_id: node_id}}) YIELD value
-
-            RETURN collect(value.neigh_ids) as neighbors
-            """
         result = self.graph_db.run(
             subgraph_query, parameters={"node_id_list": node_ids}
         )
-        adj_list = result.data()[0]["neighbors"]
-        index = dict(zip(node_ids, range(len(node_ids))))
 
-        def _remove_invalid(arr):
-            return arr[arr != -1]
+        data = result.data()[0]
+        sources = np.array(data["sources"])
+        targets = np.array(data["targets"])
 
-        def _numpy_indexer(arr):
-            return np.array([index.get(x, -1) for x in arr])
+        index = pd.Index(node_ids)
 
-        adj_list = [_remove_invalid(_numpy_indexer(neighs)) for neighs in adj_list]
+        src_idx = index.get_indexer(sources)
+        tgt_idx = index.get_indexer(targets)
 
-        indptr = np.cumsum([0] + [len(neighs) for neighs in adj_list])
-        indices = np.concatenate(adj_list)
-        data = np.ones(len(indices), dtype=np.float32)
+        weights = np.ones(len(sources), dtype=np.float32)
         shape = (len(node_ids), len(node_ids))
-        adj = sps.csr_matrix((data, indices, indptr), shape=shape)
+        adj = sps.csr_matrix((weights, (src_idx, tgt_idx)), shape=shape)
 
         if not self.is_directed() and len(data) > 0:
             # in an undirected graph, the adjacency matrix should be symmetric: which means counting
