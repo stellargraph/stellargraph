@@ -76,7 +76,7 @@ class RowFrame:
 
         if values_len != index_len():
             raise ValueError(
-                f"values: expected {index_len()} rows to match the index value(s), found {values_len} rows"
+                f"values: expected the index length {index_len()} to match the first dimension of values, found {values_len} rows"
             )
 
         self.index = index
