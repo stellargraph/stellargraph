@@ -296,18 +296,9 @@ class FlatAdjacencyList:
         self.flat = flat_array
 
     def __getitem__(self, idx):
-        if idx < 0:
-            raise KeyError("Invalid node ilocs")
-        else:
-            start = self.splits[idx]
-            stop = self.splits[idx + 1]
+        start = self.splits[idx]
+        stop = self.splits[idx + 1]
         return self.flat[start:stop]
-
-    def get(self, idx, default):
-        if idx >= (len(self.splits) - 1) or idx < 0:
-            return default
-        else:
-            return self[idx]
 
     def items(self):
         for idx in range(len(self.splits) - 1):
@@ -465,4 +456,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)
+        return self._adj_lookup(ins=ins, outs=outs)[node_id]
