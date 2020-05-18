@@ -26,6 +26,14 @@ from ..core.experimental import experimental
 from ..core.validation import require_integer_in_range
 
 
+def _complexify(tensors):
+    """
+    Convert each "interleaved complex" real tensor in ``tensors`` (i.e. last axis represents [a, b,
+    ...] like [a_re, a_im, b_re, b_im, ...]) to the equivalent complex tensor.
+    """
+    return [tf.complex(tensor[..., 0::2], tensor[..., 1::2]) for tensor in tensors]
+
+
 class ComplExScore(Layer):
     """
     ComplEx scoring Keras layer.
@@ -55,20 +63,8 @@ class ComplExScore(Layer):
                 relation and object embeddings, respectively, that is, ``inputs == [Re(subject),
                 Im(subject), Re(relation), ...]``
         """
-        s_re, s_im, r_re, r_im, o_re, o_im = inputs
-
-        def inner(r, s, o):
-            return tf.reduce_sum(r * s * o, axis=2)
-
-        # expansion of Re(<w_r, e_s, conjugate(e_o)>)
-        score = (
-            inner(r_re, s_re, o_re)
-            + inner(r_re, s_im, o_im)
-            + inner(r_im, s_re, o_im)
-            - inner(r_im, s_im, o_re)
-        )
-
-        return score
+        s, r, o = _complexify(inputs)
+        return tf.math.real(tf.reduce_sum(r * s * tf.math.conj(o), axis=2))
 
 
 class ComplEx:
@@ -108,17 +104,15 @@ class ComplEx:
         def embed(count):
             return Embedding(
                 count,
-                embedding_dimension,
+                embedding_dimension * 2,
                 embeddings_initializer=embeddings_initializer,
                 embeddings_regularizer=embeddings_regularizer,
             )
 
-        # ComplEx generates embeddings in C, which we model as separate real and imaginary
+        # ComplEx generates embeddings in C, which we model as interleaved real and imaginary
         # embeddings
-        self._node_embeddings_real = embed(self.num_nodes)
-        self._node_embeddings_imag = embed(self.num_nodes)
-        self._edge_type_embeddings_real = embed(self.num_edge_types)
-        self._edge_type_embeddings_imag = embed(self.num_edge_types)
+        self._node_embeddings = embed(self.num_nodes)
+        self._edge_type_embeddings = embed(self.num_edge_types)
 
     def embeddings(self):
         """
@@ -129,13 +123,10 @@ class ComplEx:
             (``shape = number of nodes × k``), the second element is the embeddings for edge
             types/relations (``shape = number of edge types x k``).
         """
-        node = 1j * self._node_embeddings_imag.embeddings.numpy()
-        node += self._node_embeddings_real.embeddings.numpy()
-
-        rel = 1j * self._edge_type_embeddings_imag.embeddings.numpy()
-        rel += self._edge_type_embeddings_real.embeddings.numpy()
-
-        return node, rel
+        node = self._node_embeddings.embeddings.numpy()
+        rel = self._edge_type_embeddings.embeddings.numpy()
+        assert node.dtype == rel.dtype == np.float32
+        return node.view(np.complex64), rel.view(np.complex64)
 
     def rank_edges_against_all_nodes(
         self, test_data, known_edges_graph, tie_breaking="random"
@@ -255,18 +246,13 @@ class ComplEx:
         """
         s_iloc, r_iloc, o_iloc = x
 
-        s_re = self._node_embeddings_real(s_iloc)
-        s_im = self._node_embeddings_imag(s_iloc)
-
-        r_re = self._edge_type_embeddings_real(r_iloc)
-        r_im = self._edge_type_embeddings_imag(r_iloc)
-
-        o_re = self._node_embeddings_real(o_iloc)
-        o_im = self._node_embeddings_imag(o_iloc)
+        s = self._node_embeddings(s_iloc)
+        r = self._edge_type_embeddings(r_iloc)
+        o = self._node_embeddings(o_iloc)
 
         scoring = ComplExScore()
 
-        return scoring([s_re, s_im, r_re, r_im, o_re, o_im])
+        return scoring([s, r, o])
 
     def in_out_tensors(self):
         """
@@ -543,14 +529,12 @@ class RotatEScore(Layer):
         }
 
     def call(self, inputs):
-        s_re, s_im, r_re, r_im, o_re, o_im = inputs
-        # expansion of s◦r - t
-        re = s_re * r_re - s_im * r_im - o_re
-        im = s_re * r_im + s_im * r_re - o_im
-        # norm the vector: -|| ... ||_p
-        return self._margin - tf.norm(
-            tf.sqrt(re * re + im * im), ord=self._norm_order, axis=2
-        )
+        s, r_phase, o = inputs
+        s, o = _complexify([s, o])
+
+        r = tf.complex(tf.math.cos(r_phase), tf.math.sin(r_phase))
+
+        return self._margin - tf.norm(s * r - o, ord=self._norm_order, axis=2)
 
 
 @experimental(reason="demo and documentation is missing", issues=[1549, 1550])
@@ -582,18 +566,14 @@ class RotatE:
 
         self._scoring = RotatEScore(margin=margin, norm_order=norm_order)
 
-        def embed(count):
-            return Embedding(
-                count,
-                embedding_dimension,
-                embeddings_initializer=embeddings_initializer,
-                embeddings_regularizer=embeddings_regularizer,
-            )
-
-        # RotatE generates embeddings in C, which we model as separate real and imaginary embeddings
-        # for node types, and just the phase for edge types (since they have |x| = 1)
-        self._node_embeddings_real = embed(self.num_nodes)
-        self._node_embeddings_imag = embed(self.num_nodes)
+        # RotatE generates embeddings in C, which we model as interleaved real and imaginary
+        # embeddings for node types, and just the phase for edge types (since they have |x| = 1)
+        self._node_embeddings = Embedding(
+            self.num_nodes,
+            embedding_dimension * 2,
+            embeddings_initializer=embeddings_initializer,
+            embeddings_regularizer=embeddings_regularizer,
+        )
 
         # it doesn't make sense to regularize the phase, because it's circular
         self._edge_type_embeddings_phase = Embedding(
@@ -603,8 +583,9 @@ class RotatE:
         )
 
     def embeddings(self):
-        node = 1j * self._node_embeddings_imag.embeddings.numpy()
-        node += self._node_embeddings_real.embeddings.numpy()
+        node = self._node_embeddings.embeddings.numpy()
+        assert node.dtype == np.float32
+        node = node.view(np.complex64)
 
         phase = self._edge_type_embeddings_phase.embeddings.numpy()
         rel = 1j * np.sin(phase)
@@ -678,18 +659,11 @@ class RotatE:
     def __call__(self, x):
         s_iloc, r_iloc, o_iloc = x
 
-        s_re = self._node_embeddings_real(s_iloc)
-        s_im = self._node_embeddings_imag(s_iloc)
-
+        s = self._node_embeddings(s_iloc)
         r_phase = self._edge_type_embeddings_phase(r_iloc)
+        o = self._node_embeddings(o_iloc)
 
-        r_re = tf.math.cos(r_phase)
-        r_im = tf.math.sin(r_phase)
-
-        o_re = self._node_embeddings_real(o_iloc)
-        o_im = self._node_embeddings_imag(o_iloc)
-
-        return self._scoring([s_re, s_im, r_re, r_im, o_re, o_im])
+        return self._scoring([s, r_phase, o])
 
     def in_out_tensors(self):
         s_iloc = Input(shape=1)
