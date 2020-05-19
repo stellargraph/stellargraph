@@ -182,7 +182,10 @@ def test_columnar_convert_type_column():
     assert columns.keys() == {"D"}
     np.testing.assert_array_equal(ids, [10, 100, 10000, 1, 1000])
     np.testing.assert_array_equal(columns["D"], [2, 3, 5, 1, 4])
-    _check_type_info(type_info, [("a", _empty_array(2)), ("b", _empty_array(1)), ("c", _empty_array(2))])
+    _check_type_info(
+        type_info,
+        [("a", _empty_array(2)), ("b", _empty_array(1)), ("c", _empty_array(2))],
+    )
 
     # invalid configuration
     with pytest.raises(
@@ -223,7 +226,10 @@ def test_columnar_convert_transform_columns():
     assert columns["ww"][1] == 3
     assert columns["ww"][2] == 4
 
-    _check_type_info(type_info, [("x", _empty_array(1)), ("y", _empty_array(1)), ("z", _empty_array(1))])
+    _check_type_info(
+        type_info,
+        [("x", _empty_array(1)), ("y", _empty_array(1)), ("z", _empty_array(1))],
+    )
 
     np.testing.assert_array_equal(columns["ss"], 0)
     np.testing.assert_array_equal(columns["tt"], 1)
@@ -251,6 +257,7 @@ def test_convert_edges_weights():
             weight_column="w",
             nodes=nodes,
             type_column=None,
+            dtype=np.int8,
         )
 
     # various numbers are valid
@@ -290,6 +297,7 @@ def test_convert_edges_type_column(edge_features):
         weight_column="w",
         type_column="l",
         nodes=nodes,
+        dtype=np.float32,
     )
 
     np.testing.assert_array_equal(edges.sources, [1, 2, 4, 0, 3])
@@ -299,9 +307,13 @@ def test_convert_edges_type_column(edge_features):
     )
 
     if edge_features:
-        np.testing.assert_array_equal(edges.features_of_type("a"), [[1.0, -0.25], [2.0, -0.5]])
+        np.testing.assert_array_equal(
+            edges.features_of_type("a"), [[1.0, -0.25], [2.0, -0.5]]
+        )
         np.testing.assert_array_equal(edges.features_of_type("b"), [[4.0, -1.0]])
-        np.testing.assert_array_equal(edges.features_of_type("c"), [[0.0, 0.0], [3.0, -0.75]])
+        np.testing.assert_array_equal(
+            edges.features_of_type("c"), [[0.0, 0.0], [3.0, -0.75]]
+        )
     else:
         np.testing.assert_array_equal(edges.features_of_type("a"), _empty_array(2))
         np.testing.assert_array_equal(edges.features_of_type("b"), _empty_array(1))

@@ -502,18 +502,18 @@ def test_edge_features():
     feature_sizes = {"F": 4, "R": 6}
     sg = example_hin_1(feature_sizes=feature_sizes, edge_features=True)
 
-    one_zero = np.array([[-1] * 4, [0] * 4])
+    one_zero = np.array([[-1] * 6, [0] * 6])
 
     # inference
     np.testing.assert_array_equal(sg.edge_features(edges=[1, 0]), one_zero)
     # specified
     np.testing.assert_array_equal(
-        sg.edge_features(edges=[1, 0], edge_type="F"), one_zero
+        sg.edge_features(edges=[1, 0], edge_type="R"), one_zero
     )
 
     # wrong type
     with pytest.raises(ValueError, match="unknown IDs"):
-        sg.edge_features(edges=[1, 0], edge_type="R")
+        sg.edge_features(edges=[1, 0], edge_type="F")
 
     # mixed types, inference
     with pytest.raises(ValueError, match="all edges must have the same type"):
@@ -521,7 +521,7 @@ def test_edge_features():
 
     # mixed types, specified
     with pytest.raises(ValueError, match="unknown IDs"):
-        sg.edge_features(edges=[0, 100], edge_type="F")
+        sg.edge_features(edges=[0, 100], edge_type="R")
 
 
 def test_edge_features_edge_type():
@@ -529,13 +529,14 @@ def test_edge_features_edge_type():
     sg = example_hin_1(feature_sizes=feature_sizes, edge_features=True)
 
     np.testing.assert_array_equal(
-        sg.edge_features(edge_type="F"), [[0] * 4, [-1] * 4, [-2] * 4, [-3] * 4],
+        sg.edge_features(edge_type="R"),
+        [[0] * 6, [-1] * 6, [-2] * 6, [-3] * 6, [-4] * 6],
     )
-    np.testing.assert_array_equal(sg.edge_features(edge_type="R"), [[-100] * 6])
+    np.testing.assert_array_equal(sg.edge_features(edge_type="F"), [[-100] * 4])
 
 
 def test_edge_features_edge_type_inference():
-    one_type = example_graph(feature_size=4, edge_features=True)
+    one_type = example_graph(edge_feature_size=4)
     np.testing.assert_array_equal(
         one_type.edge_features(), [[0] * 4, [-1] * 4, [-2] * 4, [-3] * 4]
     )
@@ -544,7 +545,7 @@ def test_edge_features_edge_type_inference():
     np.testing.assert_array_equal(one_type.edge_features([1]), [[-1] * 4])
 
     # inference doesn't work for a heterogeneous graph:
-    feature_sizes = {"R": 4, "F": 6}
+    feature_sizes = {"F": 4, "R": 6}
     many_types = example_hin_1(feature_sizes=feature_sizes, edge_features=True)
 
     with pytest.raises(
@@ -555,13 +556,13 @@ def test_edge_features_edge_type_inference():
 
 
 def test_edge_features_missing_id():
-    sg = example_graph(feature_size=6, edge_features=True)
+    sg = example_graph(edge_feature_size=6)
     with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
         sg.edge_features([1, 1000, None, 2000])
 
 
 def test_null_edge_feature():
-    sg = example_graph(feature_size=6, edge_features=True)
+    sg = example_graph(edge_feature_size=6)
     aa = sg.edge_features([1, None, 2, None])
     assert aa.shape == (4, 6)
     assert aa[:, 0] == pytest.approx([-1, 0, -2, 0])
@@ -1233,7 +1234,11 @@ def test_isolated_node_neighbor_methods(is_directed, use_ilocs):
 def test_info_homogeneous(is_directed):
 
     g = example_graph(
-        feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed, edge_feature_size=34
+        feature_size=12,
+        node_label="ABC",
+        edge_label="xyz",
+        is_directed=is_directed,
+        edge_feature_size=34,
     )
 
     if is_directed:
@@ -1261,7 +1266,9 @@ def test_info_homogeneous(is_directed):
 
 
 def test_info_heterogeneous():
-    g = example_hin_1({"A": 0, "B": 34, "F": 0, "R": 56}, reverse_order=True, edge_features=True)
+    g = example_hin_1(
+        {"A": 0, "B": 34, "F": 0, "R": 56}, reverse_order=True, edge_features=True
+    )
     # literal match to check the output is good for human consumption
     assert (
         g.info()

@@ -116,7 +116,11 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None, is_directed=False, self_loop=False, reverse_order=False, edge_features=False,
+    feature_sizes=None,
+    is_directed=False,
+    self_loop=False,
+    reverse_order=False,
+    edge_features=False,
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
@@ -153,8 +157,8 @@ def example_hin_1(
     f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
 
     if edge_features:
-        r = r.join(pd.DataFrame(-features("R", r.index)))
-        f = f.join(pd.DataFrame(-features("F", f.index)))
+        r = r.join(pd.DataFrame(-features("R", r.index), index=r.index))
+        f = f.join(pd.DataFrame(-features("F", f.index), index=f.index))
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
