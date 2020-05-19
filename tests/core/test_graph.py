@@ -21,7 +21,7 @@ import pytest
 import random
 from stellargraph.core.graph import *
 from stellargraph.core.experimental import ExperimentalWarning
-from ..test_utils.alloc import snapshot, allocation_benchmark
+from ..test_utils.alloc import snapshot, peak, allocation_benchmark
 from ..test_utils.graphs import (
     example_graph_nx,
     example_graph,
@@ -30,6 +30,7 @@ from ..test_utils.graphs import (
     line_graph,
     weighted_hin,
     example_graph_random,
+    knowledge_graph,
 )
 
 from .. import test_utils
@@ -179,7 +180,7 @@ def test_graph_constructor_nodes_from_edges():
 
     with pytest.raises(
         ValueError,
-        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'weight'",
+        match=r"edges.*: expected 'source', 'target', 'weight' columns, found: 'x'",
     ):
         StellarGraph(edges=pd.DataFrame(columns=["x"]))
 
@@ -195,6 +196,64 @@ def test_graph_constructor_edge_labels():
         (4, 0, "b"),
         (5, 2, "b"),
     ]
+
+
+def test_graph_constructor_internal():
+    orig = example_graph_random(node_types=3, edge_types=3, is_directed=True)
+    undir_g = StellarGraph(orig._nodes, orig._edges)
+    dir_g = StellarDiGraph(orig._nodes, orig._edges)
+
+    assert not undir_g.is_directed()
+    assert dir_g.is_directed()
+    for g in [undir_g, dir_g]:
+        assert g.node_types == orig.node_types
+        for t in orig.node_types:
+            np.testing.assert_array_equal(
+                g.node_features(node_type=t), orig.node_features(node_type=t)
+            )
+        assert g.edges(include_edge_type=True) == orig.edges(include_edge_type=True)
+
+    with pytest.raises(
+        TypeError, match="edges: expected type 'EdgeData' .* found dict"
+    ):
+        StellarGraph(orig._nodes, {})
+
+    with pytest.raises(
+        TypeError, match="nodes: expected type 'NodeData' .* found DataFrame"
+    ):
+        StellarGraph(pd.DataFrame(index=[0]), orig._edges)
+
+    # check that each parameter is validated as being the default. This explicitly lists the
+    # parameters, to not rely on `__kwdefaults__` since the internal implementation uses that too
+    # (at the time of writing).
+    non_default = [
+        "source_column",
+        "target_column",
+        "edge_weight_column",
+        "node_type_default",
+        "edge_type_default",
+        "edge_type_column",
+        "dtype",
+    ]
+    unchecked = {
+        # is_directed is allowed to be specified
+        "is_directed",
+        # don't check the legacy forms
+        "graph",
+        "node_type_name",
+        "edge_type_name",
+        "node_features",
+    }
+    # check that we seem to be covering all the relevant parameters. Also, if something fundamental
+    # changes with the class this will hopefully catch the testing being invalidated.
+    assert set(non_default) == set(StellarGraph.__init__.__kwdefaults__) - unchecked
+
+    for param in non_default:
+        with pytest.raises(
+            ValueError, match=f"{param}: expected the default value .* found <object"
+        ):
+            # specify a junk object
+            StellarGraph(orig._nodes, orig._edges, **{param: object()})
 
 
 def test_info():
@@ -293,6 +352,50 @@ def test_node_ilocs_to_ids():
     expected_node_ids = [1, 2, 3, 4]
     node_ids = sg.node_ilocs_to_ids(node_ilocs)
     assert (node_ids == expected_node_ids).all()
+
+
+def test_node_type_names_to_from_ilocs():
+    sg = example_hin_1()
+
+    def both_ways(names, ilocs):
+        np.testing.assert_array_equal(sg.node_type_names_to_ilocs(names), ilocs)
+        np.testing.assert_array_equal(sg.node_type_ilocs_to_names(ilocs), names)
+
+    both_ways([], [])
+    both_ways(["A"], [0])
+    both_ways(["B", "A", "A", "B"], [1, 0, 0, 1])
+
+    with pytest.raises(KeyError, match="'C'.*0"):
+        sg.node_type_names_to_ilocs(["C", "A", 0])
+
+    with pytest.raises(IndexError, match="index 100 .* size 2"):
+        sg.node_type_ilocs_to_names([100])
+
+    with pytest.raises(IndexError, match="index -100 .* size 2"):
+        sg.node_type_ilocs_to_names([-100])
+
+
+def test_edge_type_names_to_from_ilocs(knowledge_graph):
+    def both_ways(names, ilocs):
+        np.testing.assert_array_equal(
+            knowledge_graph.edge_type_names_to_ilocs(names), ilocs
+        )
+        np.testing.assert_array_equal(
+            knowledge_graph.edge_type_ilocs_to_names(ilocs), names
+        )
+
+    both_ways([], [])
+    both_ways(["W"], [0])
+    both_ways(["Z", "X", "W", "W", "Z", "Z"], [3, 1, 0, 0, 3, 3])
+
+    with pytest.raises(KeyError, match="'U'.*0"):
+        knowledge_graph.edge_type_names_to_ilocs(["U", "W", 0])
+
+    with pytest.raises(IndexError, match="index 100 .* size 4"):
+        knowledge_graph.edge_type_ilocs_to_names([100])
+
+    with pytest.raises(IndexError, match="index -100 .* size 4"):
+        knowledge_graph.edge_type_ilocs_to_names([-100])
 
 
 def test_feature_conversion_from_nodes():
@@ -548,7 +651,12 @@ def test_edges_include_edge_type(use_ilocs):
 
     expected = r | f
     if use_ilocs:
-        expected = {tuple(g.node_ids_to_ilocs(x[:2])) + (x[2],) for x in expected}
+        expected = {
+            tuple(g.node_ids_to_ilocs(x[:2]))
+            + tuple(g.edge_type_names_to_ilocs([x[2]]))
+            for x in expected
+        }
+
     expected = normalize_edges(expected, directed=False)
     assert (
         normalize_edges(
@@ -702,7 +810,7 @@ def test_benchmark_get_neighbours(benchmark, use_ilocs):
     # get the neigbours of every node in the graph
     def f():
         for i in range(num_nodes):
-            sg.neighbors(i, use_ilocs=use_ilocs)
+            sg.neighbor_arrays(i, use_ilocs=use_ilocs)
 
     benchmark(f)
 
@@ -755,62 +863,85 @@ def test_benchmark_get_features(
     benchmark(f)
 
 
+def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges):
+    nodes, edges = example_benchmark_graph(
+        feature_size=feature_size, n_nodes=num_nodes, n_edges=num_edges
+    )
+
+    def f():
+        return StellarGraph(nodes=nodes, edges=edges)
+
+    benchmarker(f)
+
+
 @pytest.mark.benchmark(group="StellarGraph creation (time)")
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
-@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (1000, 5000), (20000, 100000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
-def test_benchmark_creation(
-    benchmark, feature_size, num_nodes, num_edges, force_adj_lists
-):
-    nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
-    )
-
-    def f():
-        sg = StellarGraph(nodes=nodes, edges=edges)
-        if force_adj_lists == "directed":
-            sg._edges._init_directed_adj_lists()
-        elif force_adj_lists == "undirected":
-            sg._edges._init_undirected_adj_lists()
-        elif force_adj_lists == "both":
-            sg._edges._init_undirected_adj_lists()
-            sg._edges._init_directed_adj_lists()
-        return sg
-
-    benchmark(f)
+def test_benchmark_creation(benchmark, feature_size, num_nodes, num_edges):
+    _run_creation_benchmark(benchmark, feature_size, num_nodes, num_edges)
 
 
-@pytest.mark.benchmark(group="StellarGraph creation", timer=snapshot)
-# various element counts, to give an indication of the relationship
-# between those and memory use (0,0 gives the overhead of the
-# StellarGraph object itself, without any data)
+@pytest.mark.benchmark(group="StellarGraph creation (size)", timer=snapshot)
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
-# features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-@pytest.mark.parametrize("force_adj_lists", [None, "directed", "undirected", "both"])
 def test_allocation_benchmark_creation(
-    allocation_benchmark, feature_size, num_nodes, num_edges, force_adj_lists
+    allocation_benchmark, feature_size, num_nodes, num_edges
 ):
-    nodes, edges = example_benchmark_graph(
-        feature_size, num_nodes, num_edges, features_in_nodes=True
-    )
+    _run_creation_benchmark(allocation_benchmark, feature_size, num_nodes, num_edges)
+
+
+@pytest.mark.benchmark(group="StellarGraph creation (peak)", timer=peak)
+@pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
+@pytest.mark.parametrize("feature_size", [None, 100])
+def test_allocation_benchmark_creation_peak(
+    allocation_benchmark, feature_size, num_nodes, num_edges
+):
+    _run_creation_benchmark(allocation_benchmark, feature_size, num_nodes, num_edges)
+
+
+def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
+    nodes, edges = example_benchmark_graph(n_nodes=num_nodes, n_edges=num_edges)
+
+    sg = StellarGraph(nodes=nodes, edges=edges)
 
     def f():
-        sg = StellarGraph(nodes=nodes, edges=edges)
         if force_adj_lists == "directed":
-            sg._edges._init_directed_adj_lists()
+            return sg._edges._create_undirected_adj_lists()
         elif force_adj_lists == "undirected":
-            sg._edges._init_undirected_adj_lists()
-        elif force_adj_lists == "both":
-            sg._edges._init_undirected_adj_lists()
-            sg._edges._init_directed_adj_lists()
-        return sg
+            return sg._edges._create_directed_adj_lists()
 
-    allocation_benchmark(f)
+    benchmarker(f)
+
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (time)")
+@pytest.mark.parametrize(
+    "num_nodes,num_edges", [(100, 200), (1000, 5000), (20000, 100000)]
+)
+@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+def test_benchmark_adj_list(benchmark, num_nodes, num_edges, force_adj_lists):
+    _run_adj_list_benchmark(benchmark, num_nodes, num_edges, force_adj_lists)
+
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (size)", timer=snapshot)
+@pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
+@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+def test_allocation_benchmark_adj_list(
+    allocation_benchmark, num_nodes, num_edges, force_adj_lists
+):
+    _run_adj_list_benchmark(allocation_benchmark, num_nodes, num_edges, force_adj_lists)
+
+
+@pytest.mark.benchmark(group="StellarGraph adjacency lists (peak)", timer=peak)
+@pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
+@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+def test_allocation_benchmark_adj_list_peak(
+    allocation_benchmark, num_nodes, num_edges, force_adj_lists
+):
+    _run_adj_list_benchmark(allocation_benchmark, num_nodes, num_edges, force_adj_lists)
 
 
 def example_weighted_hin(is_directed=True):
@@ -836,6 +967,13 @@ def example_unweighted_hom(is_directed=True):
     return StellarDiGraph(nodes, edges) if is_directed else StellarGraph(nodes, edges)
 
 
+def _edge_types_or_ilocs(graph, use_ilocs, names):
+    if use_ilocs:
+        return graph.edge_type_names_to_ilocs(names)
+
+    return names
+
+
 @pytest.mark.parametrize("use_ilocs", [True, False])
 @pytest.mark.parametrize("is_directed", [True, False])
 def test_neighbors_weighted_hin(is_directed, use_ilocs):
@@ -853,11 +991,12 @@ def test_neighbors_weighted_hin(is_directed, use_ilocs):
         zip(expected_nodes, expected_weights),
     )
 
+    edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AB"])
     expected_nodes = graph.node_ids_to_ilocs([2, 3]) if use_ilocs else [2, 3]
     expected_weights = [10.0, 10.0]
     assert_items_equal(
         graph.neighbors(
-            node, include_edge_weight=True, edge_types=["AB"], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
         ),
         zip(expected_nodes, expected_weights),
     )
@@ -882,9 +1021,10 @@ def test_neighbors_unweighted_hom(is_directed, use_ilocs):
         graph.neighbors(node, include_edge_weight=True, use_ilocs=use_ilocs),
         zip(expected_nodes, expected_weights),
     )
+
     assert_items_equal(
         graph.neighbors(
-            node, include_edge_weight=True, edge_types=["AB"], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )
@@ -910,6 +1050,7 @@ def test_in_nodes_weighted_hin(use_ilocs):
     node = graph.node_ids_to_ilocs([1])[0] if use_ilocs else 1
     expected_nodes = graph.node_ids_to_ilocs([0, 0]) if use_ilocs else [0, 0]
     expected_weighted = zip(expected_nodes, [0.0, 1.0])
+    edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AB"])
 
     assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
@@ -918,7 +1059,7 @@ def test_in_nodes_weighted_hin(use_ilocs):
     )
     assert_items_equal(
         graph.in_nodes(
-            node, include_edge_weight=True, edge_types=["AB"], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
         ),
         [],
     )
@@ -938,7 +1079,7 @@ def test_in_nodes_unweighted_hom(use_ilocs):
     )
     assert_items_equal(
         graph.in_nodes(
-            node, include_edge_weight=True, edge_types=["AA"], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )
@@ -958,7 +1099,7 @@ def test_out_nodes_weighted_hin(use_ilocs):
     )
     assert_items_equal(
         graph.out_nodes(
-            node, include_edge_weight=True, edge_types=["AA"], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )
@@ -978,7 +1119,7 @@ def test_out_nodes_unweighted_hom(use_ilocs):
     )
     assert_items_equal(
         graph.out_nodes(
-            node, include_edge_weight=True, edge_types=["AB"], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
         ),
         [],
     )

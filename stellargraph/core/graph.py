@@ -172,12 +172,11 @@ class StellarGraph:
 
     .. _iloc-explanation:
 
-    This type stores the external IDs for nodes and edges as *ilocs* (internal or integer locations,
-    similar to Pandas), which are sequential integers that allow for efficient storage and indexing.
-    For convenience, methods here will traffic in the external ID values and transparently convert to
-    and from ilocs as required internally. Many of these methods also have a ``use_ilocs`` parameter
-    that allows for explicitly switching the methods to consume and return ilocs directly, cutting out
-    the conversion overhead.
+    This type stores the external IDs for nodes and edges as :term:`ilocs <iloc>`.  For convenience,
+    methods here will traffic in the external ID values and transparently convert to and from ilocs
+    as required internally. Many of these methods also have a ``use_ilocs`` parameter that allows
+    for explicitly switching the methods to consume and return ilocs directly, cutting out the
+    conversion overhead.
 
     .. seealso:: :meth:`from_networkx` for construction from a NetworkX graph.
 
@@ -303,25 +302,54 @@ class StellarGraph:
         if edges is None:
             edges = {}
 
-        self._nodes = convert.convert_nodes(
-            nodes, name="nodes", default_type=node_type_default, dtype=dtype,
-        )
-
         self._is_directed = is_directed
-        self._edges = convert.convert_edges(
-            edges,
-            name="edges",
-            default_type=edge_type_default,
-            source_column=source_column,
-            target_column=target_column,
-            weight_column=edge_weight_column,
-            type_column=edge_type_column,
-            nodes=self._nodes,
-        )
 
-        nodes_from_edges = pd.unique(
-            np.concatenate([self._edges.targets, self._edges.sources])
-        )
+        nodes_is_internal = isinstance(nodes, NodeData)
+        edges_is_internal = isinstance(edges, EdgeData)
+        any_internal = nodes_is_internal or edges_is_internal
+
+        if not any_internal:
+            internal_nodes = convert.convert_nodes(
+                nodes, name="nodes", default_type=node_type_default, dtype=dtype,
+            )
+
+            internal_edges = convert.convert_edges(
+                edges,
+                name="edges",
+                default_type=edge_type_default,
+                source_column=source_column,
+                target_column=target_column,
+                weight_column=edge_weight_column,
+                type_column=edge_type_column,
+                nodes=internal_nodes,
+            )
+        else:
+            if not edges_is_internal:
+                raise TypeError(
+                    f"edges: expected type 'EdgeData' when 'nodes' has type 'NodeData', found {type(edges).__name__}"
+                )
+            if not nodes_is_internal:
+                raise TypeError(
+                    f"nodes: expected type 'NodeData' when 'edges' has type 'EdgeData', found {type(nodes).__name__}"
+                )
+
+            params = locals()
+            for param, expected in self.__init__.__kwdefaults__.items():
+                if param == "is_directed":
+                    continue
+
+                if params[param] is not expected:
+                    raise ValueError(
+                        f"{param}: expected the default value ({expected!r}) when constructing from 'NodeData' and 'EdgeData', found {params[param]!r}. (All parameters except 'nodes', 'edges' and 'is_directed' must be left unset.)"
+                    )
+
+            internal_nodes = nodes
+            internal_edges = edges
+
+            # FIXME: it would be good to do more validation that 'nodes' and 'edges' match here
+
+        self._nodes = internal_nodes
+        self._edges = internal_edges
 
     @staticmethod
     def _infer_nodes_from_edges(edges, source_column, target_column):
@@ -527,6 +555,12 @@ class StellarGraph:
             return ilocs
         return self._nodes.ids.from_iloc(ilocs)
 
+    def _to_edges(self, edge_arrs):
+        edges = list(zip(*(arr for arr in edge_arrs[:3] if arr is not None)))
+        if edge_arrs[3] is not None:
+            return edges, edge_arrs[3]
+        return edges
+
     def edges(
         self, include_edge_type=False, include_edge_weight=False, use_ilocs=False
     ) -> Iterable[Any]:
@@ -540,30 +574,43 @@ class StellarGraph:
             include_edge_weight (bool):
                 A flag that indicates whether to return edge weights.  Weights are returned in a
                 separate list.
-            use_ilocs (bool): if True return :ref:`node ilocs <iloc-explanation>`
+            use_ilocs (bool): if True return :ref:`ilocs for nodes (and edge types) <iloc-explanation>`
 
         Returns:
-            The graph edges. If edge weights are included then a tuple of (edges, weights)
+            The graph edges. If edge weights are included then a tuple of (edges, weights).
         """
-        # FIXME: these would be better returned as the 2 or 3 arrays directly, rather than tuple-ing
-        # (the same applies to all other instances of zip in this file)
+        edge_arrs = self.edge_arrays(
+            include_edge_type, include_edge_weight, use_ilocs=use_ilocs
+        )
+        return self._to_edges(edge_arrs)
+
+    def edge_arrays(
+        self, include_edge_type=False, include_edge_weight=False, use_ilocs=False
+    ) -> tuple:
+        """
+        Obtains the collection of edges in the graph as a tuple of arrays (sources, targets, types, weights).
+        ``types`` and ``weights`` will be `None` if the optional parameters are not specified.
+
+        Args:
+            include_edge_type (bool): A flag that indicates whether to return edge types.
+            include_edge_weight (bool): A flag that indicates whether to return edge weights.
+            use_ilocs (bool): if True return :ref:`ilocs for nodes (and edge types) <iloc-explanation>`
+
+        Returns:
+            A tuple containing 1D arrays of the source and target nodes (sources, targets, types, weights).
+            Setting include_edge_type and/or include_edge_weight to True will include arrays of edge types
+            and/or edge weights in this tuple, otherwise they will be set to ``None``.
+        """
+        types = types = self._edges.type_ilocs if include_edge_type else None
+        weights = self._edges.weights if include_edge_weight else None
         sources = self._edges.sources
         targets = self._edges.targets
 
         if not use_ilocs:
-            sources = self._nodes.ids.from_iloc(sources)
-            targets = self._nodes.ids.from_iloc(targets)
-
-        if include_edge_type:
-            types = self._edges.type_of_iloc(slice(None))
-            edges = list(zip(sources, targets, types))
-        else:
-            edges = list(zip(sources, targets))
-
-        if include_edge_weight:
-            return edges, self._edges.weights
-
-        return edges
+            sources = self.node_ilocs_to_ids(sources)
+            targets = self.node_ilocs_to_ids(targets)
+            types = self._edges.type_of_iloc(slice(None)) if include_edge_type else None
+        return sources, targets, types, weights
 
     def has_node(self, node: Any) -> bool:
         """
@@ -590,41 +637,47 @@ class StellarGraph:
             other_node = self._nodes.ids.from_iloc(other_node)
 
         if filter_edge_types is not None:
-            filter_edge_type_ilocs = self._edges.types.to_iloc(filter_edge_types)
+            if not use_ilocs:
+                filter_edge_types = self._edges.types.to_iloc(filter_edge_types)
             edge_type_ilocs = self._edges.type_ilocs[ilocs]
-            correct_type = np.isin(edge_type_ilocs, filter_edge_type_ilocs)
+            correct_type = np.isin(edge_type_ilocs, filter_edge_types)
 
             other_node = other_node[correct_type]
             if weights is not None:
                 weights = weights[correct_type]
 
-        # FIXME(#718): it would be better to return these as ndarrays, instead of (zipped) lists
         if weights is not None:
+            return other_node, weights
+
+        return other_node
+
+    def _to_neighbors(self, neigh_arrs, include_edge_weight):
+        if include_edge_weight:
             return [
-                NeighbourWithWeight(node, weight)
-                for node, weight in zip(other_node, weights)
+                NeighbourWithWeight(neigh, weight) for neigh, weight in zip(*neigh_arrs)
             ]
+        return list(neigh_arrs)
 
-        return list(other_node)
-
-    def neighbors(
+    def neighbor_arrays(
         self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
-    ) -> Iterable[Any]:
+    ):
         """
-        Obtains the collection of neighbouring nodes connected
-        to the given node.
+        Obtains the collection of neighbouring nodes connected to the given node
+        as an array of node_ids. If `include_edge_weight` edge is `True` then
+        an array of edges weights is also returned in a tuple of `(neighbor_ids, edge_weights)`.
 
         Args:
             node (any): The node in question.
-            include_edge_weight (bool, default False): If True, each neighbour in the
-                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
+            include_edge_weight (bool, default False): If True an array of edge weights is also returned.
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
-            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>` and the ilocs of
-                each neighbour is returned.
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
+                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                neighbour is returned.
 
         Returns:
-            iterable: The neighbouring nodes.
+            A numpy array of the neighboring nodes. If `include_edge_weight` is `True` then an array
+            of edge weights is also returned in a tuple `(neighbor_array, edge_weight_array)`
         """
         if not use_ilocs:
             node = self._nodes.ids.to_iloc([node])[0]
@@ -636,6 +689,70 @@ class StellarGraph:
 
         return self._transform_edges(
             other_node, edge_ilocs, include_edge_weight, edge_types, use_ilocs
+        )
+
+    def neighbors(
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
+    ) -> Iterable[any]:
+        """
+        Obtains the collection of neighbouring nodes connected
+        to the given node.
+
+        Args:
+            node (any): The node in question.
+            include_edge_weight (bool, default False): If True, each neighbour in the
+                output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
+            edge_types (list of hashable, optional): If provided, only traverse the graph
+                via the provided edge types when collecting neighbours.
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
+                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                neighbour is returned.
+
+        Returns:
+            iterable: The neighboring nodes.
+        """
+        neigh_arrs = self.neighbor_arrays(
+            node, include_edge_weight, edge_types, use_ilocs=use_ilocs
+        )
+        return self._to_neighbors(neigh_arrs, include_edge_weight)
+
+    def in_node_arrays(
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
+    ):
+        """
+        Obtains the collection of neighbouring nodes with edges
+        directed to the given node. For an undirected graph,
+        neighbours are treated as both in-nodes and out-nodes.
+
+        Args:
+            node (any): The node in question.
+            include_edge_weight (bool, default False): If True an array of edge weights is also returned.
+            edge_types (list of hashable, optional): If provided, only traverse the graph
+                via the provided edge types when collecting neighbours.
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
+                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                neighbour is returned.
+
+        Returns:
+            A numpy array of the neighboring in-nodes. If `include_edge_weight` is `True` then an array
+            of edge weights is also returned in a tuple `(neighbor_array, edge_weight_array)`
+        """
+        if not self.is_directed():
+            # all edges are both incoming and outgoing for undirected graphs
+            return self.neighbor_arrays(
+                node,
+                include_edge_weight=include_edge_weight,
+                edge_types=edge_types,
+                use_ilocs=use_ilocs,
+            )
+
+        if not use_ilocs:
+            node = self._nodes.ids.to_iloc([node])[0]
+        edge_ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
+        source = self._edges.sources[edge_ilocs]
+
+        return self._transform_edges(
+            source, edge_ilocs, include_edge_weight, edge_types, use_ilocs
         )
 
     def in_nodes(
@@ -652,15 +769,42 @@ class StellarGraph:
                 output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
-            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>` and the ilocs of each neighbour is
-                returned.
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
+                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                neighbour is returned.
 
         Returns:
             iterable: The neighbouring in-nodes.
         """
+        neigh_arrs = self.in_node_arrays(
+            node, include_edge_weight, edge_types, use_ilocs=use_ilocs
+        )
+        return self._to_neighbors(neigh_arrs, include_edge_weight)
+
+    def out_node_arrays(
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
+    ):
+        """
+        Obtains the collection of neighbouring nodes with edges
+        directed from the given node. For an undirected graph,
+        neighbours are treated as both in-nodes and out-nodes.
+
+        Args:
+            node (any): The node in question.
+            include_edge_weight (bool, default False): If True an array of edge weights is also returned.
+            edge_types (list of hashable, optional): If provided, only traverse the graph
+                via the provided edge types when collecting neighbours.
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
+                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                neighbour is returned.
+
+        Returns:
+            A numpy array of the neighboring out-nodes. If `include_edge_weight` is `True` then an array
+            of edge weights is also returned in a tuple `(neighbor_array, edge_weight_array)`
+        """
         if not self.is_directed():
             # all edges are both incoming and outgoing for undirected graphs
-            return self.neighbors(
+            return self.neighbor_arrays(
                 node,
                 include_edge_weight=include_edge_weight,
                 edge_types=edge_types,
@@ -669,11 +813,12 @@ class StellarGraph:
 
         if not use_ilocs:
             node = self._nodes.ids.to_iloc([node])[0]
-        edge_ilocs = self._edges.edge_ilocs(node, ins=True, outs=False)
-        source = self._edges.sources[edge_ilocs]
+
+        edge_ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
+        target = self._edges.targets[edge_ilocs]
 
         return self._transform_edges(
-            source, edge_ilocs, include_edge_weight, edge_types, use_ilocs
+            target, edge_ilocs, include_edge_weight, edge_types, use_ilocs
         )
 
     def out_nodes(
@@ -690,30 +835,17 @@ class StellarGraph:
                 output is a named tuple with fields `node` (the node ID) and `weight` (the edge weight)
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
-            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>` and the ilocs of each neighbour is
-                returned.
+            use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
+                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                neighbour is returned.
 
         Returns:
             iterable: The neighbouring out-nodes.
         """
-        if not self.is_directed():
-            # all edges are both incoming and outgoing for undirected graphs
-            return self.neighbors(
-                node,
-                include_edge_weight=include_edge_weight,
-                edge_types=edge_types,
-                use_ilocs=use_ilocs,
-            )
-
-        if not use_ilocs:
-            node = self._nodes.ids.to_iloc([node])[0]
-
-        edge_ilocs = self._edges.edge_ilocs(node, ins=False, outs=True)
-        target = self._edges.targets[edge_ilocs]
-
-        return self._transform_edges(
-            target, edge_ilocs, include_edge_weight, edge_types, use_ilocs
+        neigh_arrs = self.out_node_arrays(
+            node, include_edge_weight, edge_types, use_ilocs=use_ilocs
         )
+        return self._to_neighbors(neigh_arrs, include_edge_weight)
 
     def nodes_of_type(self, node_type=None):
         """
@@ -801,6 +933,54 @@ class StellarGraph:
             a sequence of all edge types in the graph
         """
         return self._edges.types.pandas_index
+
+    def node_type_names_to_ilocs(self, node_type_names):
+        """
+        Get the :ref:`node type ilocs <iloc-explanation>` for the specified node types.
+
+        Args:
+            node_type_names (sequence of hashable): node types
+
+        Returns:
+            Numpy array containing the ilocs of the requested node types.
+        """
+        return self._nodes.types.to_iloc(node_type_names, strict=True)
+
+    def node_type_ilocs_to_names(self, node_type_ilocs):
+        """
+        Get the names of the specified :ref:`node type ilocs <iloc-explanation>`.
+
+        Args:
+            node_type_ilocs (sequence of int): node type ilocs
+
+        Returns:
+            Numpy array containing the names of the requested node types.
+        """
+        return self._nodes.types.from_iloc(node_type_ilocs)
+
+    def edge_type_names_to_ilocs(self, edge_type_names):
+        """
+        Get the :ref:`edge type ilocs <iloc-explanation>` for the specified edge types.
+
+        Args:
+            edge_type_names (sequence of hashable): edge types
+
+        Returns:
+            Numpy array containing the ilocs of the requested edge types.
+        """
+        return self._edges.types.to_iloc(edge_type_names, strict=True)
+
+    def edge_type_ilocs_to_names(self, edge_type_ilocs):
+        """
+        Get the names of the specified :ref:`edge type ilocs <iloc-explanation>`.
+
+        Args:
+            edge_type_ilocs (sequence of int): edge type ilocs
+
+        Returns:
+            Numpy array containing the names of the requested edge types.
+        """
+        return self._edges.types.from_iloc(edge_type_ilocs)
 
     def node_feature_sizes(self, node_types=None):
         """

@@ -521,7 +521,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
     machine learning. Currently the model does not require node features for
     nodes in the graph.
 
-    Use the :meth:`.flow` method supplying the nodes and targets,
+    Use the :meth:`flow` method supplying the nodes and targets,
     or an UnsupervisedSampler instance that generates node samples on demand,
     to get an object that can be used as a Keras data generator.
 
