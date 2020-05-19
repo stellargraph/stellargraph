@@ -913,6 +913,10 @@ def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
             return sg._edges._create_undirected_adj_lists()
         elif force_adj_lists == "undirected":
             return sg._edges._create_directed_adj_lists()
+        elif force_adj_lists == "directed_by_other_node_type":
+            return sg._edges._create_undirected_adj_lists_by_other_node_type()
+        elif force_adj_lists == "undirected_by_other_node_type":
+            return sg._edges._create_directed_adj_lists_by_other_node_type()
 
     benchmarker(f)
 
@@ -921,14 +925,30 @@ def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
 @pytest.mark.parametrize(
     "num_nodes,num_edges", [(100, 200), (1000, 5000), (20000, 100000)]
 )
-@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+@pytest.mark.parametrize(
+    "force_adj_lists",
+    [
+        "directed",
+        "undirected",
+        "directed_by_other_node_type",
+        "undirected_by_other_node_type",
+    ],
+)
 def test_benchmark_adj_list(benchmark, num_nodes, num_edges, force_adj_lists):
     _run_adj_list_benchmark(benchmark, num_nodes, num_edges, force_adj_lists)
 
 
 @pytest.mark.benchmark(group="StellarGraph adjacency lists (size)", timer=snapshot)
 @pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
-@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+@pytest.mark.parametrize(
+    "force_adj_lists",
+    [
+        "directed",
+        "undirected",
+        "directed_by_other_node_type",
+        "undirected_by_other_node_type",
+    ],
+)
 def test_allocation_benchmark_adj_list(
     allocation_benchmark, num_nodes, num_edges, force_adj_lists
 ):
@@ -937,7 +957,15 @@ def test_allocation_benchmark_adj_list(
 
 @pytest.mark.benchmark(group="StellarGraph adjacency lists (peak)", timer=peak)
 @pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
-@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+@pytest.mark.parametrize(
+    "force_adj_lists",
+    [
+        "directed",
+        "undirected",
+        "directed_by_other_node_type",
+        "undirected_by_other_node_type",
+    ],
+)
 def test_allocation_benchmark_adj_list_peak(
     allocation_benchmark, num_nodes, num_edges, force_adj_lists
 ):
