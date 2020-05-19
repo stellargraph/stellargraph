@@ -1976,7 +1976,7 @@ def test_node_degrees(use_ilocs):
             node_iloc = g.node_ids_to_ilocs([node_id])[0]
             assert expected[node_id] == degrees[node_iloc]
     else:
-        assert_items_equal(expected, degrees)
+        assert expected == degrees
 
 
 def test_unique_node_type():
