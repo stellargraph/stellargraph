@@ -120,39 +120,59 @@ class ElementData:
 
     Args:
         ids (sequence): the IDs of each element
-        type_starts (list of tuple of type name, int): the starting iloc of the elements of each type within ``shared``
+        type_info (list of tuple of type name, numpy array): the associated feature vectors of each type, where the size of the first dimension defines the elements of that type
     """
 
-    def __init__(self, ids, type_starts):
-        if not isinstance(type_starts, list):
+    def __init__(self, ids, type_info):
+        if not isinstance(type_info, list):
             raise TypeError(
-                f"type_starts: expected list, found {type(type_starts).__name__}"
+                f"type_info: expected list, found {type(type_info).__name__}"
             )
 
         type_ranges = {}
-        type_stops = type_starts[1:] + [(None, len(ids))]
-        consecutive_types = zip(type_starts, type_stops)
-        for idx, ((type_name, start), (_, stop)) in enumerate(consecutive_types):
-            if idx == 0 and start != 0:
-                raise ValueError(
-                    f"type_starts: expected first type ({type_name!r}) to start at index 0, found start {start}"
-                )
-            if start > stop:
+        features = {}
+        all_types = []
+        type_sizes = []
+
+        rows_so_far = 0
+
+        # validation
+        for type_name, data in type_info:
+            if not isinstance(data, np.ndarray):
                 raise TypeError(
-                    f"type_starts (for {type_name!r}): expected valid type range, found start ({start}) after stop ({stop})"
+                    f"type_info (for {type_name!r}): expected numpy array, found {type(data).__name__}"
                 )
+
+            if len(data.shape) != 2:
+                raise ValueError(
+                    f"type_info (for {type_name!r}): expected 2 dimensions, found {len(data.shape)}"
+                )
+
+            rows, _columns = data.shape
+            start = rows_so_far
+
+            rows_so_far += rows
+            stop = rows_so_far
+
+            all_types.append(type_name)
+            type_sizes.append(stop - start)
             type_ranges[type_name] = range(start, stop)
+            features[type_name] = data
+
+        if rows_so_far != len(ids):
+            raise ValueError(
+                f"type_info: expected features for each of the {len(ids)} IDs, found a total of {rows_so_far} features"
+            )
 
         self._id_index = ExternalIdIndex(ids)
 
         # there's typically a small number of types, so we can map them down to a small integer type
         # (usually uint8) for minimum storage requirements
-        all_types = [type_name for type_name, _ in type_starts]
-        type_sizes = [len(type_ranges[type_name]) for type_name in all_types]
-
         self._type_index = ExternalIdIndex(all_types)
         self._type_column = self._type_index.to_iloc(all_types).repeat(type_sizes)
         self._type_element_ilocs = type_ranges
+
+        self._features = features
 
     def __len__(self) -> int:
         return len(self._id_index)
@@ -204,40 +224,6 @@ class ElementData:
         type_codes = self._type_column[id_ilocs]
         return self._type_index.from_iloc(type_codes)
 
-
-class NodeData(ElementData):
-    """
-    Args:
-        ids (sequence): the IDs of each element
-        type_starts (list of tuple of type name, int): the starting iloc of the nodes of each type within ``shared``
-        features (dict of type name to numpy array): a 2D numpy or scipy array of feature vectors for the nodes of each type
-    """
-
-    def __init__(self, ids, type_starts, features):
-        super().__init__(ids, type_starts)
-        if not isinstance(features, dict):
-            raise TypeError(f"features: expected dict, found {type(features).__name__}")
-
-        for key, data in features.items():
-            if not isinstance(data, (np.ndarray, sps.spmatrix)):
-                raise TypeError(
-                    f"features[{key!r}]: expected numpy or scipy array, found {type(data).__name__}"
-                )
-
-            if len(data.shape) != 2:
-                raise ValueError(
-                    f"features[{key!r}]: expected 2 dimensions, found {len(data.shape)}"
-                )
-
-            rows, _columns = data.shape
-            expected = len(self._type_element_ilocs[key])
-            if rows != expected:
-                raise ValueError(
-                    f"features[{key!r}]: expected one feature per ID, found {expected} IDs and {rows} feature rows"
-                )
-
-        self._features = features
-
     def features_of_type(self, type_name) -> np.ndarray:
         """
         Returns all features for a given type.
@@ -284,6 +270,11 @@ class NodeData(ElementData):
         }
 
 
+class NodeData(ElementData):
+    # nodes don't have extra functionality at the moment
+    pass
+
+
 def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
@@ -295,11 +286,11 @@ class EdgeData(ElementData):
         sources (numpy.ndarray): the ilocs of the source of each edge
         targets (numpy.ndarray): the ilocs of the target of each edge
         weight (numpy.ndarray): the weight of each edge
-        type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
+        type_info (list of tuple of type name, numpy array): the associated feature vectors of each type, where the size of the first dimension defines the elements of that type
     """
 
-    def __init__(self, ids, sources, targets, weights, type_starts):
-        super().__init__(ids, type_starts)
+    def __init__(self, ids, sources, targets, weights, type_info):
+        super().__init__(ids, type_info)
 
         for name, column in {
             "sources": sources,
