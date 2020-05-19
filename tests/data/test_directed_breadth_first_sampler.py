@@ -27,7 +27,7 @@ class TestDirectedBreadthFirstNeighbours(object):
         g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
-        nodes = ["0", 1]
+        nodes = g.node_ids_to_ilocs(["0", 1])
         n = 1
         in_size = [1]
         out_size = [1]
