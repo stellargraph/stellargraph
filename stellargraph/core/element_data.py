@@ -288,35 +288,6 @@ def _numpyise(d, dtype):
     return {k: np.array(v, dtype=dtype) for k, v in d.items()}
 
 
-class LazyAdjLists:
-    def __init__(self, init_index):
-        self.init_index = init_index
-        self.undirected = self.ins = self.outs = None
-
-    def force_init(self):
-        self.lookup(ins=True, outs=True)
-        self.lookup(ins=True, outs=False)
-        self.lookup(ins=False, outs=True)
-
-    def lookup(self, *, ins, outs):
-        if ins and outs:
-            if self.undirected is None:
-                self.undirected = self.init_index(ins=True, outs=True)
-            return self.undirected
-        if ins:
-            if self.ins is None:
-                self.ins = self.init_index(ins=True, outs=False)
-            return self.ins
-        if outs:
-            if self.outs is None:
-                self.outs = self.init_index(ins=False, outs=True)
-            return self.outs
-
-        raise ValueError(
-            "expected at least one of 'ins' or 'outs' to be True, found neither"
-        )
-
-
 class EdgeData(ElementData):
     """
     Args:
@@ -356,16 +327,14 @@ class EdgeData(ElementData):
         self.weights = weights
         self.node_data = node_data
 
-        dtype = np.min_scalar_type(len(self.sources))
-        self.dtype = dtype
+        self.dtype = np.min_scalar_type(len(self.sources))
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
-        self._adj_list = LazyAdjLists(self._init_adj_list)
-
-        self._adj_list_by_other_node_type = LazyAdjLists(
-            self._init_adj_list_by_other_node_type
-        )
+        self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
+        self._edges_dict_by_other_node_type = None
+        self._edges_in_dict_by_other_node_type = None
+        self._edges_out_dict_by_other_node_type = None
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
@@ -406,8 +375,10 @@ class EdgeData(ElementData):
             in_dict.setdefault(tgt, []).append(i)
             out_dict.setdefault(src, []).append(i)
 
-        dtype = np.min_scalar_type(len(self.sources))
-        return _numpyise(in_dict, dtype=dtype), _numpyise(out_dict, dtype=dtype)
+        return (
+            _numpyise(in_dict, dtype=self.dtype),
+            _numpyise(out_dict, dtype=self.dtype),
+        )
 
     def _init_undirected_adj_lists(self):
         self._edges_dict = self._create_undirected_adj_lists()
@@ -421,34 +392,87 @@ class EdgeData(ElementData):
             if src != tgt:
                 undirected.setdefault(src, []).append(i)
 
-        dtype = np.min_scalar_type(len(self.sources))
-        return _numpyise(undirected, dtype=dtype)
+        return _numpyise(undirected, dtype=self.dtype)
 
-    def _init_adj_list_by_other_node_type(self, *, ins, outs):
-        index = {}
+    def _init_directed_adj_lists_by_other_node_type(self):
+        (
+            self._edges_in_dict_by_other_node_type,
+            self._edges_out_dict_by_other_node_type,
+        ) = self._create_directed_adj_lists_by_other_node_type()
+
+    def _create_directed_adj_lists_by_other_node_type(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        in_dict = {}
+        out_dict = {}
         source_types = self.node_data.type_ilocs[self.sources]
         target_types = self.node_data.type_ilocs[self.targets]
-        edge_iter = enumerate(
+
+        for i, (src, tgt, src_type, tgt_type) in enumerate(
             zip(self.sources, self.targets, source_types, target_types)
+        ):
+            in_dict.setdefault(src_type, {}).setdefault(tgt, []).append(i)
+            out_dict.setdefault(tgt_type, {}).setdefault(src, []).append(i)
+
+        return (
+            {k: _numpyise(v, self.dtype) for k, v in in_dict.items()},
+            {k: _numpyise(v, self.dtype) for k, v in out_dict.items()},
         )
 
-        if ins and outs:
-            for i, (src, tgt, src_type, tgt_type) in edge_iter:
-                index.setdefault(src_type, {}).setdefault(tgt, []).append(i)
-                if src != tgt:
-                    index.setdefault(tgt_type, {}).setdefault(src, []).append(i)
-        elif ins:
-            for i, (src, tgt, src_type, tgt_type) in edge_iter:
-                index.setdefault(src_type, {}).setdefault(tgt, []).append(i)
-        elif outs:
-            for i, (src, tgt, src_type, tgt_type) in edge_iter:
-                index.setdefault(tgt_type, {}).setdefault(src, []).append(i)
-        else:
-            raise ValueError(
-                "expected at least one of 'ins' or 'outs' to be True, found neither"
-            )
+    def _init_undirected_adj_lists_by_other_node_type(self):
+        self._edges_dict_by_other_node_type = (
+            self._create_undirected_adj_lists_by_other_node_type()
+        )
 
-        return {k: _numpyise(v, self.dtype) for k, v in index.items()}
+    def _create_undirected_adj_lists_by_other_node_type(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        undirected = {}
+        source_types = self.node_data.type_ilocs[self.sources]
+        target_types = self.node_data.type_ilocs[self.targets]
+
+        for i, (src, tgt, src_type, tgt_type) in enumerate(
+            zip(self.sources, self.targets, source_types, target_types)
+        ):
+            undirected.setdefault(src_type, {}).setdefault(tgt, []).append(i)
+            if src != tgt:
+                undirected.setdefault(tgt_type, {}).setdefault(src, []).append(i)
+
+        return {k: _numpyise(v, self.dtype) for k, v in undirected.items()}
+
+    def _adj_lookup(self, *, ins, outs):
+        if ins and outs:
+            if self._edges_dict is None:
+                self._init_undirected_adj_lists()
+            return self._edges_dict
+        if ins:
+            if self._edges_in_dict is None:
+                self._init_directed_adj_lists()
+            return self._edges_in_dict
+        if outs:
+            if self._edges_out_dict is None:
+                self._init_directed_adj_lists()
+            return self._edges_out_dict
+
+        raise ValueError(
+            "expected at least one of 'ins' or 'outs' to be True, found neither"
+        )
+
+    def _adj_lookup_by_other_node_type(self, *, ins, outs):
+        if ins and outs:
+            if self._edges_dict_by_other_node_type is None:
+                self._init_undirected_adj_lists_by_other_node_type()
+            return self._edges_dict_by_other_node_type
+        if ins:
+            if self._edges_in_dict_by_other_node_type is None:
+                self._init_directed_adj_lists_by_other_node_type()
+            return self._edges_in_dict_by_other_node_type
+        if outs:
+            if self._edges_out_dict_by_other_node_type is None:
+                self._init_directed_adj_lists_by_other_node_type()
+            return self._edges_out_dict_by_other_node_type
+
+        raise ValueError(
+            "expected at least one of 'ins' or 'outs' to be True, found neither"
+        )
 
     def degrees(self, *, ins=True, outs=True):
         """
@@ -462,7 +486,7 @@ class EdgeData(ElementData):
             The in-, out- or total (summed) degree of all non-isolated nodes as a numpy array (if
             ``ret`` is the return value, ``ret[i]`` is the degree of the node with iloc ``i``)
         """
-        adj = self._adj_list.lookup(ins=ins, outs=outs)
+        adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
     def edge_ilocs(
@@ -481,11 +505,11 @@ class EdgeData(ElementData):
 
         if other_node_type_iloc is not None:
             return (
-                self._adj_list_by_other_node_type.lookup(ins=ins, outs=outs)
+                self._adj_lookup_by_other_node_type(ins=ins, outs=outs)
                 .get(other_node_type_iloc, {})
                 .get(node_iloc, self._empty_ilocs)
             )
         else:
-            return self._adj_list.lookup(ins=ins, outs=outs).get(
+            return self._adj_lookup(ins=ins, outs=outs).get(
                 node_iloc, self._empty_ilocs
             )
