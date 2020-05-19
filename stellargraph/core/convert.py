@@ -24,6 +24,7 @@ import pandas as pd
 
 from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
+from .indexed_array import IndexedArray
 from .validation import comma_sep, require_dataframe_has_columns
 from .utils import is_real_iterable
 
@@ -80,11 +81,17 @@ class ColumnarConverter:
         return f"{self._parent_name}[{type_name!r}]"
 
     def _convert_single(self, type_name, data):
-        if not isinstance(data, pd.DataFrame):
+        if isinstance(data, pd.DataFrame):
+            return self._convert_pandas(type_name, data)
+        elif isinstance(data, (IndexedArray, np.ndarray)):
+            return self._convert_rowframe(type_name, data)
+        else:
             raise TypeError(
-                f"{self.name(type_name)}: expected pandas DataFrame, found {type(data).__name__}"
+                f"{self.name(type_name)}: expected IndexedArray or pandas DataFrame, found {type(data).__name__}"
             )
 
+    def _convert_pandas(self, type_name, data):
+        assert isinstance(data, pd.DataFrame)
         existing = set(self.selected_columns).intersection(data.columns)
 
         ids = data.index
@@ -133,6 +140,26 @@ class ColumnarConverter:
             )
 
         return ids, columns, features
+
+    def _convert_rowframe(self, type_name, data):
+        assert isinstance(data, (IndexedArray, np.ndarray))
+        if self.selected_columns:
+            raise ValueError(
+                f"{self.name(type_name)}: expected a Pandas DataFrame when selecting columns {comma_sep(self.selected_columns)}, found {type(data).__name__}"
+            )
+
+        if isinstance(data, np.ndarray):
+            try:
+                data = IndexedArray(data)
+            except Exception as e:
+                raise ValueError(
+                    f"{self.name(type_name)}: could not convert NumPy array to a IndexedArray, see other error"
+                )
+
+        # selected_columns must be empty, so we better be allowing features
+        assert self.allow_features
+
+        return data.index, {}, data.values
 
     def _ids_columns_and_starts_from_singles(self, singles):
         rows_so_far = 0
@@ -209,7 +236,7 @@ class ColumnarConverter:
         if self.type_column is not None:
             return self._convert_with_type_column(elements)
 
-        if isinstance(elements, pd.DataFrame):
+        if isinstance(elements, (pd.DataFrame, IndexedArray, np.ndarray)):
             elements = {self.default_type: elements}
 
         if not isinstance(elements, dict):
