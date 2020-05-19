@@ -160,7 +160,7 @@ class GraphWalk(object):
         return rs
 
     def neighbors(self, node):
-        return self.graph.neighbors(node, use_ilocs=True)
+        return self.graph.neighbor_arrays(node, use_ilocs=True)
 
     def run(self, *args, **kwargs):
         """
@@ -280,8 +280,8 @@ class UniformRandomWalk(RandomWalk):
         walk = [start_node]
         current_node = start_node
         for _ in range(length - 1):
-            neighbours = self.graph.neighbors(current_node, use_ilocs=True)
-            if not neighbours:
+            neighbours = self.graph.neighbor_arrays(current_node, use_ilocs=True)
+            if len(neighbours) == 0:
                 # dead end, so stop
                 break
             else:
@@ -558,7 +558,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
                     current_node = node
                     walk = [current_node]
                     for target_node_type in metapath:
-                        neighbours = self.graph.neighbors(
+                        neighbours = self.graph.neighbor_arrays(
                             current_node,
                             other_node_type=target_node_type,
                             use_ilocs=True,
@@ -672,7 +672,9 @@ class SampledBreadthFirstWalk(GraphWalk):
                         continue
 
                     neighbours = (
-                        self.neighbors(cur_node) if cur_node is not None else []
+                        self.graph.neighbor_arrays(cur_node, use_ilocs=True)
+                        if cur_node != -1
+                        else []
                     )
                     if len(neighbours) == 0:
                         # Either node is unconnected or is in directed graph with no out-nodes.
@@ -885,14 +887,14 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             The fixed-length list of neighbouring nodes (or None values
             if the neighbourhood is empty).
         """
-        if node is None:
+        if node == -1:
             # Non-node, e.g. previously sampled from empty neighbourhood
             return [-1] * size
-        neighbours = list(
-            self.graph.in_nodes(node, use_ilocs=True)
-            if idx == 0
-            else self.graph.out_nodes(node, use_ilocs=True)
-        )
+
+        if idx == 0:
+            neighbours = self.graph.in_node_arrays(node, use_ilocs=True)
+        else:
+            neighbours = self.graph.out_node_arrays(node, use_ilocs=True)
         if len(neighbours) == 0:
             # Sampling from empty neighbourhood
             return [-1] * size
@@ -1049,7 +1051,7 @@ class TemporalRandomWalk(GraphWalk):
         walks = []
         num_cw_curr = 0
 
-        edges, times = self.graph.edges(include_edge_weight=True)
+        sources, targets, _, times = self.graph.edge_arrays(include_edge_weight=True)
         edge_biases = self._temporal_biases(
             times, None, bias_type=initial_edge_bias, is_forward=False,
         )
@@ -1066,8 +1068,9 @@ class TemporalRandomWalk(GraphWalk):
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
-            first_edge_index = self._sample(len(edges), edge_biases, np_rs)
-            src, dst = edges[first_edge_index]
+            first_edge_index = self._sample(len(times), edge_biases, np_rs)
+            src = sources[first_edge_index]
+            dst = targets[first_edge_index]
             t = times[first_edge_index]
 
             remaining_length = num_cw - num_cw_curr + cw_size - 1
@@ -1120,18 +1123,15 @@ class TemporalRandomWalk(GraphWalk):
         Perform 1 temporal step from a node. Returns None if a dead-end is reached.
 
         """
+        neighbours, times = self.graph.neighbor_arrays(node, include_edge_weight=True)
+        neighbours = neighbours[times > time]
+        times = times[times > time]
 
-        neighbours = [
-            (neighbour, t)
-            for neighbour, t in self.graph.neighbors(node, include_edge_weight=True)
-            if t > time
-        ]
-
-        if neighbours:
-            times = [t for _, t in neighbours]
+        if len(neighbours) > 0:
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
-            next_node, next_time = neighbours[chosen_neighbour_index]
+            next_node = neighbours[chosen_neighbour_index]
+            next_time = times[chosen_neighbour_index]
             return next_node, next_time
         else:
             return None
