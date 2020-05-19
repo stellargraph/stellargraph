@@ -775,27 +775,18 @@ def _ranks_from_score_columns(
     # the filtered rank is the number of unknown elements scored higher, where an element is
     # known if the edge (s, r, n) (for modified-object) or (n, r, o) (for modified-subject)
     # exists in known_edges_graph.
-
-    # FIXME(#870): this would be better without external IDs <-> ilocs translation
-    unmodified_nodes = known_edges_graph._nodes.ids.from_iloc(unmodified_node_ilocs)
-    true_rels = known_edges_graph._edges.types.from_iloc(true_rel_ilocs)
     if modified_object:
         neigh_func = known_edges_graph.out_nodes
     else:
         neigh_func = known_edges_graph.in_nodes
 
-    # collect all the neighbours into a single array to do one node_ids_to_ilocs call,
-    # which has relatively high constant cost
-    neighbours = []
-    columns = []
-    for batch_column, (unmodified, r) in enumerate(zip(unmodified_nodes, true_rels)):
-        this_neighs = neigh_func(unmodified, edge_types=[r])
-        neighbours.extend(this_neighs)
-        columns.extend(batch_column for _ in this_neighs)
+    for batch_column, (unmodified, r) in enumerate(
+        zip(unmodified_node_ilocs, true_rel_ilocs)
+    ):
+        this_neighs = neigh_func(unmodified, edge_types=[r], use_ilocs=True)
+        greater[this_neighs, batch_column] = False
+        greater_equal[this_neighs, batch_column] = False
 
-    neighbour_ilocs = known_edges_graph.node_ids_to_ilocs(neighbours)
-    greater[neighbour_ilocs, columns] = False
-    greater_equal[neighbour_ilocs, columns] = False
     # the actual elements should be counted as equal, whether or not it was a known edge or not
     greater_equal[true_modified_node_ilocs, range(batch_size)] = True
 
