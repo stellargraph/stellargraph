@@ -32,7 +32,7 @@ fi
 f=${NOTEBOOKS[$INDEX]}
 
 case $(basename "$f") in
-  'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'attri2vec-out-of-sample-link-prediction.ipynb' | \
+  'attacks_clustering_analysis.ipynb' | 'hateful-twitters-interpretability.ipynb' | 'hateful-twitters.ipynb' | 'attri2vec-link-prediction.ipynb' | \
     'gat-node-link-importance.ipynb' | 'gcn-node-link-importance.ipynb' | 'gcn-sparse-node-link-importance.ipynb' | 'rgcn-node-classification.ipynb' | \
     'stellargraph-metapath2vec.ipynb')
     # These notebooks do not yet work on CI:

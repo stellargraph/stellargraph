@@ -170,7 +170,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/attri2vec-node-classification>`
      - :any:`demo <link-prediction/attri2vec-link-prediction>`
      - :any:`demo <embeddings/attri2vec-embeddings>`
-     - :any:`demo <link-prediction/attri2vec-out-of-sample-link-prediction>`
+     - yes
      -
    *
      - GraphSAGE

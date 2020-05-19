@@ -7,8 +7,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 
 | Demo | Source |
 |---|---|
-| [Link prediction with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html) | [source](attri2vec-link-prediction.ipynb) |
-| [Out-of-sample link prediction with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-out-of-sample-link-prediction.html) | [source](attri2vec-out-of-sample-link-prediction.ipynb) |
+| [Link prediction via inductive node representations with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html) | [source](attri2vec-link-prediction.ipynb) |
 | [Knowledge graph link prediction with ComplEx](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html) | [source](complex-link-prediction.ipynb) |
 | [Link prediction with Continuous-Time Dynamic Network Embeddings (CTDNE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html) | [source](ctdne-link-prediction.ipynb) |
 | [Knowledge graph link prediction with DistMult](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/distmult-link-prediction.html) | [source](distmult-link-prediction.ipynb) |
