@@ -403,6 +403,8 @@ class ComplEx(KGModel):
             embeddings_regularizer=embeddings_regularizer,
         )
 
+    build = deprecated_model_function(KGModel.in_out_tensors, "build")
+
 
 class DistMultScore(KGScore, Layer):
     """
@@ -492,6 +494,8 @@ class DistMult(KGModel):
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
         )
+
+    build = deprecated_model_function(KGModel.in_out_tensors, "build")
 
 
 class RotatEScore(KGScore, Layer):
