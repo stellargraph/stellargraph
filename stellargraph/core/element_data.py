@@ -296,6 +296,8 @@ class FlatAdjacencyList:
         self.flat = flat_array
 
     def __getitem__(self, idx):
+        if idx < 0:
+            raise KeyError("node ilocs must be non-negative.")
         start = self.splits[idx]
         stop = self.splits[idx + 1]
         return self.flat[start:stop]
