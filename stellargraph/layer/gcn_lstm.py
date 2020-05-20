@@ -17,7 +17,7 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
-from tensorflow.keras.layers import Input, Layer, Dropout, LSTM, Dense
+from tensorflow.keras.layers import Input, Layer, Dropout, LSTM, Dense, Permute
 from ..core.experimental import experimental
 from ..core.utils import calculate_laplacian
 
@@ -129,8 +129,7 @@ class FixedAdjacencyGraphConvolution(Layer):
             input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
 
         """
-        n_nodes = input_shapes[-1]
-        t_steps = input_shapes[-2]
+        _batch_dim, n_nodes, t_steps = input_shapes
         self.units = t_steps
 
         self.A = self.add_weight(
@@ -149,7 +148,8 @@ class FixedAdjacencyGraphConvolution(Layer):
 
         if self.use_bias:
             self.bias = self.add_weight(
-                shape=(n_nodes,),
+                # ensure the per-node bias can be broadcast across each feature
+                shape=(n_nodes, 1),
                 initializer=self.bias_initializer,
                 name="bias",
                 regularizer=self.bias_regularizer,
@@ -164,7 +164,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (ndarray): node features (size B x T x N), where B is the batch size, T is the
+            inputs (ndarray): node features (size B x N x T), where B is the batch size, T is the
                 sequence length, and N is the number of nodes in the graph.
 
         Returns:
@@ -173,10 +173,13 @@ class FixedAdjacencyGraphConvolution(Layer):
 
         # Calculate the layer operation of GCN
 
-        h_graph = K.dot(features, self.A)
-        output = tf.transpose(
-            K.dot(tf.transpose(h_graph, [0, 2, 1]), self.kernel), [0, 2, 1]
-        )
+        # shape = B x T x N
+        nodes_last = tf.transpose(features, [0, 2, 1])
+        neighbours = K.dot(nodes_last, self.A)
+
+        # shape = B x N x T
+        h_graph = tf.transpose(neighbours, [0, 2, 1])
+        output = K.dot(h_graph, self.kernel)
 
         # Add optional bias & apply activation
         if self.bias is not None:
@@ -293,6 +296,8 @@ class GraphConvolutionLSTM:
                 )
             )
 
+        self._layers.append(Permute((2, 1)))
+
         for ii in range(n_lstm_layers - 1):
             self._layers.append(
                 LSTM(
@@ -330,7 +335,7 @@ class GraphConvolutionLSTM:
             input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
         """
         # Inputs for features
-        x_t = Input(batch_shape=(None, self.n_features, self.n_nodes))
+        x_t = Input(batch_shape=(None, self.n_nodes, self.n_features))
 
         # Indices to gather for model output
         out_indices_t = Input(batch_shape=(None, self.n_nodes), dtype="int32")
