@@ -13,8 +13,8 @@ Page not found
    let searchPage = parts.slice(0, 3).join("/") + "/search.html";
 
    // take the rest of the URL path, remove the file extension (if it exists), and use the alphanumeric components as the search input.
-   val notFound = parts.slice(3, -1);
-   val withoutExtension = parts[parts.length - 1].replace(/\.[^.]*$/, "");
+   let notFound = parts.slice(3, -1);
+   let withoutExtension = parts[parts.length - 1].replace(/\.[^.]*$/, "");
    notFound.push(withoutExtension);
    let terms = notFound.join(" ").replace(/[^a-zA-Z0-9]+/g, " ");
 
