@@ -8,7 +8,7 @@ cd docs
 
 echo "--- installing pandoc"
 apt update
-apt install -y pandoc
+apt install -y pandoc enchant
 
 echo "--- installing documentation requirements"
 pip install -r requirements.txt
