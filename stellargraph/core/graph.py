@@ -661,7 +661,7 @@ class StellarGraph:
         return node in self._nodes
 
     def _transform_edges(
-        self, other_node, ilocs, include_edge_weight, filter_edge_types, use_ilocs
+        self, other_node, ilocs, include_edge_weight, filter_edge_types, use_ilocs, include_edge_ids,
     ):
         if include_edge_weight:
             weights = self._edges.weights[ilocs]
@@ -681,6 +681,11 @@ class StellarGraph:
             if weights is not None:
                 weights = weights[correct_type]
 
+        if include_edge_ids:
+            if weights is not None:
+                return other_node, weights, ilocs
+            return other_node, ilocs
+
         if weights is not None:
             return other_node, weights
 
@@ -694,7 +699,7 @@ class StellarGraph:
         return list(neigh_arrs)
 
     def neighbor_arrays(
-        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False
+        self, node: Any, include_edge_weight=False, edge_types=None, use_ilocs=False, include_edge_ids=False,
     ):
         """
         Obtains the collection of neighbouring nodes connected to the given node
@@ -707,8 +712,9 @@ class StellarGraph:
             edge_types (list of hashable, optional): If provided, only traverse the graph
                 via the provided edge types when collecting neighbours.
             use_ilocs (bool): if True `node` is treated as a :ref:`node iloc <iloc-explanation>`
-                (and similarly `edge_types` is treated as a edge type ilocs) and the ilocs of each
+                (and similarly `include_edge_ids` returns ilocs not IDs, and `edge_types` is treated as a edge type ilocs) and the ilocs of each
                 neighbour is returned.
+            include_edge_ids (bool): if True, return an array of the edge IDs/ilocs of each edge.
 
         Returns:
             A numpy array of the neighboring nodes. If `include_edge_weight` is `True` then an array
@@ -723,7 +729,7 @@ class StellarGraph:
         other_node = np.where(source == node, target, source)
 
         return self._transform_edges(
-            other_node, edge_ilocs, include_edge_weight, edge_types, use_ilocs
+            other_node, edge_ilocs, include_edge_weight, edge_types, use_ilocs, include_edge_ids
         )
 
     def neighbors(
@@ -1065,7 +1071,7 @@ class StellarGraph:
         """
         return self._feature_sizes(self._edges, edge_types)
 
-    def check_graph_for_ml(self, features=True):
+    def check_graph_for_ml(self, features=True, edge_features=False):
         """
         Checks if all properties required for machine learning training/inference are set up.
         An error will be raised if the graph is not correctly setup.
@@ -1074,6 +1080,12 @@ class StellarGraph:
             raise RuntimeError(
                 "This StellarGraph has no numeric feature attributes for nodes"
                 "Node features are required for machine learning"
+            )
+
+        if edge_features and all(size == 0 for _, size in self.edge_feature_sizes().items()):
+            raise RuntimeError(
+                "This StellarGraph has no numeric feature attributes for edges"
+                "Edge features are required for this algorithm"
             )
 
         # TODO: check the schema
