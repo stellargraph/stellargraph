@@ -93,20 +93,38 @@ class StellarGraph:
 
         Gs = StellarDiGraph(edges=edges)
 
-    One can also pass a DataFrame of nodes. Each row of the nodes DataFrame represents a node in the
-    graph, where the index is the ID of the node. When this nodes DataFrame is not passed (the
+    One can also pass information about nodes, as either:
+
+    - a :class:`IndexedArray`
+    - a NumPy array, if the node IDs are 0, 1, 2, ...
+    - a Pandas DataFrame
+
+    Each row of the nodes frame (first dimension of the NumPy array) represents a node in the
+    graph, where the index is the ID of the node. When this node information is not passed (the
     argument is left as the default), the set of nodes is automatically inferred. This inference in
     the example above is equivalent to::
 
-        nodes = pd.DataFrame([], index=["a", "b", "c", "d"])
+        nodes = IndexedArray(index=["a", "b", "c", "d"])
         Gs = StellarGraph(nodes, edges)
 
     Numeric node features are taken as any columns of the nodes DataFrame. For example, if the graph
     above has two features ``x`` and ``y`` associated with each node::
 
+        # As a IndexedArray (no column names):
+        feature_array = np.array([[-1, 0.4], [2, 0.1], [-3, 0.9], [4, 0]])
+        nodes = IndexedArray(feature_array, index=["a", "b", "c", "d"])
+
+        # As a Pandas DataFrame:
         nodes = pd.DataFrame(
             {"x": [-1, 2, -3, 4], "y": [0.4, 0.1, 0.9, 0]}, index=["a", "b", "c", "d"]
         )
+
+        # As a NumPy array:
+        # Note, edges must change to using 0, 1, 2, 3 (instead of a, b, c, d)
+        nodes = feature_array
+
+    Construction directly from a :class:`IndexedArray` or NumPy array will have the least overhead, but
+    construction from Pandas allows for convenient data transformation.
 
     Edge weights are taken as the optional ``weight`` column of the edges DataFrame::
 
@@ -117,16 +135,19 @@ class StellarGraph:
         })
 
     Heterogeneous graphs, with multiple node or edge types, can be created by passing multiple
-    DataFrames in a dictionary. The dictionary keys are the names/identifiers for the type. For
-    example, if the graph above has node ``a`` of type ``foo``, and the rest as type ``bar``, the
-    construction might look like::
+    :class:`IndexedArray` or DataFrames in a dictionary. The dictionary keys are the names/identifiers
+    for the type. For example, if the graph above has node ``a`` of type ``foo``, and the rest as
+    type ``bar``, the construction might look like::
 
-        foo_nodes = pd.DataFrame({"x": [-1]}, index=["a"])
-        bar_nodes = pd.DataFrame(
-            {"y": [0.4, 0.1, 0.9], "z": [100, 200, 300]}, index=["b", "c", "d"]
+        foo_nodes = IndexedArray(np.array([[-1]]), index=["a"])
+        bar_nodes = IndexedArray(
+            np.array([[0.4, 100], [0.1, 200], [0.9, 300]], index=["b", "c", "d"])
         )
 
         StellarGraph({"foo": foo_nodes, "bar": bar_nodes}, edges)
+
+    (One cannot pass multiple NumPy arrays, because the node IDs cannot be inferred properly in this
+    case. The node IDs for a NumPy array can be specified via the :class:`IndexedArray` type.)
 
     Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
     ``z``. A heterogeneous graph can have different features for each type.
@@ -181,13 +202,13 @@ class StellarGraph:
     .. seealso:: :meth:`from_networkx` for construction from a NetworkX graph.
 
     Args:
-        nodes (DataFrame or dict of hashable to Pandas DataFrame, optional):
-            Features for every node in the graph. Any columns in the DataFrame are taken as numeric
-            node features of type ``dtype``. If there is only one type of node, a DataFrame can be
+        nodes (Numpy array, IndexedArray, DataFrame or dict of hashable to IndexedArray or Pandas DataFrame, optional):
+            Features for every node in the graph. The values are taken as numeric
+            node features of type ``dtype``. If there is only one type of node, a NumPy array, :class:`IndexedArray` or DataFrame can be
             passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
             have an ID taken from the index of the dataframe, and they have to be unique across all
-            types.  For nodes with no features, an appropriate DataFrame can be created with
-            ``pandas.DataFrame([], index=node_ids)``, where ``node_ids`` is a list of the node
+            types.  For nodes with no features, an appropriate value can be created with
+            ``IndexedArray(index=node_ids)``, where ``node_ids`` is a list of the node
             IDs. If this is not passed, the nodes will be inferred from ``edges`` with no features
             for each node.
 
