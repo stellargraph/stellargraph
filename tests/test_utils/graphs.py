@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-from stellargraph import StellarGraph, StellarDiGraph, RowFrame
+from stellargraph import StellarGraph, StellarDiGraph, IndexedArray
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -86,7 +86,7 @@ def example_graph(
     nodes = [1, 2, 3, 4]
     features = repeated_features(nodes, feature_size)
 
-    nodes = RowFrame(features, index=nodes)
+    nodes = IndexedArray(features, index=nodes)
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={node_label: nodes}, edges={edge_label: elist})
@@ -127,12 +127,12 @@ def example_hin_1(
     a_ids = [0, 1, 2, 3]
     if reverse_order:
         a_ids = a_ids[::-1]
-    a = RowFrame(features("A", a_ids), index=a_ids)
+    a = IndexedArray(features("A", a_ids), index=a_ids)
 
     b_ids = [4, 5, 6]
     if reverse_order:
         b_ids = b_ids[::-1]
-    b = RowFrame(features("B", b_ids), index=b_ids)
+    b = IndexedArray(features("B", b_ids), index=b_ids)
 
     r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
     f_edges, f_index = [(4, 5)], [100]
