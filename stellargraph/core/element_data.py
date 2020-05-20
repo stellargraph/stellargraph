@@ -225,12 +225,12 @@ class NodeData(ElementData):
                     f"features[{key!r}]: expected numpy or scipy array, found {type(data).__name__}"
                 )
 
-            if len(data.shape) != 2:
+            if len(data.shape) < 2:
                 raise ValueError(
-                    f"features[{key!r}]: expected 2 dimensions, found {len(data.shape)}"
+                    f"features[{key!r}]: expected at least 2 dimensions, found {len(data.shape)}"
                 )
 
-            rows, _columns = data.shape
+            rows = data.shape[0]
             expected = len(self._type_element_ilocs[key])
             if rows != expected:
                 raise ValueError(
@@ -280,7 +280,7 @@ class NodeData(ElementData):
              features of that type, and the dtype of the features.
         """
         return {
-            type_name: (type_features.shape[1], type_features.dtype)
+            type_name: (type_features.shape[1:], type_features.dtype)
             for type_name, type_features in self._features.items()
         }
 
