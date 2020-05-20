@@ -119,7 +119,7 @@ class ColumnarConverter:
 
         return ids, columns, features
 
-    def _ids_columns_and_starts_from_singles(self, singles):
+    def _ids_columns_and_type_info_from_singles(self, singles):
         type_info = []
         type_ids = []
         type_columns = defaultdict(list)
@@ -203,7 +203,7 @@ class ColumnarConverter:
             for type_name, data in elements.items()
         }
 
-        ids, columns, type_info = self._ids_columns_and_starts_from_singles(singles)
+        ids, columns, type_info = self._ids_columns_and_type_info_from_singles(singles)
         return (ids, columns, type_info)
 
 
