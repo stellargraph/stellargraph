@@ -433,20 +433,30 @@ class EdgeData(ElementData):
 
     def _create_directed_adj_lists_by_other_node_type(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = {}
-        out_dict = {}
         source_types = self.node_data.type_ilocs[self.sources]
         target_types = self.node_data.type_ilocs[self.targets]
 
-        for i, (src, tgt, src_type, tgt_type) in enumerate(
-            zip(self.sources, self.targets, source_types, target_types)
-        ):
-            in_dict.setdefault(src_type, {}).setdefault(tgt, []).append(i)
-            out_dict.setdefault(tgt_type, {}).setdefault(src, []).append(i)
+        def _to_directed_adj_list(arr, other_node_types):
+            index = {}
+            flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
+            for other_node_type in np.unique(other_node_types):
+
+                # FIXME: need to sort like the argsort above before creating mask
+                mask = other_node_types == other_node_type
+
+                arr_filtered = arr[mask]
+                flat_filtered = flat[mask]
+                neigh_counts = np.bincount(arr_filtered, minlength=self.number_of_nodes)
+                splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
+                splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+
+                index[other_node_type] = FlatAdjacencyList(flat_filtered, splits)
+
+            return index
 
         return (
-            {k: _numpyise(v, self.dtype) for k, v in in_dict.items()},
-            {k: _numpyise(v, self.dtype) for k, v in out_dict.items()},
+            _to_directed_adj_list(self.targets, source_types),
+            _to_directed_adj_list(self.sources, target_types),
         )
 
     def _init_undirected_adj_lists_by_other_node_type(self):
