@@ -20,6 +20,7 @@ import pandas as pd
 import pytest
 import random
 from stellargraph.core.graph import *
+from stellargraph.core.indexed_array import IndexedArray
 from stellargraph.core.experimental import ExperimentalWarning
 from ..test_utils.alloc import snapshot, peak, allocation_benchmark
 from ..test_utils.graphs import (
@@ -54,20 +55,27 @@ def create_graph_1(is_directed=False):
 
 
 def example_benchmark_graph(
-    feature_size=None, n_nodes=100, n_edges=200, n_types=4, features_in_nodes=True
+    feature_size=None,
+    n_nodes=100,
+    n_edges=200,
+    n_types=4,
+    features_in_nodes=True,
+    pandas_node_data=True,
 ):
     node_ids = np.arange(n_nodes)
     edges = pd.DataFrame(
         np.random.randint(0, n_nodes, size=(n_edges, 2)), columns=["source", "target"]
     )
 
-    if feature_size is None:
-        features = []
-    else:
-        features = np.ones((n_nodes, feature_size))
+    features = np.ones((n_nodes, 0 if feature_size is None else feature_size))
 
-    all_nodes = pd.DataFrame(features, index=node_ids)
-    nodes = {ty: all_nodes[node_ids % n_types == ty] for ty in range(n_types)}
+    feature_cls = pd.DataFrame if pandas_node_data else IndexedArray
+
+    def select_ty(ty):
+        idx = node_ids % n_types == ty
+        return feature_cls(features[idx, :], index=node_ids[idx])
+
+    nodes = {ty: select_ty(ty) for ty in range(n_types)}
 
     return nodes, edges
 
@@ -174,7 +182,7 @@ def test_graph_constructor_nodes_from_edges():
         StellarGraph(edges=1)
 
     with pytest.raises(
-        TypeError, match="edges.*: expected pandas DataFrame, found int"
+        TypeError, match="edges.*: expected IndexedArray or pandas DataFrame, found int"
     ):
         StellarGraph(edges={"a": 1})
 
@@ -254,6 +262,66 @@ def test_graph_constructor_internal():
         ):
             # specify a junk object
             StellarGraph(orig._nodes, orig._edges, **{param: object()})
+
+
+@pytest.fixture(params=["IndexedArray", "NumPy"])
+def rowframe_convert(request):
+    return IndexedArray if request.param == "IndexedArray" else (lambda arr: arr)
+
+
+def test_graph_constructor_rowframe_numpy_homogeneous(rowframe_convert):
+    empty = np.empty((0, 0))
+    g = StellarGraph(rowframe_convert(empty))
+    np.testing.assert_array_equal(g.nodes(), [])
+    assert g.node_features() is empty
+
+    arr = np.random.rand(3, 4)
+    edges = pd.DataFrame({"source": [0, 1], "target": [2, 2]})
+    g = StellarGraph(rowframe_convert(arr), edges)
+    np.testing.assert_array_equal(g.nodes(), [0, 1, 2])
+    assert g.node_features() is arr
+
+
+def test_graph_constructor_rowframe_numpy_heterogeneous(rowframe_convert):
+    arr1 = np.random.rand(3, 4)
+    arr2 = np.random.rand(6, 7)
+    frame2 = IndexedArray(arr2, index=range(100, 106))
+
+    g = StellarGraph({"a": rowframe_convert(arr1), "b": frame2})
+    np.testing.assert_array_equal(g.nodes(), [0, 1, 2, 100, 101, 102, 103, 104, 105])
+    assert g.node_features(node_type="a") is arr1
+    assert g.node_features(node_type="b") is arr2
+
+
+def test_graph_constructor_rowframe_numpy_invalid():
+    arr1 = np.random.rand(3, 4)
+    arr2 = np.random.rand(6, 7)
+
+    with pytest.raises(ValueError, match="expected IDs .*, found .* more: 0, 1, 2"):
+        # using an array directly twice will cause the auto-range-IDs to overlap
+        StellarGraph({"a": arr1, "b": arr2})
+
+    with pytest.raises(ValueError, match="expected IDs .*, found .* more: 1"):
+        StellarGraph(IndexedArray(index=[1, 1]))
+
+    with pytest.raises(
+        ValueError, match="edges: expected all source .* found some missing: 'a'"
+    ):
+        StellarGraph(arr1, pd.DataFrame({"source": ["a"], "target": ["b"]}))
+
+    with pytest.raises(
+        ValueError, match="edges: expected all source .* found some missing: 'b'"
+    ):
+        StellarGraph(
+            IndexedArray(index=["a", "c"]),
+            pd.DataFrame({"source": ["a"], "target": ["b"]}),
+        )
+
+    # FIXME(#1524): this restriction on the shape should be lifted
+    with pytest.raises(
+        ValueError, match=r"features\['default'\]: expected 2 dimensions, found 3"
+    ):
+        StellarGraph(np.random.rand(3, 4, 5))
 
 
 def test_info():
@@ -955,9 +1023,14 @@ def test_benchmark_get_features(
     benchmark(f)
 
 
-def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges):
+def _run_creation_benchmark(
+    benchmarker, input_data, feature_size, num_nodes, num_edges
+):
     nodes, edges = example_benchmark_graph(
-        feature_size=feature_size, n_nodes=num_nodes, n_edges=num_edges
+        feature_size=feature_size,
+        n_nodes=num_nodes,
+        n_edges=num_edges,
+        pandas_node_data=input_data == "pandas",
     )
 
     def f():
@@ -967,32 +1040,39 @@ def _run_creation_benchmark(benchmarker, feature_size, num_nodes, num_edges):
 
 
 @pytest.mark.benchmark(group="StellarGraph creation (time)")
+@pytest.mark.parametrize("input_data", ["pandas", "rowframe"])
 # various element counts, to give an indication of the relationship
 # between those and memory use (0,0 gives the overhead of the
 # StellarGraph object itself, without any data)
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (1000, 5000), (20000, 100000)])
 # features or not, to capture their cost
 @pytest.mark.parametrize("feature_size", [None, 100])
-def test_benchmark_creation(benchmark, feature_size, num_nodes, num_edges):
-    _run_creation_benchmark(benchmark, feature_size, num_nodes, num_edges)
+def test_benchmark_creation(benchmark, input_data, feature_size, num_nodes, num_edges):
+    _run_creation_benchmark(benchmark, input_data, feature_size, num_nodes, num_edges)
 
 
 @pytest.mark.benchmark(group="StellarGraph creation (size)", timer=snapshot)
+@pytest.mark.parametrize("input_data", ["pandas", "rowframe"])
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 @pytest.mark.parametrize("feature_size", [None, 100])
 def test_allocation_benchmark_creation(
-    allocation_benchmark, feature_size, num_nodes, num_edges
+    allocation_benchmark, input_data, feature_size, num_nodes, num_edges
 ):
-    _run_creation_benchmark(allocation_benchmark, feature_size, num_nodes, num_edges)
+    _run_creation_benchmark(
+        allocation_benchmark, input_data, feature_size, num_nodes, num_edges
+    )
 
 
 @pytest.mark.benchmark(group="StellarGraph creation (peak)", timer=peak)
+@pytest.mark.parametrize("input_data", ["pandas", "rowframe"])
 @pytest.mark.parametrize("num_nodes,num_edges", [(0, 0), (100, 200), (1000, 5000)])
 @pytest.mark.parametrize("feature_size", [None, 100])
 def test_allocation_benchmark_creation_peak(
-    allocation_benchmark, feature_size, num_nodes, num_edges
+    allocation_benchmark, input_data, feature_size, num_nodes, num_edges
 ):
-    _run_creation_benchmark(allocation_benchmark, feature_size, num_nodes, num_edges)
+    _run_creation_benchmark(
+        allocation_benchmark, input_data, feature_size, num_nodes, num_edges
+    )
 
 
 def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
@@ -2123,7 +2203,7 @@ def test_node_degrees(use_ilocs):
     degrees = g.node_degrees(use_ilocs=use_ilocs)
 
     # expected node degrees - keys are node ids
-    expected = {0: 1, 1: 2, 2: 1, 3: 1, 4: 4, 5: 3}
+    expected = {0: 1, 1: 2, 2: 1, 3: 1, 4: 4, 5: 3, 6: 0}
     if use_ilocs:
         for node_id in expected.keys():
             node_iloc = g.node_ids_to_ilocs([node_id])[0]
@@ -2182,6 +2262,22 @@ def test_bulk_node_types():
     node_types = sg.node_type(node_ilocs, use_ilocs=True)
     assert (node_types[:4] == "A").all()
     assert (node_types[4:] == "B").all()
+
+
+def test_correct_adjacency_list_type():
+
+    # the dtype of index into "sg._edges._edges_dict"
+    # can be larger than "sg._edges.ids.dtype"
+    # because there are 2 undirected edges for every (non-self loop) directed edge
+    # this test checks this edge case
+    cycle_graph = nx.cycle_graph(200)
+    sg = StellarGraph.from_networkx(cycle_graph)
+    sg._edges._init_undirected_adj_lists()
+
+    assert sg.number_of_edges() == 200
+    assert sg._edges.ids.dtype == np.uint8
+    assert all(deg == 2 for deg in sg.node_degrees().values())
+    assert sg._edges._edges_dict.flat.dtype == np.uint16
 
 
 def test_node_feature_sizes():

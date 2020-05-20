@@ -35,7 +35,8 @@ class ExternalIdIndex:
 
     def __init__(self, ids):
         self._index = pd.Index(ids)
-        self._dtype = np.min_scalar_type(len(self._index))
+        # reserve 2 ^ (n-bits) - 1 for sentinel
+        self.dtype = np.min_scalar_type(len(self._index))
 
         if not self._index.is_unique:
             # had some duplicated IDs, which is an error
@@ -98,7 +99,7 @@ class ExternalIdIndex:
         # reduce the storage required (especially useful if this is going to be stored rather than
         # just transient)
         if smaller_type:
-            return internal_ids.astype(self._dtype)
+            return internal_ids.astype(self.dtype)
         return internal_ids
 
     def from_iloc(self, internal_ids) -> np.ndarray:
@@ -275,8 +276,26 @@ class NodeData(ElementData):
     pass
 
 
-def _numpyise(d, dtype):
-    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
+class FlatAdjacencyList:
+    """
+    Stores an adjacency list in one contiguous numpy array in a format similar
+    to a ragged tensor (https://www.tensorflow.org/guide/ragged_tensor).
+    """
+
+    def __init__(self, flat_array, splits):
+        self.splits = splits
+        self.flat = flat_array
+
+    def __getitem__(self, idx):
+        if idx < 0:
+            raise KeyError("node ilocs must be non-negative.")
+        start = self.splits[idx]
+        stop = self.splits[idx + 1]
+        return self.flat[start:stop]
+
+    def items(self):
+        for idx in range(len(self.splits) - 1):
+            yield (idx, self[idx])
 
 
 class EdgeData(ElementData):
@@ -287,9 +306,10 @@ class EdgeData(ElementData):
         targets (numpy.ndarray): the ilocs of the target of each edge
         weight (numpy.ndarray): the weight of each edge
         type_info (list of tuple of type name, numpy array): the associated feature vectors of each type, where the size of the first dimension defines the elements of that type
+        number_of_nodes (int): the total number of nodes in the graph
     """
 
-    def __init__(self, ids, sources, targets, weights, type_info):
+    def __init__(self, ids, sources, targets, weights, type_info, number_of_nodes):
         super().__init__(ids, type_info)
 
         for name, column in {
@@ -315,6 +335,7 @@ class EdgeData(ElementData):
         self.sources = sources
         self.targets = targets
         self.weights = weights
+        self.number_of_nodes = number_of_nodes
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
@@ -329,31 +350,59 @@ class EdgeData(ElementData):
         self._edges_in_dict, self._edges_out_dict = self._create_directed_adj_lists()
 
     def _create_directed_adj_lists(self):
-        # record the edge ilocs of incoming, outgoing and both-direction edges
-        in_dict = {}
-        out_dict = {}
+        # record the edge ilocs of incoming and outgoing edges
 
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            in_dict.setdefault(tgt, []).append(i)
-            out_dict.setdefault(src, []).append(i)
+        def _to_dir_adj_list(arr):
+            neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
+            splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
+            splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+            flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
+            return FlatAdjacencyList(flat, splits)
 
-        dtype = np.min_scalar_type(len(self.sources))
-        return _numpyise(in_dict, dtype=dtype), _numpyise(out_dict, dtype=dtype)
+        return _to_dir_adj_list(self.targets), _to_dir_adj_list(self.sources)
 
     def _init_undirected_adj_lists(self):
         self._edges_dict = self._create_undirected_adj_lists()
 
     def _create_undirected_adj_lists(self):
-        # record the edge ilocs of incoming, outgoing and both-direction edges
-        undirected = {}
+        # record the edge ilocs of both-direction edges
+        num_edges = len(self.targets)
 
-        for i, (src, tgt) in enumerate(zip(self.sources, self.targets)):
-            undirected.setdefault(tgt, []).append(i)
-            if src != tgt:
-                undirected.setdefault(src, []).append(i)
+        # the dtype of the edge_ilocs
+        # the argsort results in integers in [0, 2 * num_edges),
+        # so the dtype potentially needs to be slightly larger
+        dtype = np.min_scalar_type(2 * len(self.sources))
 
-        dtype = np.min_scalar_type(len(self.sources))
-        return _numpyise(undirected, dtype=dtype)
+        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
+        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
+        self_loops = self.sources == self.targets
+        num_self_loops = self_loops.sum()
+
+        combined = np.concatenate([self.sources, self.targets])
+        # mask out duplicates of self loops
+        combined[num_edges:][self_loops] = sentinel
+
+        flat_array = np.argsort(combined).astype(dtype, copy=False)
+
+        # get targets without self loops inplace
+        # sentinels are sorted to the end
+        filtered_targets = combined[num_edges:]
+        filtered_targets.sort()
+
+        # remove the sentinels if there are any (the full array will be retained
+        # forever; we're assume that there's self loops are a small fraction
+        # of the total number of edges)
+        if num_self_loops > 0:
+            flat_array = flat_array[:-num_self_loops]
+            filtered_targets = filtered_targets[:-num_self_loops]
+
+        flat_array %= num_edges
+        neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
+        neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
+        splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
+        splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
+
+        return FlatAdjacencyList(flat_array, splits)
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
@@ -400,4 +449,4 @@ class EdgeData(ElementData):
             The integer locations of the edges for the given node_id.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs).get(node_id, self._empty_ilocs)
+        return self._adj_lookup(ins=ins, outs=outs)[node_id]

@@ -25,6 +25,7 @@ from stellargraph.core.convert import (
     convert_edges,
     from_networkx,
 )
+from stellargraph.core.indexed_array import IndexedArray
 
 _EMPTY_DF = pd.DataFrame([], index=[1, 2])
 
@@ -158,7 +159,8 @@ def test_columnar_convert_invalid_input():
         converter.convert(1)
 
     with pytest.raises(
-        TypeError, match=r"some_name\['x'\]: expected pandas DataFrame, found int",
+        TypeError,
+        match=r"some_name\['x'\]: expected IndexedArray or pandas DataFrame, found int",
     ):
         converter.convert({"x": 1})
 
@@ -233,6 +235,101 @@ def test_columnar_convert_transform_columns():
 
     np.testing.assert_array_equal(columns["ss"], 0)
     np.testing.assert_array_equal(columns["tt"], 1)
+
+
+def test_columnar_convert_rowframe():
+    converter = ColumnarConverter(
+        "some_name",
+        "foo",
+        None,
+        column_defaults={},
+        selected_columns={},
+        transform_columns={},
+        allow_features=True,
+    )
+
+    frame1 = IndexedArray(np.random.rand(3, 4, 5), index=[1111, -222, 33])
+    frame2 = IndexedArray(np.random.rand(6, 7))
+
+    ids, columns, type_starts, features = converter.convert(frame1)
+
+    assert ids == [1111, -222, 33]
+    assert columns == {}
+    assert type_starts == [("foo", 0)]
+    assert features["foo"] is frame1.values
+
+    ids, columns, type_starts, features = converter.convert({"a": frame1, "b": frame2})
+
+    np.testing.assert_array_equal(ids, [*frame1.index, *frame2.index])
+    assert columns == {}
+    assert type_starts == [("a", 0), ("b", 3)]
+    assert features["a"] is frame1.values
+    assert features["b"] is frame2.values
+
+
+def test_columnar_convert_ndarray():
+    converter = ColumnarConverter(
+        "some_name",
+        "foo",
+        None,
+        column_defaults={},
+        selected_columns={},
+        transform_columns={},
+        allow_features=True,
+    )
+
+    arr1 = np.random.rand(3, 4, 5)
+    arr2 = np.random.rand(6, 7)
+
+    # single array, default type
+    ids, columns, type_starts, features = converter.convert(arr1)
+
+    assert ids == range(3)
+    assert columns == {}
+    assert type_starts == [("foo", 0)]
+    assert features["foo"] is arr1
+
+    # multiple arrays, explicit types; the IDs are wrong (duplicated) here, but that's detected
+    # elsewhere
+    ids, columns, type_starts, features = converter.convert({"a": arr1, "b": arr2})
+
+    np.testing.assert_array_equal(ids, [*range(3), *range(6)])
+    assert columns == {}
+    assert type_starts == [("a", 0), ("b", 3)]
+    assert features["a"] is arr1
+    assert features["b"] is arr2
+
+    # check it says which type
+    with pytest.raises(
+        ValueError, match=r"some_name\['foo'\]: could not convert NumPy array"
+    ):
+        converter.convert(np.zeros(123))
+
+
+def test_columnar_convert_rowframe_ndarray_invalid():
+    converter = ColumnarConverter(
+        "some_name",
+        "foo",
+        None,
+        column_defaults={},
+        selected_columns={"bar": "baz"},
+        transform_columns={},
+        allow_features=True,
+    )
+
+    frame = IndexedArray(np.random.rand(3, 4, 5))
+
+    with pytest.raises(
+        ValueError,
+        match=r"some_name\['foo'\]: expected a Pandas DataFrame when selecting columns 'bar', found IndexedArray",
+    ):
+        converter.convert(frame)
+
+    with pytest.raises(
+        ValueError,
+        match=r"some_name\['foo'\]: expected a Pandas DataFrame when selecting columns 'bar', found ndarray",
+    ):
+        converter.convert(frame.values)
 
 
 def test_convert_edges_weights():
