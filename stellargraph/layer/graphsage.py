@@ -834,6 +834,7 @@ class GraphSAGE:
             self.n_samples = _require_without_generator(n_samples, "n_samples")
             self.input_feature_size = _require_without_generator(input_dim, "input_dim")
             self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
+            self.edge_feature_size = None
             # Check the number of samples and the layer sizes are consistent
             if len(self.n_samples) != self.max_hops:
                 raise ValueError(
@@ -918,6 +919,15 @@ class GraphSAGE:
                 "GraphSAGE called on graph with more than one node type."
             )
         self.input_feature_size = feature_sizes.popitem()[1]
+
+        if generator.use_edge_features:
+            edge_feature_sizes = generator.graph.edge_feature_sizes()
+            # the generator validates there's only one edge type
+            assert len(edge_feature_sizes) == 1
+            self.edge_feature_size = edge_feature_sizes.popitem()[1]
+        else:
+            self.edge_feature_size = None
+
 
     def _compute_neighbourhood_sizes(self):
         """
@@ -1013,6 +1023,11 @@ class GraphSAGE:
         x_inp = [
             Input(shape=(s, self.input_feature_size)) for s in self.neighbourhood_sizes
         ]
+
+        if self.edge_feature_size is not None:
+            x_inp.extend(
+                Input(shape=(s, self.edge_feature_size)) for s in self.neighbourhood_sizes[1:]
+            )
 
         # Output from GraphSAGE model
         x_out = self(x_inp)
