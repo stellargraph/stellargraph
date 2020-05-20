@@ -6,14 +6,34 @@ import pandas as pd
 from ...core.experimental import experimental
 
 
-@experimental(reason="the class is not fully tested and lacks documentation")
+@experimental(reason="the class is not tested", issues=[1578])
 class Neo4jStellarGraph:
+    """
+    Neo4jStellarGraph class for graph machine learning on graphs stored in
+    a Neo4j database.
+
+    This class communicates with Neo4j via a p2neo.Graph connected to the graph
+    database of interest and contains functions to query the graph data necessary
+    for machine learning.
+
+    Args:
+        graph (py2neo.Graph): a py2neo.Graph connected to a Neo4j graph database.
+        is_directed (bool, optional): If True, the data represents a
+            directed multigraph, otherwise an undirected multigraph.
+    """
+
     def __init__(self, graph_db, is_directed=False):
 
         self.graph_db = graph_db
         self._is_directed = is_directed
 
     def nodes(self):
+        """
+        Obtains the collection of nodes in the graph.
+
+        Returns:
+            The node IDs of all the nodes in the graph.
+        """
         node_ids_query = f"""    
             MATCH (n)
             RETURN n.ID as node_id
@@ -24,6 +44,14 @@ class Neo4jStellarGraph:
         return [row["node_id"] for row in data]
 
     def node_features(self, node_ids):
+        """
+        Get the numeric feature vectors for the specified nodes or node type.
+
+        Args:
+            nodes (list): list of node IDs.
+        Returns:
+            Numpy array containing the node features for the requested nodes.
+        """
         feature_query = f"""
             UNWIND $node_id_list AS node_id
             MATCH(node) WHERE node.ID = node_id
@@ -36,6 +64,19 @@ class Neo4jStellarGraph:
         return features
 
     def to_adjacency_matrix(self, node_ids):
+        """
+        Obtains a SciPy sparse adjacency matrix for the subgraph containing
+        the nodes specified in node_ids.
+
+        Args:
+            nodes (list): The collection of nodes
+                comprising the subgraph. The adjacency matrix is
+                computed for this subgraph.
+
+        Returns:
+             The weighted adjacency matrix.
+        """
+
         # neo4j optimizes this query to be O(edges incident to nodes)
         # not O(E) as it appears
         subgraph_query = f"""
@@ -83,6 +124,7 @@ class Neo4jStellarGraph:
         return self._is_directed
 
 
+# A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
     def __init__(self, graph_db):
         super().__init__(graph_db, is_directed=True)
