@@ -470,26 +470,24 @@ def test_feature_conversion_from_nodes():
 
 
 def test_node_feature_sizes_shapes():
-    arr1 = RowFrame(np.ones((3, 4)), index=range(3))
-    arr2 = RowFrame(np.ones((5, 6, 7)), index=range(3, 3 + 5))
-    g = StellarGraph({"a": arr1, "b": arr2})
+    g = example_hin_1(feature_sizes={"A": 4, "B": (6, 7)})
 
-    assert g.node_feature_shapes() == {"a": (4,), "b": (6, 7)}
+    assert g.node_feature_shapes() == {"A": (4,), "B": (6, 7)}
     with pytest.raises(
         ValueError,
-        match=r"node_feature_sizes expects node types .* found type 'b' with feature shape \(6, 7\)",
+        match=r"node_feature_sizes expects node types .* found type 'B' with feature shape \(6, 7\)",
     ):
         g.node_feature_sizes()
 
-    assert g.node_feature_shapes(node_types=["a"]) == {"a": (4,)}
-    assert g.node_feature_sizes(node_types=["a"]) == {"a": 4}
+    assert g.node_feature_shapes(node_types=["A"]) == {"A": (4,)}
+    assert g.node_feature_sizes(node_types=["A"]) == {"A": 4}
 
-    assert g.node_feature_shapes(node_types=["b"]) == {"b": (6, 7)}
+    assert g.node_feature_shapes(node_types=["B"]) == {"B": (6, 7)}
     with pytest.raises(
         ValueError,
-        match=r"node_feature_sizes expects node types .* found type 'b' with feature shape \(6, 7\)",
+        match=r"node_feature_sizes expects node types .* found type 'B' with feature shape \(6, 7\)",
     ):
-        g.node_feature_sizes(node_types=["b"])
+        g.node_feature_sizes(node_types=["B"])
 
 
 def test_node_features():
