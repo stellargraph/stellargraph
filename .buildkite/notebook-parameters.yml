@@ -23,3 +23,6 @@ num_restarts: 2
 # a small number of random walks for demos/embeddings/stellargraph-keras-node2vec.ipynb
 # and demos/node-classification/node2vec/stellargraph-keras-node2vec-node-classification.ipynb
 walk_number: 2
+
+# the reddit dataset isn't available on CI for graph-resource-usage.ipynb
+reddit_path: null
