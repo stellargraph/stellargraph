@@ -50,7 +50,7 @@ class Neo4jStellarGraph:
         Returns:
             The node IDs of all the nodes in the graph.
         """
-        node_ids_query = f"""    
+        node_ids_query = f"""
             MATCH (n)
             RETURN n.ID as node_id
             """
