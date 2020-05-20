@@ -141,9 +141,6 @@ class ColumnarConverter:
                     f"{self.name(type_name)}: could not convert NumPy array to a IndexedArray, see other error"
                 )
 
-        # selected_columns must be empty, so we better be allowing features
-        assert self.allow_features
-
         return data.index, {}, data.values
 
     def _ids_columns_and_type_info_from_singles(self, singles):
