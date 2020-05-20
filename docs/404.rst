@@ -1,0 +1,26 @@
+:orphan:
+
+Page not found
+==============
+
+.. raw:: html
+
+   <p>Please use the links in the side bar, or <a id="suggested-search">search for potentially-related pages</a>.</p>
+
+   <script>
+   // turn a URL like /<lang>/<version>/some_directory/some-page.html into a search for "some directory some page"
+   let parts = document.location.pathname.split(/\//g);
+
+   // parts = ["", "<lang>", "<version>", ...], and we need /<lang>/<version>/search.html
+   let searchPage = parts.slice(0, 3).join("/") + "/search.html";
+
+   // take the rest of the URL path, remove the file extension (if it exists), and use the alphanumeric components as the search input.
+   let notFound = parts.slice(3, -1);
+   let withoutExtension = parts[parts.length - 1].replace(/\.[^.]*$/, "");
+   notFound.push(withoutExtension);
+   let terms = notFound.join(" ").replace(/[^a-zA-Z0-9]+/g, " ");
+
+   // build and write in the URL
+   let url = searchPage + "?q=" + encodeURIComponent(terms);
+   document.getElementById("suggested-search").href = url;
+   </script>

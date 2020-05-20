@@ -5,7 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph
-  :members: StellarGraph, StellarDiGraph, GraphSchema
+  :members: StellarGraph, StellarDiGraph, GraphSchema, IndexedArray
 
 .. autodata:: custom_keras_layers
    :annotation: = {...}
@@ -152,6 +152,12 @@ Knowledge Graph models
   :members:
 
 .. autoclass:: DistMultScore
+  :members:
+
+.. autoclass:: RotatE
+  :members:
+
+.. autoclass:: RotatEScore
   :members:
 
 GCN Supervised Graph Classification
