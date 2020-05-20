@@ -245,26 +245,26 @@ def test_columnar_convert_rowframe():
         column_defaults={},
         selected_columns={},
         transform_columns={},
-        allow_features=True,
     )
 
     frame1 = IndexedArray(np.random.rand(3, 4, 5), index=[1111, -222, 33])
     frame2 = IndexedArray(np.random.rand(6, 7))
 
-    ids, columns, type_starts, features = converter.convert(frame1)
+    ids, columns, type_info = converter.convert(frame1)
 
     assert ids == [1111, -222, 33]
     assert columns == {}
-    assert type_starts == [("foo", 0)]
-    assert features["foo"] is frame1.values
+    _check_type_info(type_info, [("foo", frame1.values)])
+    # check identity, to validate non-copying
+    assert type_info[0][1] is frame1.values
 
-    ids, columns, type_starts, features = converter.convert({"a": frame1, "b": frame2})
+    ids, columns, type_info = converter.convert({"a": frame1, "b": frame2})
 
     np.testing.assert_array_equal(ids, [*frame1.index, *frame2.index])
     assert columns == {}
-    assert type_starts == [("a", 0), ("b", 3)]
-    assert features["a"] is frame1.values
-    assert features["b"] is frame2.values
+    _check_type_info(type_info, [("a", frame1.values), ("b", frame2.values)])
+    assert type_info[0][1] is frame1.values
+    assert type_info[1][1] is frame2.values
 
 
 def test_columnar_convert_ndarray():
@@ -275,29 +275,28 @@ def test_columnar_convert_ndarray():
         column_defaults={},
         selected_columns={},
         transform_columns={},
-        allow_features=True,
     )
 
     arr1 = np.random.rand(3, 4, 5)
     arr2 = np.random.rand(6, 7)
 
     # single array, default type
-    ids, columns, type_starts, features = converter.convert(arr1)
+    ids, columns, type_info = converter.convert(arr1)
 
     assert ids == range(3)
     assert columns == {}
-    assert type_starts == [("foo", 0)]
-    assert features["foo"] is arr1
+    _check_type_info(type_info, [("foo", arr1)])
+    assert type_info[0][1] is arr1
 
     # multiple arrays, explicit types; the IDs are wrong (duplicated) here, but that's detected
     # elsewhere
-    ids, columns, type_starts, features = converter.convert({"a": arr1, "b": arr2})
+    ids, columns, type_info = converter.convert({"a": arr1, "b": arr2})
 
     np.testing.assert_array_equal(ids, [*range(3), *range(6)])
     assert columns == {}
-    assert type_starts == [("a", 0), ("b", 3)]
-    assert features["a"] is arr1
-    assert features["b"] is arr2
+    _check_type_info(type_info, [("a", arr1), ("b", arr2)])
+    assert type_info[0][1] is arr1
+    assert type_info[1][1] is arr2
 
     # check it says which type
     with pytest.raises(
@@ -314,7 +313,6 @@ def test_columnar_convert_rowframe_ndarray_invalid():
         column_defaults={},
         selected_columns={"bar": "baz"},
         transform_columns={},
-        allow_features=True,
     )
 
     frame = IndexedArray(np.random.rand(3, 4, 5))

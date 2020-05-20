@@ -319,7 +319,7 @@ def test_graph_constructor_rowframe_numpy_invalid():
 
     # FIXME(#1524): this restriction on the shape should be lifted
     with pytest.raises(
-        ValueError, match=r"features\['default'\]: expected 2 dimensions, found 3"
+        ValueError, match=r"type_info \(for 'default'\): expected 2 dimensions, found 3"
     ):
         StellarGraph(np.random.rand(3, 4, 5))
 
