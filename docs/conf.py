@@ -64,6 +64,7 @@ extensions = [
     "nbsphinx",
     "nbsphinx_link",
     "notfound.extension",
+    "sphinxcontrib.spelling",
 ]
 
 # Add mappings
