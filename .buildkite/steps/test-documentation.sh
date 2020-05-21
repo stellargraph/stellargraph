@@ -3,7 +3,9 @@
 set -euo pipefail
 
 error_file=/tmp/sphinx-errors.txt
+
 spelling_file="_build/spelling/output.txt"
+opts="-W --keep-going -w $error_file"
 
 cd docs
 
@@ -19,9 +21,8 @@ pip freeze
 
 echo "+++ building docs"
 exit_code=0
-export SPHINXOPTS="-W --keep-going -w $error_file"
-make html || exit_code="$?"
-make spelling || exit_code="$?"
+make html SPHINXOPTS="$opts" || exit_code="$?"
+make spelling SPHINXOPTS="$opts" || exit_code="$?"
 
 if [ "$exit_code" -ne 0 ]; then
   echo "--- annotating build with failures"
