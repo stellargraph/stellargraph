@@ -25,7 +25,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, constraints, initializers, regularizers
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
-from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
+from ..mapper import FullBatchNodeGenerator, FullBatchGenerator, ClusterNodeGenerator
 from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 
 
@@ -740,23 +740,21 @@ class GAT:
             self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
             self.n_nodes = _require_without_generator(num_nodes, "num_nodes")
             self.n_features = _require_without_generator(num_features, "num_features")
-
         else:
-            if not isinstance(generator, FullBatchGenerator):
+            if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
                 raise TypeError(
-                    "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                    f"Generator should be a instance of FullBatchNodeGenerator, "
+                    f"FullBatchLinkGenerator or ClusterNodeGenerator"
                 )
 
             # Copy required information from generator
             self.use_sparse = generator.use_sparse
             self.multiplicity = generator.multiplicity
-            self.n_nodes = generator.features.shape[0]
             self.n_features = generator.features.shape[1]
-
-        if self.n_nodes is None or self.n_features is None:
-            raise RuntimeError(
-                "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
-            )
+            if isinstance(generator, FullBatchGenerator):
+                self.n_nodes = generator.features.shape[0]
+            else:
+                self.n_nodes = None
 
         # Set the normalization layer used in the model
         if normalize == "l2":

@@ -45,8 +45,8 @@ def test_APPNP_edge_cases():
     except TypeError as e:
         error = e
     assert (
-        str(error)
-        == "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+        str(error) == f"Generator should be a instance of FullBatchNodeGenerator, "
+        f"FullBatchLinkGenerator or ClusterNodeGenerator"
     )
 
     try:

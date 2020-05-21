@@ -106,7 +106,7 @@ class Test_GraphAttention:
         x_inp, layer_inp = self.get_inputs()
 
         # Instantiate layer with squeezed matrix
-        x_out = gat(x_inp)
+        x_out = gat(layer_inp)
 
         model = keras.Model(inputs=x_inp, outputs=x_out)
 
