@@ -198,7 +198,6 @@ class GraphConvolutionLSTM:
        2. User specified no. of LSTM layers
        3. 1 Dense layer
        4. 1 Dropout layer. The last two layers consistently showed better performance and regularization experimentally.
-       
     Args:
        seq_len: No. of LSTM cells
        adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
