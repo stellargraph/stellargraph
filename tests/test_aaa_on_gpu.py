@@ -20,14 +20,14 @@
 import os
 import tensorflow as tf
 import pytest
+from . import force_gpu
 
 # When the environment variable is set, we need to be sure that we're running on a GPU
+@pytest.mark.skipif(
+    not force_gpu,
+    reason="STELLARGRAPH_MUST_USE_GPU is not set to 1, so a GPU does not have to be used",
+)
 def test_on_gpu_when_requested():
-    if os.environ.get("STELLARGRAPH_MUST_USE_GPU") != "1":
-        pytest.skip(
-            "STELLARGRAPH_MUST_USE_GPU is not set to 1, so a GPU does not have to be used"
-        )
-
     # we can't easily capture this
     tf.debugging.set_log_device_placement(True)
 
@@ -39,5 +39,3 @@ def test_on_gpu_when_requested():
     assert c.numpy().shape == (2, 2)
 
     assert tf.config.list_physical_devices("GPU")
-    # FIXME: remove this, just to show the logging
-    assert False

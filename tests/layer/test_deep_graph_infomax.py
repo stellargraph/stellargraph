@@ -18,6 +18,7 @@ from stellargraph.layer import *
 from stellargraph.mapper import *
 
 from ..test_utils.graphs import example_graph_random
+from .. import force_gpu
 import tensorflow as tf
 import pytest
 import numpy as np
@@ -90,6 +91,7 @@ def test_dgi(model_type, sparse):
         assert embeddings.shape == (len(nodes), 16)
 
 
+@pytest.mark.skipif(force_gpu, reason="tf on GPU is non-deterministic")
 def test_dgi_stateful():
     G = example_graph_random()
     emb_dim = 16
