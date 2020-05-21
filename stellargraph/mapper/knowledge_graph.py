@@ -88,8 +88,7 @@ class KGTripleGenerator(Generator):
                 )
 
         source_ilocs = self.G.node_ids_to_ilocs(sources)
-        # FIXME(#870): this would be best expressed without poking into the _edges proprety of G
-        rel_ilocs = self.G._edges.types.to_iloc(rels, strict=True)
+        rel_ilocs = self.G.edge_type_names_to_ilocs(rels)
         target_ilocs = self.G.node_ids_to_ilocs(targets)
 
         return KGTripleSequence(
