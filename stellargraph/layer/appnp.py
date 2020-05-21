@@ -137,19 +137,17 @@ class APPNPPropagationLayer(Layer):
                 "Currently full-batch methods only support a batch dimension of one"
             )
 
-        # Remove singleton batch dimension
-        features = K.squeeze(features, 0)
-        propagated_features = K.squeeze(propagated_features, 0)
-
         # Propagate the node features
         A = As[0]
-        output = (1 - self.teleport_probability) * K.dot(
-            A, propagated_features
-        ) + self.teleport_probability * features
+        if K.is_sparse(A):
+            propagated_features = K.squeeze(propagated_features, 0)
+            propagated_features = K.dot(A, propagated_features)
+            propagated_features = K.expand_dims(propagated_features, 0)
+        else:
+            propagated_features = K.batch_dot(A, propagated_features)
 
-        # Add batch dimension back if we removed it
-        if batch_dim == 1:
-            output = K.expand_dims(output, 0)
+        output = (1 - self.teleport_probability) * propagated_features
+        output += self.teleport_probability * features
 
         return output
 
@@ -306,7 +304,7 @@ class APPNP:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As  # [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
