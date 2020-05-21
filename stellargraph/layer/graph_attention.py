@@ -276,7 +276,7 @@ class GraphAttention(Layer):
                   M is the number of output nodes
         """
         X = inputs[0]  # Node features (1 x N x F)
-        A = inputs[1]  # Adjacency matrix (N x N)
+        A = inputs[1]  # Adjacency matrix (1 X N x N)
         N = K.int_shape(A)[-1]
 
         batch_dim, n_nodes, _ = K.int_shape(X)
@@ -288,6 +288,7 @@ class GraphAttention(Layer):
         else:
             # Remove singleton batch dimension
             X = K.squeeze(X, 0)
+            A = K.squeeze(A, 0)
 
         outputs = []
         for head in range(self.attn_heads):
@@ -841,7 +842,7 @@ class GAT:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
