@@ -250,15 +250,13 @@ class APPNP:
         # Copy required information from generator
         self.method = generator.method
         self.multiplicity = generator.multiplicity
-        self.n_nodes = (
-            generator.features.shape[0]
-            if isinstance(generator, FullBatchGenerator)
-            else None
-        )
         self.n_features = generator.features.shape[1]
-
-        # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
+        if isinstance(generator, FullBatchGenerator):
+            self.n_nodes = generator.features.shape[0]
+        else:
+            self.n_nodes = None
+
         if self.method == "none":
             self.graph_norm_layer = GraphPreProcessingLayer(num_of_nodes=self.n_nodes)
 
