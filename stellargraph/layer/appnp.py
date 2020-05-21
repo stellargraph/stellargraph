@@ -18,7 +18,7 @@ import warnings
 from tensorflow.keras.layers import Dense, Lambda, Dropout, Input, Layer, InputLayer
 import tensorflow.keras.backend as K
 
-from ..mapper import FullBatchGenerator
+from ..mapper import FullBatchGenerator, ClusterNodeGenerator
 from .preprocessing_layer import GraphPreProcessingLayer
 from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 
@@ -55,7 +55,7 @@ class APPNPPropagationLayer(Layer):
         teleport_probability=0.1,
         final_layer=None,
         input_dim=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
@@ -219,9 +219,10 @@ class APPNP:
         approx_iter=10,
     ):
 
-        if not isinstance(generator, FullBatchGenerator):
+        if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
             raise TypeError(
-                "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                f"Generator should be a instance of FullBatchNodeGenerator, "
+                f"FullBatchLinkGenerator or ClusterNodeGenerator"
             )
 
         if not len(layer_sizes) == len(activations):
@@ -249,7 +250,11 @@ class APPNP:
         # Copy required information from generator
         self.method = generator.method
         self.multiplicity = generator.multiplicity
-        self.n_nodes = generator.features.shape[0]
+        self.n_nodes = (
+            generator.features.shape[0]
+            if isinstance(generator, FullBatchGenerator)
+            else None
+        )
         self.n_features = generator.features.shape[1]
 
         # Check if the generator is producing a sparse matrix
