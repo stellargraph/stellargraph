@@ -1,4 +1,4 @@
-from stellargraph.layer import APPNP, GAT
+from stellargraph.layer import APPNP, GAT, GCN
 from stellargraph.mapper import ClusterNodeGenerator
 import tensorflow as tf
 import numpy as np
@@ -6,7 +6,7 @@ from ..test_utils.graphs import example_graph_random
 import pytest
 
 
-@pytest.mark.parametrize("model_type", [APPNP, GAT])
+@pytest.mark.parametrize("model_type", [APPNP, GAT, GCN])
 def test_fullbatch_cluster_models(model_type):
     G = example_graph_random(n_nodes=50)
     generator = ClusterNodeGenerator(G, clusters=10)
