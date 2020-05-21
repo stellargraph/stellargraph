@@ -194,10 +194,11 @@ class GraphConvolutionLSTM:
     This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction (https://arxiv.org/abs/1811.05320).
     The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
     The StellarGraph implementation is built as a stack of the following set of layers:
-       1. User specified no. of Graph Convolutional layers
-       2. User specified no. of LSTM layers
-       3. 1 Dense layer
-       4. 1 Dropout layer. The last two layers consistently showed better performance and regularization experimentally.
+    1. User specified no. of Graph Convolutional layers
+    2. User specified no. of LSTM layers
+    3. 1 Dense layer
+    4. 1 Dropout layer. The last two layers consistently showed better performance and regularization experimentally.
+    
     Args:
        seq_len: No. of LSTM cells
        adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
