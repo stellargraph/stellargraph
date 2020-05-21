@@ -285,10 +285,6 @@ class NodeData(ElementData):
         }
 
 
-def _numpyise(d, dtype):
-    return {k: np.array(v, dtype=dtype) for k, v in d.items()}
-
-
 class FlatAdjacencyList:
     """
     Stores an adjacency list in one contiguous numpy array in a format similar
@@ -309,6 +305,15 @@ class FlatAdjacencyList:
     def items(self):
         for idx in range(len(self.splits) - 1):
             yield (idx, self[idx])
+
+
+def _get_splits(node_ilocs_list, number_of_nodes, dtype):
+    neigh_counts = sum(
+        np.bincount(ilocs, minlength=number_of_nodes) for ilocs in node_ilocs_list
+    )
+    splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
+    splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
+    return splits
 
 
 class EdgeData(ElementData):
@@ -374,9 +379,7 @@ class EdgeData(ElementData):
         # record the edge ilocs of incoming and outgoing edges
 
         def _to_dir_adj_list(arr):
-            neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
-            splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
-            splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+            splits = _get_splits([arr], self.number_of_nodes, self._id_index.dtype)
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
             return FlatAdjacencyList(flat, splits)
 
@@ -418,10 +421,9 @@ class EdgeData(ElementData):
             filtered_targets = filtered_targets[:-num_self_loops]
 
         flat_array %= num_edges
-        neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
-        neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
-        splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
-        splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
+        splits = _get_splits(
+            [self.sources, filtered_targets], self.number_of_nodes, dtype
+        )
 
         return FlatAdjacencyList(flat_array, splits)
 
@@ -446,11 +448,9 @@ class EdgeData(ElementData):
 
                 # filter node ilocs based on other node type
                 arr_filtered = arr[other_node_types == other_node_type]
-
-                # count how often each node iloc occurs to calculate splits
-                neigh_counts = np.bincount(arr_filtered, minlength=self.number_of_nodes)
-                splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
-                splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+                splits = _get_splits(
+                    [arr_filtered], self.number_of_nodes, self._id_index.dtype
+                )
 
                 # filter edge ilocs based on other node type
                 flat_filtered = flat[other_node_types[flat] == other_node_type]
@@ -519,12 +519,9 @@ class EdgeData(ElementData):
             ]
 
             # count how often each node iloc occurs to calculate splits
-            neigh_counts = np.bincount(sources_filtered, minlength=self.number_of_nodes)
-            neigh_counts += np.bincount(
-                targets_filtered, minlength=self.number_of_nodes
+            splits = _get_splits(
+                [sources_filtered, targets_filtered], self.number_of_nodes, dtype,
             )
-            splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
-            splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
 
             # filter edge ilocs based on other node type
             flat_filtered = flat_array[other_node_types == other_node_type]
@@ -600,7 +597,7 @@ class EdgeData(ElementData):
 
         if other_node_type_iloc is not None:
             return self._adj_lookup_by_other_node_type(ins=ins, outs=outs).get(
-                other_node_type_iloc, {}
+                other_node_type_iloc, defaultdict(list)
             )[node_iloc]
         else:
             return self._adj_lookup(ins=ins, outs=outs)[node_iloc]
