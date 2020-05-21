@@ -144,19 +144,26 @@ class GraphWalk(object):
                     "The random number generator seed value, seed, should be non-negative integer or None."
                 )
 
-    def _get_random_state(self, seed):
+    def _get_random_state(self, seed, use_numpy=False):
         """
         Args:
             seed: The optional seed value for a given run.
+            use_numpy: If true, return the numpy random state
 
         Returns:
             The random state as determined by the seed.
         """
         if seed is None:
             # Use the class's random state
-            return self._random_state
-        # seed the random number generator
-        rs, _ = random_state(seed)
+            rs = self._random_state
+            np_rs = self._np_random_state
+        else:
+            # seed the random number generator
+            rs, np_rs = random_state(seed)
+
+        if numpy:
+            return np_rs
+
         return rs
 
     def neighbors(self, node):
@@ -636,7 +643,7 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes, n_size, n=1, seed=None):
+    def run(self, nodes, n_size, n=1, seed=None, include_edges=False):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
 
@@ -649,53 +656,69 @@ class SampledBreadthFirstWalk(GraphWalk):
                 number of neighbours requested.
             n (int): Number of walks per node id.
             seed (int, optional): Random number generator seed; Default is None.
+            include_edges (bool, optional): if True, include the ilocs of each edge that was traversed.
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
         self._check_sizes(n_size)
         self._check_common_parameters(nodes, n, len(n_size), seed)
-        rs = self._get_random_state(seed)
+        rs = self._get_random_state(seed, use_numpy=True)
 
         walks = []
+        walks_edges = []
         max_hops = len(n_size)  # depth of search
 
         for node in nodes:  # iterate over root nodes
             for _ in range(n):  # do n bounded breadth first walks from each root node
                 q = deque()  # the queue of neighbours
                 walk = list()  # the list of nodes in the subgraph of node
+                walk_edges = []
                 # extend() needs iterable as parameter; we use list of tuples (node id, depth)
-                q.append((node, 0))
+                q.append((node, 0, None))
 
                 while len(q) > 0:
                     # remove the top element in the queue
                     # index 0 pop the item from the front of the list
-                    cur_node, cur_depth = q.popleft()
+                    cur_node, cur_depth, cur_edge_iloc = q.popleft()
                     depth = cur_depth + 1  # the depth of the neighbouring nodes
                     walk.append(cur_node)  # add to the walk
+                    if cur_edge_iloc is not None:
+                        walk_edges.append(cur_edge_iloc)
 
                     # consider the subgraph up to and including max_hops from root node
                     if depth > max_hops:
                         continue
 
-                    neighbours = (
-                        self.graph.neighbor_arrays(cur_node, use_ilocs=True)
-                        if cur_node != -1
-                        else []
-                    )
+                    if cur_node != -1:
+                        neighbours, edge_ilocs = self.graph.neighbor_arrays(cur_node, use_ilocs=True, include_edge_ids=True)
+                    else:
+                        neighbours = edge_ilocs = []
+
                     if len(neighbours) == 0:
                         # Either node is unconnected or is in directed graph with no out-nodes.
                         _size = n_size[cur_depth]
-                        neighbours = [-1] * _size
+                        neighbours = edge_ilocs = [-1] * _size
+                    elif include_edges:
+                        idx = rs.choice(len(neighbours), size=n_size[cur_depth])
+                        neighbours = neighbours[idx]
+                        edge_ilocs = edge_ilocs[idx]
                     else:
-                        # sample with replacement
-                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
+                        neighbours = rs.choice(neighbours, size=n_size[cur_depth])
 
-                    # add them to the back of the queue
-                    q.extend((sampled_node, depth) for sampled_node in neighbours)
+                    if include_edges:
+                        q.extend((sampled_node, depth, edge_iloc) for sampled_node, edge_iloc in zip(neighbours, edge_ilocs))
+                    else:
+                        q.extend((sampled_node, depth, None) for sampled_node in neighbours)
 
                 # finished i-th walk from node so add it to the list of walks as a list
                 walks.append(walk)
+                if include_edges:
+                    assert len(walk_edges) == len(walk) - 1
+                    walks_edges.append(walk_edges)
+
+        if include_edges:
+            return walks, walk_edges
 
         return walks
 

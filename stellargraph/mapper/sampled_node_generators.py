@@ -67,7 +67,14 @@ class BatchedNodeGenerator(Generator):
         schema (GraphSchema): [Optional] Schema for the graph, for heterogeneous graphs.
     """
 
-    def __init__(self, G, batch_size, schema=None, use_node_features=True):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        schema=None,
+        use_node_features=True,
+        use_edge_features=False,
+    ):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -92,8 +99,8 @@ class BatchedNodeGenerator(Generator):
         self.sampler = None
 
         # Check if the graph has features
-        if use_node_features:
-            G.check_graph_for_ml()
+        if use_node_features or use_edge_features:
+            G.check_graph_for_ml(edge_features=use_edge_features)
 
     @abc.abstractmethod
     def sample_features(self, head_nodes, batch_num):
@@ -200,10 +207,13 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
         seed (int): [Optional] Random seed for the node sampler.
+        use_edge_features (bool): Include edge features too.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
-        super().__init__(G, batch_size)
+    def __init__(
+        self, G, batch_size, num_samples, seed=None, name=None, use_edge_features=False
+    ):
+        super().__init__(G, batch_size, use_edge_features=use_edge_features)
 
         self.num_samples = num_samples
         self.head_node_types = self.schema.node_types
@@ -217,11 +227,52 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
                 stacklevel=2,
             )
 
+        self.use_edge_features = use_edge_features
+        if self.use_edge_features:
+            self._edge_type = G.unique_edge_type(
+                "G: expected a graph with a single edge type when using 'use_edge_features=True', found a graph with edge types: %(found)s"
+            )
+
         # Create sampler for GraphSAGE
         self._samplers = SeededPerBatch(
             lambda s: SampledBreadthFirstWalk(G, graph_schema=self.schema, seed=s),
             seed=seed,
         )
+
+    # Reshape node samples to sensible format
+    def _get_levels(self, loc, lsize, samples_per_hop, walks):
+        end_loc = loc + lsize
+        walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
+
+        yield walks_at_level
+
+        if len(samples_per_hop) < 1:
+            return
+
+        yield from get_levels(
+            end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
+        )
+
+    def _get_features(self, this_batch_size, samples, is_nodes):
+        first_len = 1 if is_nodes else 0
+        elems_per_hop = self._get_levels(0, first_len, self.num_samples, samples)
+
+        if is_nodes:
+            features = self.graph.node_features
+            type_ = self.head_node_types[0]
+        else:
+            features = self.graph.edge_features
+            type_ = self._edge_type
+
+        batch_feats = (
+            features(layer_elems, type_, use_ilocs=True)
+            for layer_nodes in elems_per_hop
+        )
+        batch_feats = [
+            a.reshape(this_batch_size, -1 if np.size(a) > 0 else 0, a.shape[1])
+            for a in batch_feats
+        ]
+        return batch_feats
 
     def sample_features(self, head_nodes, batch_num):
         """
@@ -241,41 +292,41 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             for that layer.
         """
         node_samples = self._samplers[batch_num].run(
-            nodes=head_nodes, n=1, n_size=self.num_samples
+            nodes=head_nodes,
+            n=1,
+            n_size=self.num_samples,
+            include_edges=self._use_edge_features,
         )
 
-        # The number of samples for each head node (not including itself)
-        num_full_samples = np.sum(np.cumprod(self.num_samples))
+        if self._use_edge_features:
+            node_samples, edge_samples = node_samples
 
-        # Reshape node samples to sensible format
-        def get_levels(loc, lsize, samples_per_hop, walks):
-            end_loc = loc + lsize
-            walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
-            if len(samples_per_hop) < 1:
-                return [walks_at_level]
-            return [walks_at_level] + get_levels(
-                end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
-            )
+        node_features = self._get_features(len(head_nodes), node_samples, is_nodes=True)
 
-        nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
-        node_type = self.head_node_types[0]
+        if self._use_edge_features:
+            edge_features = self._get_features(len(head_nodes), edge_samples, is_nodes=False)
 
-        # Get features for sampled nodes
-        batch_feats = [
-            self.graph.node_features(layer_nodes, node_type, use_ilocs=True)
-            for layer_nodes in nodes_per_hop
-        ]
+            # there's never an edge for the head node (i.e. first element), so don't include it
+            assert np.size(edge_features[0]) == 0
+            edge_features = edge_features[1:]
 
-        # Resize features to (batch_size, n_neighbours, feature_size)
-        batch_feats = [
-            np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
-            for a in batch_feats
-        ]
-        return batch_feats
+            return node_features + edge_features
+
+        return node_features
 
     def default_corrupt_input_index_groups(self):
-        # everything can be shuffled together
-        return [list(range(len(self.num_samples) + 1))]
+        num_node_tensors = len(self.num_samples) + 1
+        # all nodes can be shuffled together
+        node_tensors = list(range(num_node_tensors))
+
+        if self._use_edge_features:
+            # as can all edges, if they exist
+            num_edge_tensors = num_node_tensors - 1
+            edge_tensors = list(range(num_edge_tensors))
+
+            return [node_tensors, edge_tensors]
+
+        return [node_tensors]
 
 
 class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
