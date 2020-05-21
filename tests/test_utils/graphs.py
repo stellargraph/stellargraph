@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-from stellargraph import StellarGraph, StellarDiGraph
+from stellargraph import StellarGraph, StellarDiGraph, IndexedArray
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -65,10 +65,14 @@ def example_graph_nx(
 
 def repeated_features(values_to_repeat, width):
     if width is None:
-        return []
+        return None
 
-    column = np.expand_dims(values_to_repeat, axis=1)
-    return column.repeat(width, axis=1)
+    if isinstance(width, int):
+        width = (width,)
+
+    values = np.asarray(values_to_repeat, dtype=np.float32)
+    column = values.reshape(values.shape + (1,) * len(width))
+    return np.tile(column, width)
 
 
 def example_graph(
@@ -87,7 +91,7 @@ def example_graph(
     nodes = [1, 2, 3, 4]
     node_features = repeated_features(nodes, feature_size)
 
-    nodes = pd.DataFrame(node_features, index=nodes)
+    nodes = IndexedArray(features, index=nodes)
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={node_label: nodes}, edges={edge_label: elist})
@@ -124,7 +128,7 @@ def example_hin_1(
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
-            return []
+            return None
         else:
             feature_size = feature_sizes.get(label, 10)
             return repeated_features(ids, feature_size)
@@ -132,12 +136,12 @@ def example_hin_1(
     a_ids = [0, 1, 2, 3]
     if reverse_order:
         a_ids = a_ids[::-1]
-    a = pd.DataFrame(features("A", a_ids), index=a_ids)
+    a = IndexedArray(features("A", a_ids), index=a_ids)
 
     b_ids = [4, 5, 6]
     if reverse_order:
         b_ids = b_ids[::-1]
-    b = pd.DataFrame(features("B", b_ids), index=b_ids)
+    b = IndexedArray(features("B", b_ids), index=b_ids)
 
     r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
     f_edges, f_index = [(4, 5)], [100]

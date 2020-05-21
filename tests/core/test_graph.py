@@ -275,7 +275,7 @@ def test_graph_constructor_rowframe_numpy_homogeneous(rowframe_convert):
     np.testing.assert_array_equal(g.nodes(), [])
     assert g.node_features() is empty
 
-    arr = np.random.rand(3, 4)
+    arr = np.random.rand(3, 4, 5)
     edges = pd.DataFrame({"source": [0, 1], "target": [2, 2]})
     g = StellarGraph(rowframe_convert(arr), edges)
     np.testing.assert_array_equal(g.nodes(), [0, 1, 2])
@@ -283,7 +283,7 @@ def test_graph_constructor_rowframe_numpy_homogeneous(rowframe_convert):
 
 
 def test_graph_constructor_rowframe_numpy_heterogeneous(rowframe_convert):
-    arr1 = np.random.rand(3, 4)
+    arr1 = np.random.rand(3, 4, 5)
     arr2 = np.random.rand(6, 7)
     frame2 = IndexedArray(arr2, index=range(100, 106))
 
@@ -294,7 +294,7 @@ def test_graph_constructor_rowframe_numpy_heterogeneous(rowframe_convert):
 
 
 def test_graph_constructor_rowframe_numpy_invalid():
-    arr1 = np.random.rand(3, 4)
+    arr1 = np.random.rand(3, 4, 5)
     arr2 = np.random.rand(6, 7)
 
     with pytest.raises(ValueError, match="expected IDs .*, found .* more: 0, 1, 2"):
@@ -316,12 +316,6 @@ def test_graph_constructor_rowframe_numpy_invalid():
             IndexedArray(index=["a", "c"]),
             pd.DataFrame({"source": ["a"], "target": ["b"]}),
         )
-
-    # FIXME(#1524): this restriction on the shape should be lifted
-    with pytest.raises(
-        ValueError, match=r"type_info \(for 'default'\): expected 2 dimensions, found 3"
-    ):
-        StellarGraph(np.random.rand(3, 4, 5))
 
 
 def test_info():
@@ -473,6 +467,40 @@ def test_feature_conversion_from_nodes():
 
     assert aa.shape == (4, 8)
     assert sg.node_feature_sizes()["default"] == 8
+
+
+def test_node_feature_sizes_shapes():
+    g = example_hin_1(feature_sizes={"A": 4, "B": (6, 7)})
+
+    assert g.node_feature_shapes() == {"A": (4,), "B": (6, 7)}
+    with pytest.raises(
+        ValueError,
+        match=r"node_feature_sizes expects node types .* found type 'B' with feature shape \(6, 7\)",
+    ):
+        g.node_feature_sizes()
+
+    assert g.node_feature_shapes(node_types=["A"]) == {"A": (4,)}
+    assert g.node_feature_sizes(node_types=["A"]) == {"A": 4}
+
+    assert g.node_feature_shapes(node_types=["B"]) == {"B": (6, 7)}
+    with pytest.raises(
+        ValueError,
+        match=r"node_feature_sizes expects node types .* found type 'B' with feature shape \(6, 7\)",
+    ):
+        g.node_feature_sizes(node_types=["B"])
+
+
+def test_edge_feature_sizes_shapes():
+    # edges don't support multidimensional features (yet...)
+    g = example_hin_1(feature_sizes={"F": 4, "R": 6}, edge_features=True)
+
+    assert g.edge_feature_shapes() == {"F": (4,), "R": (6,)}
+
+    assert g.edge_feature_shapes(edge_types=["F"]) == {"F": (4,)}
+    assert g.edge_feature_sizes(edge_types=["F"]) == {"F": 4}
+
+    assert g.edge_feature_shapes(edge_types=["R"]) == {"R": (6,)}
+    assert g.edge_feature_sizes(edge_types=["R"]) == {"R": 6}
 
 
 def test_node_features():
@@ -1347,7 +1375,7 @@ def test_info_homogeneous(is_directed):
 
 def test_info_heterogeneous():
     g = example_hin_1(
-        {"A": 0, "B": 34, "F": 0, "R": 56}, reverse_order=True, edge_features=True
+        {"A": 0, "B": (34, 4), "F": 0, "R": 56}, reverse_order=True, edge_features=True
     )
     # literal match to check the output is good for human consumption
     assert (
@@ -1361,7 +1389,7 @@ StellarGraph: Undirected multigraph
     Features: none
     Edge types: A-R->B
   B: [3]
-    Features: float32 vector, length 34
+    Features: float32 tensor, shape (34, 4)
     Edge types: B-F->B, B-R->A
 
  Edge types:
@@ -2278,25 +2306,3 @@ def test_correct_adjacency_list_type():
     assert sg._edges.ids.dtype == np.uint8
     assert all(deg == 2 for deg in sg.node_degrees().values())
     assert sg._edges._edges_dict.flat.dtype == np.uint16
-
-
-def test_node_feature_sizes():
-    no_feats = example_hin_1()
-    assert no_feats.node_feature_sizes() == {"A": 0, "B": 0}
-
-    feature_sizes = {"A": 4, "B": 6}
-    no_feats = example_hin_1(feature_sizes)
-    assert no_feats.node_feature_sizes() == {"A": 4, "B": 6}
-
-    assert no_feats.node_feature_sizes(node_types=["B"]) == {"B": 6}
-
-
-def test_edge_feature_sizes():
-    no_feats = example_hin_1(edge_features=False)
-    assert no_feats.edge_feature_sizes() == {"F": 0, "R": 0}
-
-    feature_sizes = {"F": 4, "R": 6}
-    no_feats = example_hin_1(feature_sizes, edge_features=True)
-    assert no_feats.edge_feature_sizes() == {"F": 4, "R": 6}
-
-    assert no_feats.edge_feature_sizes(edge_types=["R"]) == {"R": 6}

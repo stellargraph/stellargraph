@@ -1031,7 +1031,7 @@ class StellarGraph:
         """
         return self._edges.types.from_iloc(edge_type_ilocs)
 
-    def _feature_sizes(self, element_data, types=None):
+    def _feature_shapes(self, element_data, types):
         all_sizes = element_data.feature_info()
 
         if types is None:
@@ -1039,9 +1039,25 @@ class StellarGraph:
 
         return {type_name: all_sizes[type_name][0] for type_name in types}
 
+    def _feature_sizes(self, element_data, types, name):
+        def get(type_name, shape):
+            if len(shape) != 1:
+                raise ValueError(
+                    f"{name}_feature_sizes expects {name} types that have feature vectors (rank 1), found type {type_name!r} with feature shape {shape}"
+                )
+
+            return shape[0]
+
+        return {
+            type_name: get(type_name, shape)
+            for type_name, shape in self._feature_shapes(element_data, types).items()
+        }
+
     def node_feature_sizes(self, node_types=None):
         """
         Get the feature sizes for the specified node types.
+
+        .. seealso:: :meth:`node_feature_shapes`
 
         Args:
             node_types (list, optional): A list of node types. If None all current node types
@@ -1050,11 +1066,28 @@ class StellarGraph:
         Returns:
             A dictionary of node type and integer feature size.
         """
-        return self._feature_sizes(self._nodes, node_types)
+        return self._feature_sizes(self._nodes, node_types, "node")
+
+    def node_feature_shapes(self, node_types=None):
+        """
+        Get the feature shapes for the specified node types.
+
+        .. seealso:: :meth:`node_feature_sizes`
+
+        Args:
+            node_types (list, optional): A list of node types. If None all current node types
+                will be used.
+
+        Returns:
+            A dictionary of node type and tuple feature shapes.
+        """
+        return self._feature_shapes(self._nodes, node_types)
 
     def edge_feature_sizes(self, edge_types=None):
         """
         Get the feature sizes for the specified edge types.
+
+        .. seealso:: :meth:`edge_feature_shapes`
 
         Args:
             edge_types (list, optional): A list of edge types. If None all current edge types
@@ -1063,7 +1096,22 @@ class StellarGraph:
         Returns:
             A dictionary of edge type and integer feature size.
         """
-        return self._feature_sizes(self._edges, edge_types)
+        return self._feature_sizes(self._edges, edge_types, "edge")
+
+    def edge_feature_shapes(self, edge_types=None):
+        """
+        Get the feature shapes for the specified edge types.
+
+        .. seealso:: :meth:`edge_feature_sizes`
+
+        Args:
+            edge_types (list, optional): A list of edge types. If None all current edge types
+                will be used.
+
+        Returns:
+            A dictionary of edge type and tuple feature shapes.
+        """
+        return self._feature_shapes(self._edges, edge_types)
 
     def check_graph_for_ml(self, features=True):
         """
@@ -1344,11 +1392,13 @@ class StellarGraph:
             return f"{n1}-{rel}->{n2}"
 
         def str_feature(feature_info, ty):
-            feature_size, feature_dtype = feature_info[ty]
-            if feature_size > 0:
-                return f"{feature_dtype.name} vector, length {feature_size}"
+            feature_shape, feature_dtype = feature_info[ty]
+            if len(feature_shape) > 1:
+                feature_text = f"{feature_dtype.name} tensor, shape {feature_shape}"
+            elif feature_shape[0] == 0:
+                feature_text = "none"
             else:
-                return "none"
+                feature_text = f"{feature_dtype.name} vector, length {feature_shape[0]}"
 
         def str_node_type(count, nt):
             feature_text = str_feature(node_feature_info, nt)

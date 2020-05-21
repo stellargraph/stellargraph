@@ -144,12 +144,12 @@ class ElementData:
                     f"type_info (for {type_name!r}): expected numpy array, found {type(data).__name__}"
                 )
 
-            if len(data.shape) != 2:
+            if len(data.shape) < 2:
                 raise ValueError(
-                    f"type_info (for {type_name!r}): expected 2 dimensions, found {len(data.shape)}"
+                    f"type_info (for {type_name!r}): expected at least 2 dimensions, found {len(data.shape)}"
                 )
 
-            rows, _columns = data.shape
+            rows = data.shape[0]
             start = rows_so_far
 
             rows_so_far += rows
@@ -266,7 +266,7 @@ class ElementData:
              features of that type, and the dtype of the features.
         """
         return {
-            type_name: (type_features.shape[1], type_features.dtype)
+            type_name: (type_features.shape[1:], type_features.dtype)
             for type_name, type_features in self._features.items()
         }
 
