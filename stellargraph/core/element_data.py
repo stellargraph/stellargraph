@@ -438,17 +438,22 @@ class EdgeData(ElementData):
 
         def _to_directed_adj_list(arr, other_node_types):
             index = {}
+
+            # edge ilocs sorted in order of node iloc
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
+
             for other_node_type in np.unique(other_node_types):
 
-                # FIXME: need to sort like the argsort above before creating mask
-                mask = other_node_types == other_node_type
+                # filter node ilocs based on other node type
+                arr_filtered = arr[other_node_types == other_node_type]
 
-                arr_filtered = arr[mask]
-                flat_filtered = flat[mask]
+                # count how often each node iloc occurs to calculate splits
                 neigh_counts = np.bincount(arr_filtered, minlength=self.number_of_nodes)
                 splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
                 splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+
+                # filter edge ilocs based on other node type
+                flat_filtered = flat[other_node_types[flat] == other_node_type]
 
                 index[other_node_type] = FlatAdjacencyList(flat_filtered, splits)
 
@@ -466,18 +471,67 @@ class EdgeData(ElementData):
 
     def _create_undirected_adj_lists_by_other_node_type(self):
         # record the edge ilocs of incoming, outgoing and both-direction edges
-        undirected = {}
+        index = {}
         source_types = self.node_data.type_ilocs[self.sources]
         target_types = self.node_data.type_ilocs[self.targets]
 
-        for i, (src, tgt, src_type, tgt_type) in enumerate(
-            zip(self.sources, self.targets, source_types, target_types)
-        ):
-            undirected.setdefault(src_type, {}).setdefault(tgt, []).append(i)
-            if src != tgt:
-                undirected.setdefault(tgt_type, {}).setdefault(src, []).append(i)
+        num_edges = len(self.targets)
 
-        return {k: _numpyise(v, self.dtype) for k, v in undirected.items()}
+        # the dtype of the edge_ilocs
+        # the argsort results in integers in [0, 2 * num_edges),
+        # so the dtype potentially needs to be slightly larger
+        dtype = np.min_scalar_type(2 * len(self.sources))
+
+        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
+        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
+        self_loops = self.sources == self.targets
+        num_self_loops = self_loops.sum()
+
+        combined = np.concatenate([self.sources, self.targets])
+        # mask out duplicates of self loops
+        combined[num_edges:][self_loops] = sentinel
+
+        flat_array = np.argsort(combined).astype(dtype, copy=False)
+
+        # get targets without self loops inplace
+        # sentinels are sorted to the end
+        filtered_targets = combined[num_edges:]
+        filtered_targets_order = np.argsort(filtered_targets).astype(dtype, copy=False)
+        filtered_targets.sort()
+        filtered_source_types = source_types[filtered_targets_order]
+
+        # remove the sentinels if there are any (the full array will be retained
+        # forever; we're assume that there's self loops are a small fraction
+        # of the total number of edges)
+        if num_self_loops > 0:
+            flat_array = flat_array[:-num_self_loops]
+            filtered_targets = filtered_targets[:-num_self_loops]
+            filtered_source_types = filtered_source_types[:-num_self_loops]
+
+        other_node_types = np.concatenate([target_types, source_types])[flat_array]
+        flat_array %= num_edges
+
+        for other_node_type in np.unique(other_node_types):
+            # filter node ilocs based on other node type
+            sources_filtered = self.sources[target_types == other_node_type]
+            targets_filtered = filtered_targets[
+                filtered_source_types == other_node_type
+            ]
+
+            # count how often each node iloc occurs to calculate splits
+            neigh_counts = np.bincount(sources_filtered, minlength=self.number_of_nodes)
+            neigh_counts += np.bincount(
+                targets_filtered, minlength=self.number_of_nodes
+            )
+            splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
+            splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+
+            # filter edge ilocs based on other node type
+            flat_filtered = flat_array[other_node_types == other_node_type]
+
+            index[other_node_type] = FlatAdjacencyList(flat_filtered, splits)
+
+        return index
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
