@@ -304,7 +304,7 @@ class APPNP:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = As  # [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
