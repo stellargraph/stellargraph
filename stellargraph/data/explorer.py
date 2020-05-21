@@ -540,7 +540,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
         length = _default_if_none(length, self.length, "length")
         metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
         self._validate_walk_params(nodes, n, length)
-        self._check_metapath_values(metapaths)
+        metapaths_for_node_type = self._check_and_transform_metapaths(metapaths, length)
         rs = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
@@ -549,49 +549,28 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
         for node in nodes:
             # retrieve node type
-            label = self.graph.node_type(node, use_ilocs=True)
-            filtered_metapaths = [
-                metapath
-                for metapath in metapaths
-                if len(metapath) > 0 and metapath[0] == label
-            ]
+            node_type = self.graph.node_type(node, use_ilocs=True)
+            filtered_metapaths = metapaths_for_node_type[node_type]
 
             for metapath in filtered_metapaths:
-                # augment metapath to be length long
-                # if (
-                #     len(metapath) == 1
-                # ):  # special case for random walks like in a homogeneous graphs
-                #     metapath = metapath * length
-                # else:
-                metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
                 for _ in range(n):
-                    walk = (
-                        []
-                    )  # holds the walk data for this walk; first node is the starting node
+                    # holds the walk data for this walk; first node is the starting node
                     current_node = node
-                    for d in range(length):
-                        walk.append(current_node)
-                        # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
+                    walk = [current_node]
+                    for target_node_type in metapath:
                         neighbours = self.graph.neighbor_arrays(
-                            current_node, use_ilocs=True
+                            current_node,
+                            other_node_type=target_node_type,
+                            use_ilocs=True,
                         )
-                        # filter these by node type
-                        neighbour_types = self.graph.node_type(
-                            neighbours, use_ilocs=True
-                        )
-                        neighbours = [
-                            neigh
-                            for neigh, neigh_type in zip(neighbours, neighbour_types)
-                            if neigh_type == metapath[d]
-                        ]
 
+                        # if no neighbours of the required type as dictated by the metapath exist, then stop.
                         if len(neighbours) == 0:
-                            # if no neighbours of the required type as dictated by the metapath exist, then stop.
                             break
+
                         # select one of the neighbours uniformly at random
-                        current_node = rs.choice(
-                            neighbours
-                        )  # the next node in the walk
+                        current_node = rs.choice(neighbours)
+                        walk.append(current_node)
 
                     walks.append(
                         list(self.graph.node_ilocs_to_ids(walk))
@@ -599,7 +578,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
         return walks
 
-    def _check_metapath_values(self, metapaths):
+    def _check_and_transform_metapaths(self, metapaths, walk_length):
         """
         Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
         parameter (the first one encountered in the checks) with invalid value.
@@ -608,10 +587,19 @@ class UniformRandomMetaPathWalk(RandomWalk):
             metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
                 [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
                 schemas of length 3 and 5 respectively.
+            walk_length: length of metapath walk
         """
 
         def raise_error(msg):
             raise ValueError(f"metapaths: {msg}, found {metapaths}")
+
+        def extend_metapath(m):
+            return np.resize(m[1:], walk_length - 1)
+
+        def metapath_to_type_ilocs(m):
+            return self.graph._nodes.types.to_iloc(m)
+
+        metapaths_for_node_type = defaultdict(list)
 
         if type(metapaths) != list:
             raise_error("expected list of lists.")
@@ -628,6 +616,11 @@ class UniformRandomMetaPathWalk(RandomWalk):
                 raise_error(
                     "expected the first and last node type in a metapath to be the same"
                 )
+            metapaths_for_node_type[metapath[0]].append(
+                extend_metapath(metapath_to_type_ilocs(metapath))
+            )
+
+        return metapaths_for_node_type
 
 
 class SampledBreadthFirstWalk(GraphWalk):

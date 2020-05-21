@@ -1008,6 +1008,10 @@ def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
             return sg._edges._create_undirected_adj_lists()
         elif force_adj_lists == "undirected":
             return sg._edges._create_directed_adj_lists()
+        elif force_adj_lists == "directed_by_other_node_type":
+            return sg._edges._create_undirected_adj_lists_by_other_node_type()
+        elif force_adj_lists == "undirected_by_other_node_type":
+            return sg._edges._create_directed_adj_lists_by_other_node_type()
 
     benchmarker(f)
 
@@ -1016,14 +1020,30 @@ def _run_adj_list_benchmark(benchmarker, num_nodes, num_edges, force_adj_lists):
 @pytest.mark.parametrize(
     "num_nodes,num_edges", [(100, 200), (1000, 5000), (20000, 100000)]
 )
-@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+@pytest.mark.parametrize(
+    "force_adj_lists",
+    [
+        "directed",
+        "undirected",
+        "directed_by_other_node_type",
+        "undirected_by_other_node_type",
+    ],
+)
 def test_benchmark_adj_list(benchmark, num_nodes, num_edges, force_adj_lists):
     _run_adj_list_benchmark(benchmark, num_nodes, num_edges, force_adj_lists)
 
 
 @pytest.mark.benchmark(group="StellarGraph adjacency lists (size)", timer=snapshot)
 @pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
-@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+@pytest.mark.parametrize(
+    "force_adj_lists",
+    [
+        "directed",
+        "undirected",
+        "directed_by_other_node_type",
+        "undirected_by_other_node_type",
+    ],
+)
 def test_allocation_benchmark_adj_list(
     allocation_benchmark, num_nodes, num_edges, force_adj_lists
 ):
@@ -1032,7 +1052,15 @@ def test_allocation_benchmark_adj_list(
 
 @pytest.mark.benchmark(group="StellarGraph adjacency lists (peak)", timer=peak)
 @pytest.mark.parametrize("num_nodes,num_edges", [(100, 200), (1000, 5000)])
-@pytest.mark.parametrize("force_adj_lists", ["directed", "undirected"])
+@pytest.mark.parametrize(
+    "force_adj_lists",
+    [
+        "directed",
+        "undirected",
+        "directed_by_other_node_type",
+        "undirected_by_other_node_type",
+    ],
+)
 def test_allocation_benchmark_adj_list_peak(
     allocation_benchmark, num_nodes, num_edges, force_adj_lists
 ):
@@ -1046,10 +1074,14 @@ def example_weighted_hin(is_directed=True):
         nodes={"B": pd.DataFrame(index=[2, 3]), "A": pd.DataFrame(index=[0, 1])},
         edges={
             "AA": pd.DataFrame(
-                [(0, 1, 0.0), (0, 1, 1.0)], columns=edge_cols, index=[0, 1]
+                [(0, 1, 0.0), (0, 1, 1.0), (1, 0, 2.0)],
+                columns=edge_cols,
+                index=[0, 1, 2],
             ),
             "AB": pd.DataFrame(
-                [(1, 2, 10.0), (1, 3, 10.0)], columns=edge_cols, index=[2, 3]
+                [(1, 2, 10.0), (1, 3, 10.0), (3, 1, 20.0)],
+                columns=edge_cols,
+                index=[3, 4, 5],
             ),
         },
     )
@@ -1076,9 +1108,9 @@ def test_neighbors_weighted_hin(is_directed, use_ilocs):
 
     node = graph.node_ids_to_ilocs([1])[0] if use_ilocs else 1
     expected_nodes = (
-        graph.node_ids_to_ilocs([0, 0, 2, 3]) if use_ilocs else [0, 0, 2, 3]
+        graph.node_ids_to_ilocs([0, 0, 0, 2, 3, 3]) if use_ilocs else [0, 0, 0, 2, 3, 3]
     )
-    expected_weights = [0.0, 1.0, 10.0, 10.0]
+    expected_weights = [0.0, 1.0, 2.0, 10.0, 10.0, 20.0]
 
     assert_items_equal(graph.neighbors(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
@@ -1087,8 +1119,8 @@ def test_neighbors_weighted_hin(is_directed, use_ilocs):
     )
 
     edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AB"])
-    expected_nodes = graph.node_ids_to_ilocs([2, 3]) if use_ilocs else [2, 3]
-    expected_weights = [10.0, 10.0]
+    expected_nodes = graph.node_ids_to_ilocs([2, 3, 3]) if use_ilocs else [2, 3, 3]
+    expected_weights = [10.0, 10.0, 20.0]
     assert_items_equal(
         graph.neighbors(
             node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
@@ -1143,8 +1175,8 @@ def test_undirected_hin_neighbor_methods(use_ilocs):
 def test_in_nodes_weighted_hin(use_ilocs):
     graph = example_weighted_hin()
     node = graph.node_ids_to_ilocs([1])[0] if use_ilocs else 1
-    expected_nodes = graph.node_ids_to_ilocs([0, 0]) if use_ilocs else [0, 0]
-    expected_weighted = zip(expected_nodes, [0.0, 1.0])
+    expected_nodes = graph.node_ids_to_ilocs([0, 0, 3]) if use_ilocs else [0, 0, 3]
+    expected_weighted = zip(expected_nodes, [0.0, 1.0, 20.0])
     edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AB"])
 
     assert_items_equal(graph.in_nodes(node, use_ilocs=use_ilocs), expected_nodes)
@@ -1156,7 +1188,7 @@ def test_in_nodes_weighted_hin(use_ilocs):
         graph.in_nodes(
             node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
         ),
-        [],
+        [(3, 20.0)],
     )
 
 
@@ -1180,12 +1212,37 @@ def test_in_nodes_unweighted_hom(use_ilocs):
     )
 
 
+@pytest.mark.parametrize(
+    "other_node_type,expected", [("A", [0, 0, 0]), ("B", [2, 3, 3]), ("X", [])]
+)
+def test_neighbors_other_node_type(other_node_type, expected):
+    graph = example_weighted_hin()
+    assert_items_equal(graph.neighbors(1, other_node_type=other_node_type), expected)
+
+
+@pytest.mark.parametrize(
+    "other_node_type,expected", [("A", [0, 0]), ("B", [3]), ("X", [])]
+)
+def test_in_nodes_other_node_type(other_node_type, expected):
+    graph = example_weighted_hin()
+    assert_items_equal(graph.in_nodes(1, other_node_type=other_node_type), expected)
+
+
+@pytest.mark.parametrize(
+    "other_node_type,expected", [("A", [0]), ("B", [2, 3]), ("X", [])]
+)
+def test_out_nodes_other_node_type(other_node_type, expected):
+    graph = example_weighted_hin()
+    assert_items_equal(graph.out_nodes(1, other_node_type=other_node_type), expected)
+
+
 @pytest.mark.parametrize("use_ilocs", [True, False])
 def test_out_nodes_weighted_hin(use_ilocs):
     graph = example_weighted_hin()
     node = graph.node_ids_to_ilocs([1])[0] if use_ilocs else 1
-    expected_nodes = graph.node_ids_to_ilocs([2, 3]) if use_ilocs else [2, 3]
-    expected_weighted = zip(expected_nodes, [10.0, 10.0])
+    expected_nodes = graph.node_ids_to_ilocs([0, 2, 3]) if use_ilocs else [0, 2, 3]
+    expected_weighted = zip(expected_nodes, [2.0, 10.0, 10.0])
+    edge_types = _edge_types_or_ilocs(graph, use_ilocs, ["AA"])
 
     assert_items_equal(graph.out_nodes(node, use_ilocs=use_ilocs), expected_nodes)
     assert_items_equal(
@@ -1194,9 +1251,9 @@ def test_out_nodes_weighted_hin(use_ilocs):
     )
     assert_items_equal(
         graph.out_nodes(
-            node, include_edge_weight=True, edge_types=[10], use_ilocs=use_ilocs
+            node, include_edge_weight=True, edge_types=edge_types, use_ilocs=use_ilocs
         ),
-        [],
+        [(0, 2.0)],
     )
 
 

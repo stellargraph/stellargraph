@@ -333,7 +333,7 @@ def convert_edges(
         )
 
     return EdgeData(
-        ids, columns[SOURCE], columns[TARGET], weight_col, type_starts, len(nodes)
+        ids, columns[SOURCE], columns[TARGET], weight_col, type_starts, nodes
     )
 
 

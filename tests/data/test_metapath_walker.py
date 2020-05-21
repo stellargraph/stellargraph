@@ -316,12 +316,17 @@ class TestMetaPathWalk(object):
         assert len(run_1) == len(run_2)
         assert all(np.array_equal(w1, w2) for w1, w2 in zip(run_1, run_2))
 
-    def test_benchmark_uniformrandommetapathwalk(self, benchmark):
-        g = example_graph_random(n_nodes=50, n_edges=500, node_types=2)
+    @pytest.mark.parametrize("n_edges", [500, 1000, 2000])
+    @pytest.mark.parametrize("node_types", [2, 3, 4])
+    @pytest.mark.parametrize("n_head_nodes", [10, 50])
+    def test_benchmark_uniformrandommetapathwalk(
+        self, benchmark, n_edges, node_types, n_head_nodes
+    ):
+        g = example_graph_random(n_nodes=50, n_edges=n_edges, node_types=node_types)
         mrw = UniformRandomMetaPathWalk(g)
 
         # this should be made larger to be more realistic, when it is fast enough
-        nodes = np.arange(0, 5)
+        nodes = np.arange(0, n_head_nodes)
         n = 5
         length = 5
         metapaths = [

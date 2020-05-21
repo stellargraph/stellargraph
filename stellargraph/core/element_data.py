@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sps
 
-from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
+from ..globalvar import SOURCE, TARGET, WEIGHT
 from .validation import require_dataframe_has_columns, comma_sep
 
 
@@ -307,6 +307,15 @@ class FlatAdjacencyList:
             yield (idx, self[idx])
 
 
+def _get_splits(node_ilocs_list, number_of_nodes, dtype):
+    neigh_counts = sum(
+        np.bincount(ilocs, minlength=number_of_nodes) for ilocs in node_ilocs_list
+    )
+    splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
+    splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
+    return splits
+
+
 class EdgeData(ElementData):
     """
     Args:
@@ -316,9 +325,10 @@ class EdgeData(ElementData):
         weight (numpy.ndarray): the weight of each edge
         type_starts (list of tuple of type name, int): the starting iloc of the edges of each type within ``shared``
         number_of_nodes (int): the total number of nodes in the graph
+        node_data (NodeData): node data containing node types and IDs
     """
 
-    def __init__(self, ids, sources, targets, weights, type_starts, number_of_nodes):
+    def __init__(self, ids, sources, targets, weights, type_starts, node_data):
         super().__init__(ids, type_starts)
 
         for name, column in {
@@ -344,16 +354,43 @@ class EdgeData(ElementData):
         self.sources = sources
         self.targets = targets
         self.weights = weights
-        self.number_of_nodes = number_of_nodes
+
+        self.number_of_nodes = len(node_data)
+        self.node_data = node_data
+
+        self.dtype = np.min_scalar_type(len(self.sources))
 
         # These are lazily initialized, to only pay the (construction) time and memory cost when
         # actually using them
         self._edges_dict = self._edges_in_dict = self._edges_out_dict = None
+        self._edges_dict_by_other_node_type = None
+        self._edges_in_dict_by_other_node_type = None
+        self._edges_out_dict_by_other_node_type = None
 
         # when there's no neighbors for something, an empty array should be returned; this uses a
         # tiny dtype to minimise unnecessary type promotion (e.g. if this is used with an int32
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
+
+    def _combine_sources_and_targets(self):
+        """
+        Get the combined array of sources and targets. Self-loops are masked out with a sentinel
+
+        Returns:
+            A tuple of (combined, num_self_loops)
+        """
+        num_edges = len(self.targets)
+
+        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
+        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
+        self_loops = self.sources == self.targets
+        num_self_loops = self_loops.sum()
+
+        combined = np.concatenate([self.sources, self.targets])
+        # mask out duplicates of self loops
+        combined[num_edges:][self_loops] = sentinel
+
+        return combined, num_self_loops
 
     def _init_directed_adj_lists(self):
         self._edges_in_dict, self._edges_out_dict = self._create_directed_adj_lists()
@@ -362,9 +399,7 @@ class EdgeData(ElementData):
         # record the edge ilocs of incoming and outgoing edges
 
         def _to_dir_adj_list(arr):
-            neigh_counts = np.bincount(arr, minlength=self.number_of_nodes)
-            splits = np.zeros(len(neigh_counts) + 1, dtype=self._id_index.dtype)
-            splits[1:] = np.cumsum(neigh_counts, dtype=self._id_index.dtype)
+            splits = _get_splits([arr], self.number_of_nodes, self._id_index.dtype)
             flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
             return FlatAdjacencyList(flat, splits)
 
@@ -382,14 +417,7 @@ class EdgeData(ElementData):
         # so the dtype potentially needs to be slightly larger
         dtype = np.min_scalar_type(2 * len(self.sources))
 
-        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
-        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
-        self_loops = self.sources == self.targets
-        num_self_loops = self_loops.sum()
-
-        combined = np.concatenate([self.sources, self.targets])
-        # mask out duplicates of self loops
-        combined[num_edges:][self_loops] = sentinel
+        combined, num_self_loops = self._combine_sources_and_targets()
 
         flat_array = np.argsort(combined).astype(dtype, copy=False)
 
@@ -406,12 +434,109 @@ class EdgeData(ElementData):
             filtered_targets = filtered_targets[:-num_self_loops]
 
         flat_array %= num_edges
-        neigh_counts = np.bincount(self.sources, minlength=self.number_of_nodes)
-        neigh_counts += np.bincount(filtered_targets, minlength=self.number_of_nodes)
-        splits = np.zeros(len(neigh_counts) + 1, dtype=dtype)
-        splits[1:] = np.cumsum(neigh_counts, dtype=dtype)
+        splits = _get_splits(
+            [self.sources, filtered_targets], self.number_of_nodes, dtype
+        )
 
         return FlatAdjacencyList(flat_array, splits)
+
+    def _init_directed_adj_lists_by_other_node_type(self):
+        (
+            self._edges_in_dict_by_other_node_type,
+            self._edges_out_dict_by_other_node_type,
+        ) = self._create_directed_adj_lists_by_other_node_type()
+
+    def _create_directed_adj_lists_by_other_node_type(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        source_types = self.node_data.type_ilocs[self.sources]
+        target_types = self.node_data.type_ilocs[self.targets]
+
+        def _to_directed_adj_list(arr, other_node_types):
+            index = {}
+
+            # edge ilocs sorted in order of node iloc
+            flat = np.argsort(arr).astype(self._id_index.dtype, copy=False)
+
+            for other_node_type in np.unique(other_node_types):
+
+                # filter node ilocs based on other node type
+                arr_filtered = arr[other_node_types == other_node_type]
+                splits = _get_splits(
+                    [arr_filtered], self.number_of_nodes, self._id_index.dtype
+                )
+
+                # filter edge ilocs based on other node type
+                flat_filtered = flat[other_node_types[flat] == other_node_type]
+
+                index[other_node_type] = FlatAdjacencyList(flat_filtered, splits)
+
+            return index
+
+        return (
+            _to_directed_adj_list(self.targets, source_types),
+            _to_directed_adj_list(self.sources, target_types),
+        )
+
+    def _init_undirected_adj_lists_by_other_node_type(self):
+        self._edges_dict_by_other_node_type = (
+            self._create_undirected_adj_lists_by_other_node_type()
+        )
+
+    def _create_undirected_adj_lists_by_other_node_type(self):
+        # record the edge ilocs of incoming, outgoing and both-direction edges
+        index = {}
+        source_types = self.node_data.type_ilocs[self.sources]
+        target_types = self.node_data.type_ilocs[self.targets]
+
+        num_edges = len(self.targets)
+
+        # the dtype of the edge_ilocs
+        # the argsort results in integers in [0, 2 * num_edges),
+        # so the dtype potentially needs to be slightly larger
+        dtype = np.min_scalar_type(2 * len(self.sources))
+
+        combined, num_self_loops = self._combine_sources_and_targets()
+
+        flat_array = np.argsort(combined).astype(dtype, copy=False)
+
+        # get targets without self loops inplace
+        # sentinels are sorted to the end
+        filtered_targets = combined[num_edges:]
+        targets_sort_order = np.argsort(filtered_targets).astype(dtype, copy=False)
+        filtered_targets = filtered_targets[targets_sort_order]
+        filtered_source_types = source_types[targets_sort_order]
+
+        # remove the sentinels if there are any (the full array will be retained
+        # forever; we're assume that there's self loops are a small fraction
+        # of the total number of edges)
+        if num_self_loops > 0:
+            flat_array = flat_array[:-num_self_loops]
+            filtered_targets = filtered_targets[:-num_self_loops]
+            filtered_source_types = filtered_source_types[:-num_self_loops]
+
+        other_node_types = np.concatenate([target_types, source_types])[flat_array]
+        flat_array %= num_edges
+
+        for other_node_type in np.unique(other_node_types):
+            # filter node ilocs based on other node type
+            sources_with_other_node_type = self.sources[target_types == other_node_type]
+            targets_with_other_node_type = filtered_targets[
+                filtered_source_types == other_node_type
+            ]
+
+            # count how often each node iloc occurs to calculate splits
+            splits = _get_splits(
+                [sources_with_other_node_type, targets_with_other_node_type],
+                self.number_of_nodes,
+                dtype,
+            )
+
+            # filter edge ilocs based on other node type
+            flat_filtered = flat_array[other_node_types == other_node_type]
+
+            index[other_node_type] = FlatAdjacencyList(flat_filtered, splits)
+
+        return index
 
     def _adj_lookup(self, *, ins, outs):
         if ins and outs:
@@ -426,6 +551,24 @@ class EdgeData(ElementData):
             if self._edges_out_dict is None:
                 self._init_directed_adj_lists()
             return self._edges_out_dict
+
+        raise ValueError(
+            "expected at least one of 'ins' or 'outs' to be True, found neither"
+        )
+
+    def _adj_lookup_by_other_node_type(self, *, ins, outs):
+        if ins and outs:
+            if self._edges_dict_by_other_node_type is None:
+                self._init_undirected_adj_lists_by_other_node_type()
+            return self._edges_dict_by_other_node_type
+        if ins:
+            if self._edges_in_dict_by_other_node_type is None:
+                self._init_directed_adj_lists_by_other_node_type()
+            return self._edges_in_dict_by_other_node_type
+        if outs:
+            if self._edges_out_dict_by_other_node_type is None:
+                self._init_directed_adj_lists_by_other_node_type()
+            return self._edges_out_dict_by_other_node_type
 
         raise ValueError(
             "expected at least one of 'ins' or 'outs' to be True, found neither"
@@ -446,16 +589,23 @@ class EdgeData(ElementData):
         adj = self._adj_lookup(ins=ins, outs=outs)
         return defaultdict(int, ((key, len(value)) for key, value in adj.items()))
 
-    def edge_ilocs(self, node_id, *, ins, outs) -> np.ndarray:
+    def edge_ilocs(
+        self, node_iloc, *, ins, outs, other_node_type_iloc=None
+    ) -> np.ndarray:
         """
-        Return the integer locations of the edges for the given node_id
+        Return the integer locations of the edges for the given node iloc
 
         Args:
-            node_id: the ID of the node
+            node_iloc: the iloc of the node
 
 
         Returns:
-            The integer locations of the edges for the given node_id.
+            The integer locations of the edges for the given node iloc.
         """
 
-        return self._adj_lookup(ins=ins, outs=outs)[node_id]
+        if other_node_type_iloc is not None:
+            return self._adj_lookup_by_other_node_type(ins=ins, outs=outs).get(
+                other_node_type_iloc, defaultdict(list)
+            )[node_iloc]
+        else:
+            return self._adj_lookup(ins=ins, outs=outs)[node_iloc]
