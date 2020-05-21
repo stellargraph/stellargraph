@@ -372,6 +372,26 @@ class EdgeData(ElementData):
         # array, the result will still be int32).
         self._empty_ilocs = np.array([], dtype=np.uint8)
 
+    def _combine_sources_and_targets(self):
+        """
+        Get the combined array of sources and targets. Self-loops are masked out with a sentinel
+
+        Returns:
+            A tuple of (combined, num_self_loops)
+        """
+        num_edges = len(self.targets)
+
+        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
+        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
+        self_loops = self.sources == self.targets
+        num_self_loops = self_loops.sum()
+
+        combined = np.concatenate([self.sources, self.targets])
+        # mask out duplicates of self loops
+        combined[num_edges:][self_loops] = sentinel
+
+        return combined, num_self_loops
+
     def _init_directed_adj_lists(self):
         self._edges_in_dict, self._edges_out_dict = self._create_directed_adj_lists()
 
@@ -397,14 +417,7 @@ class EdgeData(ElementData):
         # so the dtype potentially needs to be slightly larger
         dtype = np.min_scalar_type(2 * len(self.sources))
 
-        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
-        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
-        self_loops = self.sources == self.targets
-        num_self_loops = self_loops.sum()
-
-        combined = np.concatenate([self.sources, self.targets])
-        # mask out duplicates of self loops
-        combined[num_edges:][self_loops] = sentinel
+        combined, num_self_loops = self._combine_sources_and_targets()
 
         flat_array = np.argsort(combined).astype(dtype, copy=False)
 
@@ -482,23 +495,18 @@ class EdgeData(ElementData):
         # so the dtype potentially needs to be slightly larger
         dtype = np.min_scalar_type(2 * len(self.sources))
 
-        # sentinel masks out node_ilocs so must be the same type as node_ilocs node edge_ilocs
-        sentinel = np.cast[np.min_scalar_type(self.number_of_nodes)](-1)
-        self_loops = self.sources == self.targets
-        num_self_loops = self_loops.sum()
-
-        combined = np.concatenate([self.sources, self.targets])
-        # mask out duplicates of self loops
-        combined[num_edges:][self_loops] = sentinel
+        combined, num_self_loops = self._combine_sources_and_targets()
 
         flat_array = np.argsort(combined).astype(dtype, copy=False)
 
         # get targets without self loops inplace
         # sentinels are sorted to the end
         filtered_targets = combined[num_edges:]
-        filtered_targets_order = np.argsort(filtered_targets).astype(dtype, copy=False)
-        filtered_targets.sort()
-        filtered_source_types = source_types[filtered_targets_order]
+        filtered_targets_sort_order = np.argsort(filtered_targets).astype(
+            dtype, copy=False
+        )
+        filtered_targets = filtered_targets[filtered_targets_sort_order]
+        filtered_source_types = source_types[filtered_targets_sort_order]
 
         # remove the sentinels if there are any (the full array will be retained
         # forever; we're assume that there's self loops are a small fraction
