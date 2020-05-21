@@ -502,11 +502,9 @@ class EdgeData(ElementData):
         # get targets without self loops inplace
         # sentinels are sorted to the end
         filtered_targets = combined[num_edges:]
-        filtered_targets_sort_order = np.argsort(filtered_targets).astype(
-            dtype, copy=False
-        )
-        filtered_targets = filtered_targets[filtered_targets_sort_order]
-        filtered_source_types = source_types[filtered_targets_sort_order]
+        targets_sort_order = np.argsort(filtered_targets).astype(dtype, copy=False)
+        filtered_targets = filtered_targets[targets_sort_order]
+        filtered_source_types = source_types[targets_sort_order]
 
         # remove the sentinels if there are any (the full array will be retained
         # forever; we're assume that there's self loops are a small fraction
@@ -521,14 +519,16 @@ class EdgeData(ElementData):
 
         for other_node_type in np.unique(other_node_types):
             # filter node ilocs based on other node type
-            sources_filtered = self.sources[target_types == other_node_type]
-            targets_filtered = filtered_targets[
+            sources_with_other_node_type = self.sources[target_types == other_node_type]
+            targets_with_other_node_type = filtered_targets[
                 filtered_source_types == other_node_type
             ]
 
             # count how often each node iloc occurs to calculate splits
             splits = _get_splits(
-                [sources_filtered, targets_filtered], self.number_of_nodes, dtype,
+                [sources_with_other_node_type, targets_with_other_node_type],
+                self.number_of_nodes,
+                dtype,
             )
 
             # filter edge ilocs based on other node type
