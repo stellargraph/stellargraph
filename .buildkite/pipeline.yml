@@ -109,7 +109,7 @@ steps:
         <<: *compose-config
         run: runner-3_8
     agents:
-      queue: "t2medium"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
 
   - label: ":python::book: test notebooks %n"
     <<: *timeout
