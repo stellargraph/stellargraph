@@ -19,9 +19,11 @@ pip install -r requirements.txt
 echo "--- listing dependency versions"
 pip freeze
 
-echo "+++ building docs"
 exit_code=0
+echo "+++ building docs"
 make html SPHINXOPTS="$opts" || exit_code="$?"
+
+echo "+++ checking spelling"
 make spelling SPHINXOPTS="$opts" || exit_code="$?"
 
 if [ "$exit_code" -ne 0 ]; then
