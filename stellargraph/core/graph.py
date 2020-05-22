@@ -1394,11 +1394,11 @@ class StellarGraph:
         def str_feature(feature_info, ty):
             feature_shape, feature_dtype = feature_info[ty]
             if len(feature_shape) > 1:
-                feature_text = f"{feature_dtype.name} tensor, shape {feature_shape}"
+                return f"{feature_dtype.name} tensor, shape {feature_shape}"
             elif feature_shape[0] == 0:
-                feature_text = "none"
+                return "none"
             else:
-                feature_text = f"{feature_dtype.name} vector, length {feature_shape[0]}"
+                return f"{feature_dtype.name} vector, length {feature_shape[0]}"
 
         def str_node_type(count, nt):
             feature_text = str_feature(node_feature_info, nt)
