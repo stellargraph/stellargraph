@@ -91,7 +91,7 @@ def example_graph(
     nodes = [1, 2, 3, 4]
     node_features = repeated_features(nodes, feature_size)
 
-    nodes = IndexedArray(features, index=nodes)
+    nodes = IndexedArray(node_features, index=nodes)
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={node_label: nodes}, edges={edge_label: elist})
