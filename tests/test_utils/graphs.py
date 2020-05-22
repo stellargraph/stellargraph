@@ -81,12 +81,17 @@ def example_graph(
     edge_label="default",
     feature_name="feature",
     is_directed=False,
+    edge_feature_size=None,
 ):
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
-    nodes = [1, 2, 3, 4]
-    features = repeated_features(nodes, feature_size)
+    if edge_feature_size is not None:
+        edge_features = repeated_features(-elist.index, edge_feature_size)
+        elist = elist.join(pd.DataFrame(edge_features))
 
-    nodes = IndexedArray(features, index=nodes)
+    nodes = [1, 2, 3, 4]
+    node_features = repeated_features(nodes, feature_size)
+
+    nodes = IndexedArray(node_features, index=nodes)
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={node_label: nodes}, edges={edge_label: elist})
@@ -115,7 +120,11 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None, is_directed=False, self_loop=False, reverse_order=False
+    feature_sizes=None,
+    is_directed=False,
+    self_loop=False,
+    reverse_order=False,
+    edge_features=False,
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
@@ -150,6 +159,10 @@ def example_hin_1(
         f_edges[i] = src_tgt + (10 + i,)
 
     f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
+
+    if edge_features:
+        r = r.join(pd.DataFrame(-features("R", r.index), index=r.index))
+        f = f.join(pd.DataFrame(-features("F", f.index), index=f.index))
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
