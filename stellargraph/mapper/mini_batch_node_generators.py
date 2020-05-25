@@ -29,6 +29,7 @@ from tensorflow.keras.utils import Sequence
 from scipy import sparse
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable, normalize_adj
+from ..connector.neo4j.graph import Neo4jStellarGraph
 from .base import Generator
 
 
@@ -62,7 +63,7 @@ class ClusterNodeGenerator(Generator):
 
     def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
 
-        if not isinstance(G, StellarGraph):
+        if not isinstance(G, (StellarGraph, Neo4jStellarGraph)):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
@@ -144,7 +145,7 @@ class ClusterNodeGenerator(Generator):
             print(f"{i} cluster has size {len(c)}")
 
         # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        self.features = G.node_features(self.node_list[:1])
 
     def num_batch_dims(self):
         return 2

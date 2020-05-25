@@ -138,6 +138,14 @@ class Neo4jStellarGraph:
     def is_directed(self):
         return self._is_directed
 
+    def check_graph_for_ml(self):
+        # TODO: implement this
+        return True
+
+    def unique_node_type(self, error_message=None):
+        # TODO: implement this
+        pass
+
 
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):

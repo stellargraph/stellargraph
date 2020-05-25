@@ -17,7 +17,6 @@
 __all__ = [
     "Neo4JGraphSAGENodeGenerator",
     "Neo4JDirectedGraphSAGENodeGenerator",
-    "Neo4jClusterNodeGenerator",
 ]
 
 import warnings
@@ -33,7 +32,6 @@ from .sampler import (
 from ...core.graph import StellarGraph, GraphSchema
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
-from ...mapper.mini_batch_node_generators import ClusterNodeGenerator
 from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph
 
@@ -293,109 +291,3 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             )
 
         return features
-
-
-@experimental(reason="the class is not tested", issues=[1578])
-class Neo4jClusterNodeGenerator(ClusterNodeGenerator):
-    """
-    A data generator that reads graph clusters from a Neo4j database for use with ClusterGCN.
-
-    The supplied graph should be a Neo4jStellarGraph object with node features.
-    Use the :meth:`flow` method supplying the nodes and (optionally) targets
-    to get an object that can be used as a Keras data generator.
-
-    This generator will supply the features array and the adjacency matrix to a
-    mini-batch Keras graph ML model.
-
-    [1] `W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, C. Hsieh, 2019 <https://arxiv.org/abs/1905.07953>`_.
-
-    For more information, please see `the Neo4j ClusterGCN demo <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`.
-
-    Args:
-        graph (Neo4jStellarGraph): The graph to feed into Neo4jStellarGraph
-        clusters (int or list, optional): If int, it indicates the number of clusters (default is 1, corresponding to the entire graph).
-            If `clusters` is greater than 1, then nodes are randomly assigned to a cluster.
-            If list, then it should be a list of lists of node IDs, such that each list corresponds to a cluster of nodes
-            in `G`. The clusters should be non-overlapping.
-        q (int, optional): The number of clusters to combine for each mini-batch (default is 1).
-            The total number of clusters must be divisible by `q`.
-        lam (float, optional): The mixture coefficient for adjacency matrix normalisation (default is 0.1).
-            Valid values are in the interval [0, 1].
-        name (str, optional): Name for the node generator.
-    """
-
-    def __init__(self, graph, clusters=1, q=1, lam=0.1, name=None):
-
-        if not isinstance(graph, Neo4jStellarGraph):
-            raise TypeError(
-                f"graph: expected Neo4jStellarGraph found {str(type(graph))}."
-            )
-
-        if isinstance(clusters, list):
-            self.k = len(clusters)
-        elif isinstance(clusters, int):
-            if clusters <= 0:
-                raise ValueError(
-                    "{}: clusters must be greater than 0.".format(type(self).__name__)
-                )
-            self.k = clusters
-        else:
-            raise TypeError(
-                "{}: clusters must be either int or list type.".format(
-                    type(self).__name__
-                )
-            )
-
-        if not isinstance(lam, float):
-            raise TypeError("{}: lam must be a float type.".format(type(self).__name__))
-
-        if lam < 0 or lam > 1:
-            raise ValueError(
-                "{}: lam must be in the range [0, 1].".format(type(self).__name__)
-            )
-
-        if not isinstance(q, int):
-            raise TypeError("{}: q must be integer type.".format(type(self).__name__))
-
-        if q <= 0:
-            raise ValueError(
-                "{}: q must be greater than 0.".format(type(self).__name__)
-            )
-
-        if self.k % q != 0:
-            raise ValueError(
-                "{}: the number of clusters must be exactly divisible by q.".format(
-                    type(self).__name__
-                )
-            )
-
-        self.node_list = list(graph.nodes())
-
-        if isinstance(clusters, int):
-            # We are not given graph clusters.
-            # We are going to split the graph into self.k random clusters
-            all_nodes = self.node_list.copy()
-            random.shuffle(all_nodes)
-            cluster_size = len(all_nodes) // self.k
-            self.clusters = [
-                all_nodes[i : i + cluster_size]
-                for i in range(0, len(all_nodes), cluster_size)
-            ]
-            if len(self.clusters) > self.k:
-                # for the case that the number of nodes is not exactly divisible by k, we combine
-                # the last cluster with the second last one
-                self.clusters[-2].extend(self.clusters[-1])
-                del self.clusters[-1]
-        else:
-            self.clusters = clusters
-
-        print(f"Number of clusters {self.k}")
-        for i, c in enumerate(self.clusters):
-            print(f"{i} cluster has size {len(c)}")
-
-        self.graph = graph
-        self.name = name
-        self.q = q  # The number of clusters to sample per mini-batch
-        self.lam = lam
-        # store features of one node to feed ClusterGCN the feature shape
-        self.features = self.graph.node_features(self.node_list[0])
