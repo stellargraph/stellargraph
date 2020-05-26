@@ -82,8 +82,8 @@ class Neo4jStellarGraph:
     def _node_features_from_db(self, node_ids):
         # nones should be filled with zeros in the feature matrix
         if not isinstance(node_ids, np.ndarray):
-            node_id_array = np.array(node_ids)
-        valid = node_id_array != None
+            node_ids = np.array(node_ids)
+        valid = node_ids != None
         features = np.zeros((len(node_ids), self.node_feature_sizes()[self._node_type]))
 
         # fill valid locs with features
@@ -93,7 +93,7 @@ class Neo4jStellarGraph:
             RETURN node.features as features
             """
         result = self.graph_db.run(
-            feature_query, parameters={"node_id_list": node_ids},
+            feature_query, parameters={"node_id_list": list(node_ids[valid])},
         )
         features[valid, :] = np.array([row["features"] for row in result.data()])
 
