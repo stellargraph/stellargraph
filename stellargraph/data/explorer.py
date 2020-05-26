@@ -396,7 +396,8 @@ class BiasedRandomWalk(RandomWalk):
         if weighted:
             self._check_weights_valid()
 
-        cast_func = np.cast[self.graph._edges.weights.dtype]
+        weight_dtype = self.graph._edges.weights.dtype
+        cast_func = np.cast[weight_dtype]
         ip = cast_func(1.0 / p)
         iq = cast_func(1.0 / q)
 
@@ -419,10 +420,15 @@ class BiasedRandomWalk(RandomWalk):
                 for _ in range(length - 1):
                     # select one of the neighbours using the
                     # appropriate transition probabilities
-                    neighbours, weights = self.graph.neighbor_arrays(
-                        current_node, include_edge_weight=True, use_ilocs=True
-                    )
-
+                    if weighted:
+                        neighbours, weights = self.graph.neighbor_arrays(
+                            current_node, include_edge_weight=True, use_ilocs=True
+                        )
+                    else:
+                        neighbours = self.graph.neighbor_arrays(
+                            current_node, use_ilocs=True
+                        )
+                        weights = np.ones(neighbours.shape, dtype=weight_dtype)
                     if len(neighbours) == 0:
                         break
 
