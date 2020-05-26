@@ -414,28 +414,6 @@ class BiasedRandomWalk(RandomWalk):
         if weighted:
             self._check_weights_valid()
 
-            # calculate the appropriate unnormalised transition probability, given the history of
-            # the walk
-            def transition_probability(nn):
-                nn, weight = nn
-
-                if nn == previous_node:  # d_tx = 0
-                    return ip * weight
-                elif any(nn == pn for pn, _ in previous_node_neighbours):  # d_tx = 1
-                    return weight
-                else:  # d_tx = 2
-                    return iq * weight
-
-        else:
-            # without weights
-            def transition_probability(nn):
-                if nn == previous_node:  ## d_tx = 0
-                    return ip
-                elif nn in previous_node_neighbours:  # d_tx = 1
-                    return 1.0
-                else:  # d_tx = 2
-                    return iq
-
         ip = 1.0 / p
         iq = 1.0 / q
 
@@ -460,15 +438,17 @@ class BiasedRandomWalk(RandomWalk):
 
                     # select one of the neighbours using the
                     # appropriate transition probabilities
-                    choice = naive_weighted_choices(
-                        rs, (transition_probability(nn) for nn in neighbours),
-                    )
+                    neighbours, weights = self.graph.neighbor_arrays(current_node, include_edge_weight=True)
+                    mask = (neighbours == previous_node)
+                    weights[mask] *= ip
+                    mask |= (np.isin(neighbours, previous_node_neighbours))
+                    weights[~mask] *= iq
 
+                    choice = naive_weighted_choices(rs, weights)
                     previous_node = current_node
                     previous_node_neighbours = neighbours
                     current_node = neighbours[choice]
-                    if weighted:
-                        current_node = current_node.node
+                    current_node = neighbours[choice]
 
                     walk.append(current_node)
 
