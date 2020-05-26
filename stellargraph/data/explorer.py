@@ -303,26 +303,8 @@ def naive_weighted_choices(rs, weights):
     requires a lot of preprocessing (normalized probabilties), and
     does a lot of conversions/checks/preprocessing internally.
     """
-
-    # divide the interval [0, sum(weights)) into len(weights)
-    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
-    # weights[i]
-    subinterval_ends = []
-    running_total = 0
-    for w in weights:
-        if w < 0:
-            raise ValueError("Detected negative weight: {}".format(w))
-        running_total += w
-        subinterval_ends.append(running_total)
-
-    # pick a place in the overall interval
-    x = rs.random() * running_total
-
-    # find the subinterval that contains the place, by looking for the
-    # first subinterval where the end is (strictly) after it
-    for idx, end in enumerate(subinterval_ends):
-        if x < end:
-            break
+    probs = np.cumsum(weights) / weights.sum()
+    idx = np.searchsorted(probs, rs.random(), side="right")
 
     return idx
 
@@ -449,8 +431,7 @@ class BiasedRandomWalk(RandomWalk):
                     mask |= np.isin(neighbours, previous_node_neighbours)
                     weights[~mask] *= iq
 
-                    probs = np.cumsum(weights) / weights.sum()
-                    choice = np.where(probs > rs.random())[0][0]
+                    choice = naive_weighted_choices(rs, weights)
 
                     previous_node = current_node
                     previous_node_neighbours = neighbours
