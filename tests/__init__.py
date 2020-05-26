@@ -17,4 +17,4 @@
 import os
 
 
-force_gpu = os.environ.get("STELLARGRAPH_MUST_USE_GPU") == "1"
+require_gpu = os.environ.get("STELLARGRAPH_MUST_USE_GPU") == "1"

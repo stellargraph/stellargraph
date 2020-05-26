@@ -20,11 +20,11 @@
 import os
 import tensorflow as tf
 import pytest
-from . import force_gpu
+from . import require_gpu
 
 # When the environment variable is set, we need to be sure that we're running on a GPU
 @pytest.mark.skipif(
-    not force_gpu,
+    not require_gpu,
     reason="STELLARGRAPH_MUST_USE_GPU is not set to 1, so a GPU does not have to be used",
 )
 def test_on_gpu_when_requested():

@@ -27,7 +27,7 @@ from stellargraph.layer.link_inference import link_classification
 from stellargraph.random import set_seed
 from ..test_utils.graphs import petersen_graph
 from .fixtures import assert_reproducible
-from .. import force_gpu
+from .. import require_gpu
 
 
 def unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize):
@@ -223,7 +223,7 @@ def test_unsupervised(petersen_graph, shuffle):
 
 
 @pytest.mark.parametrize("shuffle", [True, False])
-@pytest.mark.skipif(force_gpu, reason="tf on GPU is non-deterministic")
+@pytest.mark.skipif(require_gpu, reason="tf on GPU is non-deterministic")
 def test_nai(petersen_graph, shuffle):
     target_size = 10
     targets = np.random.rand(len(petersen_graph.nodes()), target_size)
