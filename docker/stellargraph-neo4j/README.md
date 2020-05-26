@@ -11,4 +11,3 @@ Run the docker container:
 ```
 docker run -it -e NEO4J_AUTH=none -p 7687:7687 -p 7474:7474 stellargraph_neo4j:latest
 ```
-
