@@ -137,9 +137,7 @@ class Neo4JDirectedBreadthFirstNeighbors:
             ...
             ]
         """
-
-        # self._check_neighbourhood_sizes(in_size, out_size)
-        # self._check_common_parameters(nodes, n, len(in_size), seed)
+        # FIXME: we may want to run validation on all the run parameters similar to other GraphWalk classes
 
         head_nodes = [head_node for head_node in nodes for _ in range(n)]
         hops = [[head_nodes]]
@@ -169,19 +167,3 @@ class Neo4JDirectedBreadthFirstNeighbors:
             hops.append(this_hop)
 
         return sum(hops, [])
-
-    def _check_neighbourhood_sizes(self, in_size, out_size):
-        """
-        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
-        parameter (the first one encountered in the checks) with invalid value.
-
-        Args:
-            in_size (list): The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_size (list): The number of out-directed nodes to sample with replacement at each depth of the walk.
-        """
-        self._check_sizes(in_size)
-        self._check_sizes(out_size)
-        if len(in_size) != len(out_size):
-            self._raise_error(
-                "The number of hops for the in and out neighbourhoods must be the same."
-            )
