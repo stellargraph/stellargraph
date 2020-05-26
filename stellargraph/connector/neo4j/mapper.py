@@ -20,7 +20,6 @@ __all__ = [
     "Neo4jClusterNodeGenerator",
 ]
 
-import warnings
 import numpy as np
 import random
 
@@ -30,6 +29,7 @@ from .sampler import (
 )
 
 from ...core.graph import GraphSchema
+from ...core.element_data import ExternalIdIndex
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
 from ...mapper.mini_batch_node_generators import ClusterNodeGenerator
@@ -64,6 +64,12 @@ class Neo4JBatchedNodeGenerator:
 
         self.head_node_types = None
         self.sampler = None
+
+    def _node_index_and_features(self, node_samples):
+        unique_nodes = list(set(node for nodes in node_samples for node in nodes))
+        node_index = ExternalIdIndex(unique_nodes)
+        features = self.graph.node_features(unique_nodes)
+        return node_index, features
 
     def flow(self, node_ids, targets=None, shuffle=False, seed=None):
 
@@ -134,17 +140,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         """
         nodes_per_hop = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
 
-        # Get features - take unique nodes to reduce amount of data retrieved from the db
-        unique_nodes = list(set(node for nodes in nodes_per_hop for node in nodes))
-        features = {
-            node: feat
-            for node, feat in zip(unique_nodes, self.graph.node_features(unique_nodes))
-        }
-
-        batch_feats = [
-            np.array([features[node] for node in layer_nodes])
-            for layer_nodes in nodes_per_hop
-        ]
+        batch_feats = [self.graph.node_features(nodes) for nodes in nodes_per_hop]
 
         # Resize features for sampled nodes
         batch_feats = [
@@ -215,14 +211,6 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         node_samples = self.sampler.run(
             nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
         )
-        # Get features - take unique nodes to reduce amount of data retrieved from the db
-        unique_nodes = list(set(node for nodes in node_samples for node in nodes))
-        unique_features = self.graph.node_features(unique_nodes)
-        assert len(unique_nodes) == len(unique_features)
-
-        features_dict = {
-            node: feat for node, feat in zip(unique_nodes, unique_features)
-        }
 
         # Reshape node samples to sensible format
         # Each 'slot' represents the list of nodes sampled from some neighbourhood, and will have a corresponding
@@ -235,9 +223,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = node_samples[slot]
-            features_for_slot = np.array(
-                [features_dict[node] for node in nodes_in_slot]
-            )
+            features_for_slot = self.graph.node_features(nodes_in_slot)
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])

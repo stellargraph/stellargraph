@@ -21,6 +21,8 @@ import scipy.sparse as sps
 import pandas as pd
 from ...core.experimental import experimental
 from ... import globalvar
+from ...core import convert
+from ...core.graph import _features
 
 
 @experimental(reason="the class is not tested", issues=[1578])
@@ -44,6 +46,10 @@ class Neo4jStellarGraph:
         self.graph_db = graph_db
         self._is_directed = is_directed
         self._node_feature_size = None
+        self._nodes = None
+
+        # FIXME: methods in this class currently only support homogeneous graphs with default node type
+        self._node_type = globalvar.NODE_TYPE_DEFAULT
 
     def nodes(self):
         """
@@ -60,6 +66,39 @@ class Neo4jStellarGraph:
         result = self.graph_db.run(node_ids_query)
         return [row["node_id"] for row in result.data()]
 
+    def cache_nodes(self, dtype="float32"):
+        nodes = self.nodes()
+        features = self._node_features_from_db(nodes)
+        self._nodes = convert.convert_nodes(
+            pd.DataFrame(features, index=nodes),
+            name="nodes",
+            default_type=self._node_type,
+            dtype=dtype,
+        )
+
+        # cache feature size too
+        self._node_feature_size = self._nodes.features_of_type(self._node_type).shape[1]
+
+    def _node_features_from_db(self, node_ids):
+        # nones should be filled with zeros in the feature matrix
+        if not isinstance(node_ids, np.ndarray):
+            node_id_array = np.array(node_ids)
+        valid = node_id_array != None
+        features = np.zeros((len(node_ids), self.node_feature_sizes()[self._node_type]))
+
+        # fill valid locs with features
+        feature_query = f"""
+            UNWIND $node_id_list AS node_id
+            MATCH(node) WHERE node.ID = node_id
+            RETURN node.features as features
+            """
+        result = self.graph_db.run(
+            feature_query, parameters={"node_id_list": node_ids},
+        )
+        features[valid, :] = np.array([row["features"] for row in result.data()])
+
+        return features
+
     def node_features(self, node_ids):
         """
         Get the numeric feature vectors for the specified nodes or node type.
@@ -69,20 +108,20 @@ class Neo4jStellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
-        none_indices = [i for i, node in enumerate(node_ids) if node is None]
-        feature_query = f"""
-            UNWIND $node_id_list AS node_id
-            MATCH(node) WHERE node.ID = node_id
-            RETURN node.features as features
-            """
-        result = self.graph_db.run(
-            feature_query, parameters={"node_id_list": node_ids},
-        )
-        full_result = [row["features"] for row in result.data()]
-        for i in none_indices:
-            full_result.insert(i, np.zeros(self._node_feature_size))
-        features = np.array(full_result)
-        return features
+        if self._nodes is not None:
+            return _features(
+                self._nodes,
+                self.unique_node_type,
+                "nodes",
+                node_ids,
+                type=None,
+                use_ilocs=False,
+            )
+        else:
+            return self._node_features_from_db(node_ids)
+
+    def unique_node_type(self):
+        return self._node_type
 
     def node_feature_sizes(self):
         if self._node_feature_size is None:
@@ -94,8 +133,7 @@ class Neo4jStellarGraph:
             result = self.graph_db.run(feature_query)
             self._node_feature_size = len(result.data()[0]["features"])
 
-        # FIXME: this assumes a homogeneous graph with only a default node type
-        return {globalvar.NODE_TYPE_DEFAULT: self._node_feature_size}
+        return {self._node_type: self._node_feature_size}
 
     def to_adjacency_matrix(self, node_ids):
         """
