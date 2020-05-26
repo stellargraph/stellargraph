@@ -438,16 +438,18 @@ class BiasedRandomWalk(RandomWalk):
 
                     # select one of the neighbours using the
                     # appropriate transition probabilities
-                    neighbours, weights = self.graph.neighbor_arrays(current_node, include_edge_weight=True)
-                    mask = (neighbours == previous_node)
+                    neighbours, weights = self.graph.neighbor_arrays(
+                        current_node, include_edge_weight=True
+                    )
+                    mask = neighbours == previous_node
                     weights[mask] *= ip
-                    mask |= (np.isin(neighbours, previous_node_neighbours))
+                    mask |= np.isin(neighbours, previous_node_neighbours)
                     weights[~mask] *= iq
 
-                    choice = naive_weighted_choices(rs, weights)
+                    probs = np.cumsum(weights) / weights.sum()
+                    choice = np.where(probs > np.random.random())[0][0]
                     previous_node = current_node
                     previous_node_neighbours = neighbours
-                    current_node = neighbours[choice]
                     current_node = neighbours[choice]
 
                     walk.append(current_node)
