@@ -414,8 +414,14 @@ class BiasedRandomWalk(RandomWalk):
         if weighted:
             self._check_weights_valid()
 
-        ip = 1.0 / p
-        iq = 1.0 / q
+        cast_func = np.cast[self.graph._edges.weights.dtype]
+        ip = cast_func(1.0 / p)
+        iq = cast_func(1.0 / q)
+
+        if np.isinf(ip):
+            raise ZeroDivisionError("p: value is too small")
+        if np.isinf(iq):
+            raise ZeroDivisionError("q: value is too small")
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -438,7 +444,6 @@ class BiasedRandomWalk(RandomWalk):
                     if len(neighbours) == 0:
                         break
 
-                    weights = weights.astype(type(ip))
                     mask = neighbours == previous_node
                     weights[mask] *= ip
                     mask |= np.isin(neighbours, previous_node_neighbours)
@@ -446,6 +451,7 @@ class BiasedRandomWalk(RandomWalk):
 
                     probs = np.cumsum(weights) / weights.sum()
                     choice = np.where(probs > rs.random())[0][0]
+
                     previous_node = current_node
                     previous_node_neighbours = neighbours
                     current_node = neighbours[choice]
