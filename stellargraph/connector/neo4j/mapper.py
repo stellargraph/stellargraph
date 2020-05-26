@@ -65,12 +65,6 @@ class Neo4JBatchedNodeGenerator:
         self.head_node_types = None
         self.sampler = None
 
-    def _node_index_and_features(self, node_samples):
-        unique_nodes = list(set(node for nodes in node_samples for node in nodes))
-        node_index = ExternalIdIndex(unique_nodes)
-        features = self.graph.node_features(unique_nodes)
-        return node_index, features
-
     def flow(self, node_ids, targets=None, shuffle=False, seed=None):
 
         return NodeSequence(
