@@ -445,7 +445,7 @@ class BiasedRandomWalk(RandomWalk):
                     weights[~mask] *= iq
 
                     probs = np.cumsum(weights) / weights.sum()
-                    choice = np.where(probs > np.random.random())[0][0]
+                    choice = np.where(probs > rs.random())[0][0]
                     previous_node = current_node
                     previous_node_neighbours = neighbours
                     current_node = neighbours[choice]
