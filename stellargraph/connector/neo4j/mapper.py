@@ -29,7 +29,6 @@ from .sampler import (
 )
 
 from ...core.graph import GraphSchema
-from ...core.element_data import ExternalIdIndex
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
 from ...mapper.mini_batch_node_generators import ClusterNodeGenerator
