@@ -140,10 +140,35 @@ class Neo4jStellarGraph:
         return self._is_directed
 
     def check_graph_for_ml(self):
-        # TODO: implement this
-        return True
+        """
+        Checks if all properties required for machine learning training/inference are set up.
+        An error will be raised if the graph is not correctly setup.
+        """
+        num_nodes_with_feats_query = f"""
+            MATCH(n)
+            WHERE "features" in keys(n)
+            return COUNT(*)
+        """
+        result = self.graph_db.run(num_nodes_with_feats_query)
+        num_nodes_with_feats = result.data()[0]["COUNT(*)"]
+        if num_nodes_with_feats == 0:
+            raise RuntimeError(
+                "This StellarGraph has no numeric feature attributes for nodes"
+                "Node features are required for machine learning"
+            )
 
     def unique_node_type(self, error_message=None):
+        """
+        Return the unique node type, for a homogeneous-node graph.
+
+        Args:
+            error_message (str, optional): a custom message to use for the exception; this can use
+                the ``%(found)s`` placeholder to insert the real sequence of node types.
+
+        Returns:
+            If this graph has only one node type, this returns that node type, otherwise it raises a
+            ``ValueError`` exception.
+        """
         node_type_query = f"""MATCH (n) RETURN distinct labels(n)"""
         result = self.graph_db.run(node_type_query)
         all_types = result.data()[0]["labels(n)"]
