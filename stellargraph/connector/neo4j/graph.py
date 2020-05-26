@@ -20,6 +20,7 @@ import numpy as np
 import scipy.sparse as sps
 import pandas as pd
 from ...core.experimental import experimental
+from ... import globalvar
 
 
 @experimental(reason="the class is not tested", issues=[1578])
@@ -38,11 +39,11 @@ class Neo4jStellarGraph:
             directed multigraph, otherwise an undirected multigraph.
     """
 
-    def __init__(self, graph_db, is_directed=False, node_feature_size=None):
+    def __init__(self, graph_db, is_directed=False):
 
         self.graph_db = graph_db
         self._is_directed = is_directed
-        self._node_feature_size = node_feature_size
+        self._node_feature_size = None
 
     def nodes(self):
         """
@@ -84,7 +85,17 @@ class Neo4jStellarGraph:
         return features
 
     def node_feature_sizes(self):
-        return {"default": self._node_feature_size}
+        if self._node_feature_size is None:
+            # if feature size is unknown, take a random node's features
+            feature_query = f"""
+                MATCH(node)
+                RETURN node.features as features LIMIT 1
+                """
+            result = self.graph_db.run(feature_query)
+            self._node_feature_size = len(result.data()[0]["features"])
+
+        # FIXME: this assumes a homogeneous graph with only a default node type
+        return {globalvar.NODE_TYPE_DEFAULT: self._node_feature_size}
 
     def to_adjacency_matrix(self, node_ids):
         """
@@ -149,7 +160,5 @@ class Neo4jStellarGraph:
 
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
-    def __init__(self, graph_db, node_feature_size=None):
-        super().__init__(
-            graph_db, node_feature_size=node_feature_size, is_directed=True
-        )
+    def __init__(self, graph_db):
+        super().__init__(graph_db, is_directed=True)
