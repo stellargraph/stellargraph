@@ -429,18 +429,16 @@ class BiasedRandomWalk(RandomWalk):
                 current_node = node
 
                 for _ in range(length - 1):
-                    neighbours = self.graph.neighbors(
-                        current_node, use_ilocs=True, include_edge_weight=weighted
-                    )
-
-                    if not neighbours:
-                        break
-
                     # select one of the neighbours using the
                     # appropriate transition probabilities
                     neighbours, weights = self.graph.neighbor_arrays(
-                        current_node, include_edge_weight=True
+                        current_node, include_edge_weight=True, use_ilocs=True
                     )
+
+                    if len(neighbours) == 0:
+                        break
+
+                    weights = weights.astype(type(ip))
                     mask = neighbours == previous_node
                     weights[mask] *= ip
                     mask |= np.isin(neighbours, previous_node_neighbours)
