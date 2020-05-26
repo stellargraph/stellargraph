@@ -19,14 +19,8 @@ __all__ = [
     "Neo4JDirectedBreadthFirstNeighbors",
 ]
 
-import numpy as np
-import warnings
-from collections import defaultdict, deque
-
-from ...core.schema import GraphSchema
-from ...core.graph import StellarGraph
-from ...data.explorer import GraphWalk
 from ...core.experimental import experimental
+from .graph import Neo4jStellarGraph, Neo4jStellarDiGraph
 
 
 def _bfs_neighbor_query(sampling_direction):
@@ -47,13 +41,13 @@ def _bfs_neighbor_query(sampling_direction):
         // for each node id in every row, collect the random list of its neighbors.
         CALL apoc.cypher.run(
 
-            'MATCH(cur_node) WHERE id(cur_node) = $node_id
+            'MATCH(cur_node) WHERE cur_node.ID = $node_id
 
             // find the neighbors
             MATCH (cur_node){direction_arrow}(neighbors)
 
             // put all ids into a list
-            WITH CASE collect(id(neighbors)) WHEN [] THEN [null] ELSE collect(id(neighbors)) END AS in_neighbors_list
+            WITH CASE collect(neighbors.ID) WHEN [] THEN [null] ELSE collect(neighbors.ID) END AS in_neighbors_list
 
             // pick random nodes with replacement
             WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS in_samples_list
@@ -66,24 +60,29 @@ def _bfs_neighbor_query(sampling_direction):
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JSampledBreadthFirstWalk(GraphWalk):
+class Neo4JSampledBreadthFirstWalk:
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4j database.
     """
 
-    def run(self, neo4j_graphdb, nodes=None, n=1, n_size=None, seed=None):
+    def __init__(self, graph):
+        if not isinstance(graph, Neo4jStellarGraph):
+            raise TypeError("Graph must be a Neo4jStellarGraph or Neo4jStellarDiGraph.")
+        self.graph = graph
+
+    def run(self, nodes=None, n=1, n_size=None):
         """
-        Send queries to Neo4j graph databases and collect sampled breadth-first walks starting from the root nodes.
+        Send queries to Neo4j graph databases and collect sampled breadth-first walks starting from
+        the root nodes.
 
         Args:
-            neo4j_graphdb: (py2neo.Graph) the Neo4j Graph Database object
-            nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
-            n_size (int): The number of neighbouring nodes to expand at each depth of the walk. Sampling of
-            n (int, default 1): Number of walks per node id.
-            neighbours with replacement is always used regardless of the node degree and number of neighbours
-            requested.
+            nodes (list of hashable): A list of root node ids such that from each node n BFWs will
+                be generated up to the given depth d.
+            n_size (list of int): The number of neighbouring nodes to expand at each depth of the
+                walk. Sampling of neighbours with replacement is always used regardless of the node
+                degree and number of neighbours requested.
+            n (int): Number of walks per node id.
             seed (int, optional): Random number generator seed; default is None
 
         Returns:
@@ -96,7 +95,7 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
         # this sends O(number of hops) queries to the database, because the code is cleanest like that
         for num_sample in n_size:
             cur_nodes = samples[-1]
-            result = neo4j_graphdb.run(
+            result = self.graph.graph_db.run(
                 neighbor_query,
                 parameters={"node_id_list": cur_nodes, "num_samples": num_sample},
             )
@@ -106,26 +105,27 @@ class Neo4JSampledBreadthFirstWalk(GraphWalk):
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
+class Neo4JDirectedBreadthFirstNeighbors:
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4j database.
     """
 
-    def run(
-        self, neo4j_graphdb, nodes=None, n=1, in_size=None, out_size=None, seed=None
-    ):
+    def __init__(self, graph):
+        if not isinstance(graph, Neo4jStellarDiGraph):
+            raise TypeError("Graph must be a Neo4jStellarDiGraph.")
+        self.graph = graph
+
+    def run(self, nodes=None, n=1, in_size=None, out_size=None):
         """
         Send queries to Neo4j databases and collect sampled breadth-first walks starting from the root nodes.
 
         Args:
-            neo4j_graphdb (py2neo.Graph): the Neo4j Graph Database object
-            nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
+            nodes (list of hashable): A list of root node ids such that from each node n BFWs will
+                be generated up to the given depth d.
             n (int): Number of walks per node id.
-            in_size (list): The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_size (list): The number of out-directed nodes to sample with replacement at each depth of the walk.
-            seed (int): Random number generator seed; default is None
+            in_size (list of int): The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size (list of int): The number of out-directed nodes to sample with replacement at each depth of the walk.
         Returns:
             A list of multi-hop neighbourhood samples. Each sample expresses a collection of nodes, which could be either in-neighbors,
             or out-neighbors of the previous hops.
@@ -138,8 +138,8 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
             ]
         """
 
-        self._check_neighbourhood_sizes(in_size, out_size)
-        self._check_common_parameters(nodes, n, len(in_size), seed)
+        # self._check_neighbourhood_sizes(in_size, out_size)
+        # self._check_common_parameters(nodes, n, len(in_size), seed)
 
         head_nodes = [head_node for head_node in nodes for _ in range(n)]
         hops = [[head_nodes]]
@@ -153,14 +153,14 @@ class Neo4JDirectedBreadthFirstNeighbors(GraphWalk):
             this_hop = []
             for cur_nodes in last_hop:
                 # get in-neighbor nodes
-                neighbor_records = neo4j_graphdb.run(
+                neighbor_records = self.graph.graph_db.run(
                     in_sample_query,
                     parameters={"node_id_list": cur_nodes, "num_samples": in_num},
                 )
                 this_hop.append(neighbor_records.data()[0]["next_samples"])
 
                 # get out-neighbor nodes
-                neighbor_records = neo4j_graphdb.run(
+                neighbor_records = self.graph.graph_db.run(
                     out_sample_query,
                     parameters={"node_id_list": cur_nodes, "num_samples": out_num},
                 )

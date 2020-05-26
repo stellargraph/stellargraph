@@ -23,14 +23,13 @@ __all__ = [
 import warnings
 import numpy as np
 import random
-import itertools as it
 
 from .sampler import (
     Neo4JDirectedBreadthFirstNeighbors,
     Neo4JSampledBreadthFirstWalk,
 )
 
-from ...core.graph import StellarGraph, GraphSchema
+from ...core.graph import GraphSchema
 from ...mapper import NodeSequence
 from ...mapper.sampled_node_generators import BatchedNodeGenerator
 from ...mapper.mini_batch_node_generators import ClusterNodeGenerator
@@ -39,7 +38,7 @@ from .graph import Neo4jStellarGraph
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
+class Neo4JBatchedNodeGenerator:
     """
     Abstract base class for graph data generators from Neo4j.
 
@@ -48,50 +47,25 @@ class Neo4JBatchedNodeGenerator(BatchedNodeGenerator):
     Do not use this base class: use a subclass specific to the method.
 
     Args:
-        G (StellarGraph): The machine-learning ready graph.
+        graph (Neo4jStellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
-        neo4j_graphdb (py2neo.Graph): the Neo4j Graph Database object
         schema (GraphSchema): [Optional] Schema for the graph, for heterogeneous graphs.
     """
 
-    def __init__(self, G, batch_size, neo4j_graphdb, schema=None):
+    def __init__(self, graph, batch_size, schema=None):
+        self.graph = graph
+        self.batch_size = batch_size
 
-        super().__init__(G, batch_size, schema)
+        # This is a node generator and requries a model with one root nodes per query
+        self.multiplicity = 1
 
-        try:
-            import py2neo
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError(
-                f"{e.msg}. StellarGraph can only connect to Neo4j using the 'py2neo' module; please install it",
-                name=e.name,
-                path=e.path,
-            ) from None
+        # FIXME: Neo4jStellarGraph must support creating schema in order to extend this for HinSAGE
+        self.schema = schema
 
-        if not isinstance(neo4j_graphdb, py2neo.Graph):
-            raise TypeError(
-                f"neo4j_graphdb: expected py2neo.Graph, found {type(neo4j_graphdb)}"
-            )
-        # Create Neo4j graph database object
-        self.neo4j_graphdb = neo4j_graphdb
+        self.head_node_types = None
+        self.sampler = None
 
     def flow(self, node_ids, targets=None, shuffle=False, seed=None):
-
-        if self.head_node_types is not None:
-            expected_node_type = self.head_node_types[0]
-        else:
-            expected_node_type = None
-
-        # Check all IDs are actually in the graph and are of expected type
-        for n in node_ids:
-            try:
-                node_type = self.graph.node_type(n)
-            except KeyError:
-                raise KeyError(f"Node ID {n} supplied to generator not found in graph")
-
-            if expected_node_type is not None and (node_type != expected_node_type):
-                raise ValueError(
-                    f"Node ID {n} not of expected type {expected_node_type}"
-                )
 
         return NodeSequence(
             self.sample_features,
@@ -110,47 +84,36 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
     """
     A data generator for node prediction with Homogeneous GraphSAGE models
 
-    At minimum, supply the StellarGraph, the batch size, and the number of
+    At minimum, supply the Neo4jStellarGraph, the batch size, and the number of
     node samples for each layer of the GraphSAGE model.
 
-    The supplied graph should be a StellarGraph object with node features.
+    The supplied graph should be a Neo4jStellarGraph object with node features.
 
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
     Example::
 
-        G_generator = GraphSAGENodeGenerator(G, 50, [10,10], neo4j_graphdb)
+        G_generator = GraphSAGENodeGenerator(G, 50, [10,10])
         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
         test_data_gen = G_generator.flow(test_node_ids)
 
     Args:
-        G (StellarGraph): The machine-learning ready graph.
+        graph (Neo4jStellarGraph): Neo4jStellarGraph object
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
-        neo4j_graphdb (py2neo.Graph): the Neo4j Graph Database object.
-        seed (int, optional): Random seed for the node sampler.
+        name (int, optional): Optional name for the generator.
     """
 
-    def __init__(self, G, batch_size, num_samples, neo4j_graphdb, seed=None, name=None):
-        super().__init__(G, batch_size, neo4j_graphdb)
+    def __init__(self, graph, batch_size, num_samples, name=None):
+        super().__init__(graph, batch_size)
 
         self.num_samples = num_samples
-        self.head_node_types = self.schema.node_types
         self.name = name
 
         # check that there is only a single node type for GraphSAGE
 
-        if len(self.head_node_types) > 1:
-            warnings.warn(
-                "running homogeneous GraphSAGE on a graph with multiple node types",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
-        self.sampler = Neo4JSampledBreadthFirstWalk(
-            G, graph_schema=self.schema, seed=seed
-        )
+        self.sampler = Neo4JSampledBreadthFirstWalk(graph)
 
     def sample_features(self, head_nodes, batch_num):
         """
@@ -169,14 +132,17 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             where num_sampled_at_layer is the cumulative product of `num_samples`
             for that layer.
         """
-        nodes_per_hop = self.sampler.run(
-            self.neo4j_graphdb, nodes=head_nodes, n=1, n_size=self.num_samples
-        )
-        node_type = self.head_node_types[0]
+        nodes_per_hop = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
 
-        # Get features for sampled nodes
+        # Get features - take unique nodes to reduce amount of data retrieved from the db
+        unique_nodes = list(set(node for nodes in nodes_per_hop for node in nodes))
+        features = {
+            node: feat
+            for node, feat in zip(unique_nodes, self.graph.node_features(unique_nodes))
+        }
+
         batch_feats = [
-            self.graph.node_features(layer_nodes, node_type)
+            np.array([features[node] for node in layer_nodes])
             for layer_nodes in nodes_per_hop
         ]
 
@@ -205,49 +171,30 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
     Example::
 
-        G_generator = DirectedGraphSAGENodeGenerator(G, 50, [10,5], [5,1], neo4j_graphdb)
+        G_generator = DirectedGraphSAGENodeGenerator(G, 50, [10,5], [5,1])
         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
         test_data_gen = G_generator.flow(test_node_ids)
 
     Args:
-        G (StellarDiGraph): The machine-learning ready graph.
+        graph (Neo4jStellarDiGraph): Neo4jStellarGraph object
         batch_size (int): Size of batch to return.
         in_samples (list): The number of in-node samples per layer (hop) to take.
         out_samples (list): The number of out-node samples per layer (hop) to take.
-        neo4j_graphdb (py2neo.Graph): The Neo4j Graph database object
-        seed (int, optional) Random seed for the node sampler.
+        name (string, optional): Optional name for the generator
     """
 
     def __init__(
-        self,
-        G,
-        batch_size,
-        in_samples,
-        out_samples,
-        neo4j_graphdb,
-        seed=None,
-        name=None,
+        self, graph, batch_size, in_samples, out_samples, name=None,
     ):
-        super().__init__(G, batch_size, neo4j_graphdb)
+        super().__init__(graph, batch_size)
 
         # TODO Add checks for in- and out-nodes sizes
         self.in_samples = in_samples
         self.out_samples = out_samples
-        self.head_node_types = self.schema.node_types
         self.name = name
 
-        # Check that there is only a single node type for GraphSAGE
-        if len(self.head_node_types) > 1:
-            warnings.warn(
-                "running homogeneous GraphSAGE on a graph with multiple node types",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-
         # Create sampler for GraphSAGE
-        self.sampler = Neo4JDirectedBreadthFirstNeighbors(
-            G, graph_schema=self.schema, seed=seed
-        )
+        self.sampler = Neo4JDirectedBreadthFirstNeighbors(graph)
 
     def sample_features(self, head_nodes, batch_num):
         """
@@ -266,19 +213,21 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
             given the sequence of in/out directions.
         """
         node_samples = self.sampler.run(
-            self.neo4j_graphdb,
-            nodes=head_nodes,
-            n=1,
-            in_size=self.in_samples,
-            out_size=self.out_samples,
+            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
         )
+        # Get features - take unique nodes to reduce amount of data retrieved from the db
+        unique_nodes = list(set(node for nodes in node_samples for node in nodes))
+        unique_features = self.graph.node_features(unique_nodes)
+        assert len(unique_nodes) == len(unique_features)
+
+        features_dict = {
+            node: feat for node, feat in zip(unique_nodes, unique_features)
+        }
 
         # Reshape node samples to sensible format
         # Each 'slot' represents the list of nodes sampled from some neighbourhood, and will have a corresponding
         # NN input layer. Every hop potentially generates both in-nodes and out-nodes, held separately,
         # and thus the slot (or directed hop sequence) structure forms a binary tree.
-
-        node_type = self.head_node_types[0]
 
         max_hops = len(self.in_samples)
         max_slots = 2 ** (max_hops + 1) - 1
@@ -286,7 +235,9 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
         for slot in range(max_slots):
             nodes_in_slot = node_samples[slot]
-            features_for_slot = self.graph.node_features(nodes_in_slot, node_type)
+            features_for_slot = np.array(
+                [features_dict[node] for node in nodes_in_slot]
+            )
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])

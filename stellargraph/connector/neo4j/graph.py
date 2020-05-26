@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__all__ = ["Neo4jStellarGraph"]
+__all__ = ["Neo4jStellarGraph", "Neo4jStellarDiGraph"]
 
 import numpy as np
 import scipy.sparse as sps
@@ -38,10 +38,11 @@ class Neo4jStellarGraph:
             directed multigraph, otherwise an undirected multigraph.
     """
 
-    def __init__(self, graph_db, is_directed=False):
+    def __init__(self, graph_db, is_directed=False, node_feature_size=None):
 
         self.graph_db = graph_db
         self._is_directed = is_directed
+        self._node_feature_size = node_feature_size
 
     def nodes(self):
         """
@@ -67,6 +68,7 @@ class Neo4jStellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
+        none_indices = [i for i, node in enumerate(node_ids) if node is None]
         feature_query = f"""
             UNWIND $node_id_list AS node_id
             MATCH(node) WHERE node.ID = node_id
@@ -75,8 +77,14 @@ class Neo4jStellarGraph:
         result = self.graph_db.run(
             feature_query, parameters={"node_id_list": node_ids},
         )
-        features = np.array([row["features"] for row in result.data()])
+        full_result = [row["features"] for row in result.data()]
+        for i in none_indices:
+            full_result.insert(i, np.zeros(self._node_feature_size))
+        features = np.array(full_result)
         return features
+
+    def node_feature_sizes(self):
+        return {"default": self._node_feature_size}
 
     def to_adjacency_matrix(self, node_ids):
         """
@@ -141,5 +149,7 @@ class Neo4jStellarGraph:
 
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
-    def __init__(self, graph_db):
-        super().__init__(graph_db, is_directed=True)
+    def __init__(self, graph_db, node_feature_size=None):
+        super().__init__(
+            graph_db, node_feature_size=node_feature_size, is_directed=True
+        )
