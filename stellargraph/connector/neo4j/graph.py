@@ -19,6 +19,7 @@ __all__ = ["Neo4jStellarGraph"]
 import numpy as np
 import scipy.sparse as sps
 import pandas as pd
+from ...core.validation import comma_sep
 from ...core.experimental import experimental
 
 
@@ -143,8 +144,19 @@ class Neo4jStellarGraph:
         return True
 
     def unique_node_type(self, error_message=None):
-        # TODO: implement this
-        pass
+        node_type_query = f"""MATCH (n) RETURN distinct labels(n)"""
+        result = self.graph_db.run(node_type_query)
+        all_types = result.data()[0]["labels(n)"]
+        if len(all_types) == 1:
+            return all_types[0]
+
+        found = comma_sep(all_types)
+        if error_message is None:
+            error_message = (
+                "Expected only one node type for 'unique_node_type', found: %(found)s"
+            )
+
+        raise ValueError(error_message % {"found": found})
 
 
 # A convenience class that merely specifies that edges have direction.
