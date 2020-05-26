@@ -165,7 +165,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><a href='node-classification/attri2vec-node-classification.ipynb'>demo</a></td>
     <td><a href='link-prediction/attri2vec-link-prediction.ipynb'>demo</a></td>
     <td><a href='embeddings/attri2vec-embeddings.ipynb'>demo</a></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
   </tr>
   <tr>
