@@ -22,7 +22,7 @@ import pandas as pd
 from ...core.experimental import experimental
 from ... import globalvar
 from ...core import convert
-from ...core.convert import IndexedArray
+from ...core.indexed_array import IndexedArray
 from ...core.graph import extract_element_features
 from ...core.validation import comma_sep
 
@@ -165,7 +165,7 @@ class Neo4jStellarGraph:
                 use_ilocs=False,
             )
         else:
-            return self._node_features_from_db(nodes)
+            return self._node_features_from_db(nodes).values
 
     def unique_node_type(self):
         return self._node_type
