@@ -28,10 +28,18 @@ from ..core.validation import require_integer_in_range
 
 def _complexify(tensors):
     """
-    Convert each "interleaved complex" real tensor in ``tensors`` (i.e. last axis represents [a, b,
-    ...] like [a_re, a_im, b_re, b_im, ...]) to the equivalent complex tensor.
+    Convert each "sequential complex" real tensor in ``tensors`` (i.e. last axis represents [a, b,
+    ...] like [a_re, b_re, ..., a_im, b_im, ...]) to the equivalent complex tensor.
     """
-    return [tf.complex(tensor[..., 0::2], tensor[..., 1::2]) for tensor in tensors]
+
+    def single(tensor):
+        half = tf.shape(tensor)[-1] // 2
+        return tf.complex(tensor[..., :half], tensor[..., half:])
+
+    if isinstance(tensors, list):
+        return [single(tensor) for tensor in tensors]
+
+    return single(tensors)
 
 
 class ComplExScore(Layer):
@@ -123,10 +131,9 @@ class ComplEx:
             (``shape = number of nodes × k``), the second element is the embeddings for edge
             types/relations (``shape = number of edge types x k``).
         """
-        node = self._node_embeddings.embeddings.numpy()
-        rel = self._edge_type_embeddings.embeddings.numpy()
-        assert node.dtype == rel.dtype == np.float32
-        return node.view(np.complex64), rel.view(np.complex64)
+        node = _complexify(self._node_embeddings.embeddings).numpy()
+        rel = _complexify(self._edge_type_embeddings.embeddings).numpy()
+        return node, rel
 
     def rank_edges_against_all_nodes(
         self, test_data, known_edges_graph, tie_breaking="random"
@@ -583,9 +590,7 @@ class RotatE:
         )
 
     def embeddings(self):
-        node = self._node_embeddings.embeddings.numpy()
-        assert node.dtype == np.float32
-        node = node.view(np.complex64)
+        node = _complexify(self._node_embeddings.embeddings).numpy()
 
         phase = self._edge_type_embeddings_phase.embeddings.numpy()
         rel = 1j * np.sin(phase)
