@@ -405,9 +405,15 @@ class BiasedRandomWalk(RandomWalk):
         iq = cast_func(1.0 / q)
 
         if np.isinf(ip):
-            raise ZeroDivisionError("p: value is too small")
+            raise ValueError(
+                f"p: value is too small. It must be possible to "
+                f"represent 1/p in {str(weight_dtype)}"
+            )
         if np.isinf(iq):
-            raise ZeroDivisionError("q: value is too small")
+            raise ValueError(
+                f"p: value is too small. It must be possible to "
+                f"represent 1/p in {str(weight_dtype)}"
+            )
 
         walks = []
         for node in nodes:  # iterate over root nodes
