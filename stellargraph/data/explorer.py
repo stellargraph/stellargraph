@@ -304,7 +304,7 @@ def naive_weighted_choices(rs, weights):
     does a lot of conversions/checks/preprocessing internally.
     """
     probs = np.cumsum(weights)
-    idx = np.searchsorted(probs, rs.random() * probs[-1], side="right")
+    idx = np.searchsorted(probs, rs.random() * probs[-1], side="left")
 
     return idx
 
