@@ -22,7 +22,9 @@ import pandas as pd
 from ...core.experimental import experimental
 from ... import globalvar
 from ...core import convert
-from ...core.graph import _features
+from ...core.convert import IndexedArray
+from ...core.graph import extract_element_features
+from ...core.validation import comma_sep
 
 
 @experimental(reason="the class is not tested", issues=[1578])
@@ -66,29 +68,45 @@ class Neo4jStellarGraph:
         result = self.graph_db.run(node_ids_query)
         return [row["node_id"] for row in result.data()]
 
-    def cache_nodes(self, dtype="float32"):
-        nodes = self.nodes()
-        features = self._node_features_from_db(nodes)
+    def cache_all_nodes_in_memory(self, dtype="float32"):
+        """
+        Load all node IDs and features into memory from Neo4j so that subsequent method calls that
+        access node features can use the cached data instead of querying the database.
+
+        This method should be avoided for larger graphs.
+
+        Args:
+            dtype (str, optional): Data type of features
+
+        """
+        features = self._node_features_from_db(None)
         self._nodes = convert.convert_nodes(
-            pd.DataFrame(features, index=nodes),
-            name="nodes",
-            default_type=self._node_type,
-            dtype=dtype,
+            features, name="nodes", default_type=self._node_type, dtype=dtype,
         )
 
         # cache feature size too
         self._node_feature_size = self._nodes.features_of_type(self._node_type).shape[1]
 
     def _node_features_from_db(self, nodes):
+        return_node = f"""
+            WITH {{ID: node.ID, features: node.features}} AS node_data
+            RETURN node_data
+            """
         if nodes is None:
-            where_clause = ""
-            valid = slice(None)
+            feature_query = f"""
+                MATCH(node)
+                {return_node}
+                """
+            result = self.graph_db.run(feature_query)
+            rows = result.data()
+            return IndexedArray(
+                [node["features"] for node in rows], index=[node["ID"] for node in rows]
+            )
         else:
-            where_clause = " WHERE node.ID = node_id"
             if isinstance(nodes, np.ndarray):
                 valid = nodes != None
                 # we need to create a list of integers to run the neo4j query with
-                nodes = [int(node) for node in nodes]
+                nodes = [node.item() if node is not None else node for node in nodes]
             elif isinstance(nodes, list):
                 valid = np.array(nodes) != None
             else:
@@ -96,28 +114,36 @@ class Neo4jStellarGraph:
                 valid = np.array([nodes is not None])
                 nodes = [nodes]
 
-        # None's should be filled with zeros in the feature matrix
-        features = np.zeros((len(nodes), self.node_feature_sizes()[self._node_type]))
-
-        # fill valid locs with features
-        feature_query = f"""
-            UNWIND $node_id_list AS node_id
-            MATCH(node) {where_clause}
-            RETURN node.features as features
-            """
-        result = self.graph_db.run(feature_query, parameters={"node_id_list": nodes})
-        rows = result.data()
-
-        # this method currently doesn't handle any other invalid IDs. If there are other
-        # invalid ids, we should raise an error
-        if len(rows) != sum(valid):
-            raise ValueError(
-                "nodes: Found values that did not return any results from the database."
+            # None's should be filled with zeros in the feature matrix
+            features = np.zeros(
+                (len(nodes), self.node_feature_sizes()[self._node_type])
             )
 
-        features[valid, :] = np.array([row["features"] for row in rows])
+            # fill valid locs with features
+            feature_query = f"""
+                UNWIND $node_id_list AS node_id
+                MATCH(node) WHERE node.ID = node_id
+                {return_node}
+                """
+            result = self.graph_db.run(
+                feature_query, parameters={"node_id_list": nodes}
+            )
+            rows = result.data()
 
-        return features
+            # this method currently doesn't handle any other invalid IDs. If there are other
+            # invalid ids, we should raise an error
+            if len(rows) != sum(valid):
+                ids = {node["ID"] for node in rows}
+                invalid = [
+                    node for node in nodes if node is not None and node not in ids
+                ]
+                raise ValueError(
+                    f"nodes: Found values that did not return any results from the database: {comma_sep(invalid)}"
+                )
+
+            features[valid, :] = [row["features"] for row in rows]
+
+            return IndexedArray(features, index=nodes)
 
     def node_features(self, nodes):
         """
@@ -129,7 +155,7 @@ class Neo4jStellarGraph:
             Numpy array containing the node features for the requested nodes.
         """
         if self._nodes is not None:
-            return _features(
+            return extract_element_features(
                 self._nodes,
                 self.unique_node_type,
                 "nodes",
@@ -144,6 +170,19 @@ class Neo4jStellarGraph:
         return self._node_type
 
     def node_feature_sizes(self):
+        """
+        Get the feature sizes for the node types in the graph.
+
+        This method obtains the feature size by sampling a random node from the graph. Currently
+        this class only supports a single default node type, and makes the following assumptions:
+
+        - all nodes have features as a single list
+
+        - all nodes' features have the same size
+
+        Returns:
+            A dictionary of node type and integer feature size.
+        """
         if self._node_feature_size is None:
             # if feature size is unknown, take a random node's features
             feature_query = f"""

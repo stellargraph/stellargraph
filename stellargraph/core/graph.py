@@ -39,7 +39,7 @@ from . import convert
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 
-def _features(element_data, unique, name, ids, type, use_ilocs):
+def extract_element_features(element_data, unique, name, ids, type, use_ilocs):
     if ids is None:
         if type is None:
             type = unique(
@@ -1247,7 +1247,7 @@ class StellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes or node type.
         """
-        return _features(
+        return extract_element_features(
             self._nodes, self.unique_node_type, "node", nodes, node_type, use_ilocs
         )
 
@@ -1282,7 +1282,7 @@ class StellarGraph:
         Returns:
             Numpy array containing the edge features for the requested edges or edge type.
         """
-        return _features(
+        return extract_element_features(
             self._edges, self.unique_edge_type, "edge", edges, edge_type, use_ilocs
         )
 

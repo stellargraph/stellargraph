@@ -133,14 +133,22 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         """
         nodes_per_hop = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
 
-        batch_feats = [self.graph.node_features(nodes) for nodes in nodes_per_hop]
+        batch_nodes = np.concatenate(nodes_per_hop)
+        batch_features = self.graph.node_features(batch_nodes)
 
-        # Resize features for sampled nodes
-        batch_feats = [
-            np.reshape(a, (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]))
-            for a in batch_feats
-        ]
-        return batch_feats
+        features = []
+        idx = 0
+        for nodes in nodes_per_hop:
+            features_for_slot = batch_features[idx : idx + len(nodes)]
+            features.append(
+                np.reshape(
+                    features_for_slot,
+                    (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]),
+                )
+            )
+            idx += len(nodes)
+
+        return features
 
 
 @experimental(reason="the class is not fully tested")
@@ -214,13 +222,17 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         max_slots = 2 ** (max_hops + 1) - 1
         features = [None] * max_slots  # flattened binary tree
 
+        batch_nodes = np.concatenate(node_samples)
+        batch_features = self.graph.node_features(batch_nodes)
+
+        idx = 0
         for slot in range(max_slots):
-            nodes_in_slot = node_samples[slot]
-            features_for_slot = self.graph.node_features(nodes_in_slot)
+            features_for_slot = batch_features[idx : idx + len(node_samples[slot])]
             resize = -1 if np.size(features_for_slot) > 0 else 0
             features[slot] = np.reshape(
                 features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
             )
+            idx += len(node_samples[slot])
 
         return features
 
