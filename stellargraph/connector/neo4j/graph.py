@@ -79,32 +79,52 @@ class Neo4jStellarGraph:
         # cache feature size too
         self._node_feature_size = self._nodes.features_of_type(self._node_type).shape[1]
 
-    def _node_features_from_db(self, node_ids):
-        # nones should be filled with zeros in the feature matrix
-        if not isinstance(node_ids, np.ndarray):
-            node_ids = np.array(node_ids)
-        valid = node_ids != None
-        features = np.zeros((len(node_ids), self.node_feature_sizes()[self._node_type]))
+    def _node_features_from_db(self, nodes):
+        if nodes is None:
+            where_clause = ""
+            valid = slice(None)
+        else:
+            where_clause = " WHERE node.ID = node_id"
+            if isinstance(nodes, np.ndarray):
+                valid = nodes != None
+                # we need to create a list of integers to run the neo4j query with
+                nodes = [int(node) for node in nodes]
+            elif isinstance(nodes, list):
+                valid = np.array(nodes) != None
+            else:
+                # single node
+                valid = np.array([nodes is not None])
+                nodes = [nodes]
+
+        # None's should be filled with zeros in the feature matrix
+        features = np.zeros((len(nodes), self.node_feature_sizes()[self._node_type]))
 
         # fill valid locs with features
         feature_query = f"""
             UNWIND $node_id_list AS node_id
-            MATCH(node) WHERE node.ID = node_id
+            MATCH(node) {where_clause}
             RETURN node.features as features
             """
-        result = self.graph_db.run(
-            feature_query, parameters={"node_id_list": list(node_ids[valid])},
-        )
-        features[valid, :] = np.array([row["features"] for row in result.data()])
+        result = self.graph_db.run(feature_query, parameters={"node_id_list": nodes})
+        rows = result.data()
+
+        # this method currently doesn't handle any other invalid IDs. If there are other
+        # invalid ids, we should raise an error
+        if len(rows) != sum(valid):
+            raise ValueError(
+                "nodes: Found values that did not return any results from the database."
+            )
+
+        features[valid, :] = np.array([row["features"] for row in rows])
 
         return features
 
-    def node_features(self, node_ids):
+    def node_features(self, nodes):
         """
         Get the numeric feature vectors for the specified nodes or node type.
 
         Args:
-            nodes (list): list of node IDs.
+            nodes (list or hashable, optional): Node ID or list of node IDs.
         Returns:
             Numpy array containing the node features for the requested nodes.
         """
@@ -113,12 +133,12 @@ class Neo4jStellarGraph:
                 self._nodes,
                 self.unique_node_type,
                 "nodes",
-                node_ids,
+                nodes,
                 type=None,
                 use_ilocs=False,
             )
         else:
-            return self._node_features_from_db(node_ids)
+            return self._node_features_from_db(nodes)
 
     def unique_node_type(self):
         return self._node_type
