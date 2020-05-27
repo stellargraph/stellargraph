@@ -27,6 +27,16 @@ from ..core.validation import require_integer_in_range
 
 
 class SlidingFeaturesNodeGenerator(Generator):
+    """
+    A data generator for a graph containing sequence data, created by sliding windows across the
+    features of each node in a graph.
+
+    Args:
+        G (StellarGraph): a graph instance where the node features are ordered sequence data
+        window_size (int): the number of sequence points included in the sliding window.
+        batch_size (int, optional): the number of sliding windows to include in each batch.
+    """
+
     def __init__(self, G, window_size, batch_size=1):
         require_integer_in_range(window_size, "window_size", min_val=1)
         require_integer_in_range(batch_size, "batch_size", min_val=1)
@@ -45,6 +55,57 @@ class SlidingFeaturesNodeGenerator(Generator):
         return 1
 
     def flow(self, sequence_iloc_slice, target_distance=None):
+        """
+        Create a sequence object for time series prediction within the given section of the node
+        features.
+
+        This handles both univariate data (each node has a single associated feature vector) and
+        multivariate data (each node has an associated feature tensor). The features are always
+        sliced and indexed along the first feature axis.
+
+        Args:
+            sequence_iloc_slice (slice):
+                A slice object of the range of features from which to select windows. A slice object
+                is the object form of ``:`` within ``[...]``, e.g. ``slice(a, b)`` is equivalent to
+                the ``a:b`` in ``v[a:b]``, and ``slice(None, b)`` is equivalent to ``v[:b]``. As
+                with that slicing, this parameter is inclusive in the start and exclusive in the
+                end.
+
+                For example, suppose the graph has feature vectors of length 10 and ``window_size =
+                3``:
+
+                * passing in ``slice(None, None)`` will create 7 windows across all 10 features
+                  starting with the features slice ``0:3``, then ``1:4``, and so on.
+
+                * passing in ``slice(4, 7)`` will create just one window, slicing the three elements
+                  ``4:7``.
+
+                For training, one might do a train-test split by choosing a boundary and considering
+                everything before that as training data, and everything after, e.g. 80% of the
+                features::
+
+                    train_end = int(0.8 * sequence_length)
+                    train_gen = sliding_generator.flow(slice(None, train_end))
+                    test_gen = sliding_generator.flow(slice(train_end, None))
+
+            target_distance (int, optional):
+                The distance from the last element of each window to select an element to include as
+                a supervised training target. Note: this always stays within the slice defined by
+                ``sequence_iloc_slice``.
+
+                Continuing the example above: a call like ``sliding_generator.flow(slice(4, 9),
+                target_distance=1)`` will yield two pairs of window and target:
+
+                * a feature window slicing ``4:7`` which includes the features at indices 4, 5, 6,
+                  and then a target feature at index 7 (distance 1 from the last element of the
+                  feature window)
+
+                * a feature window slicing ``5:8`` and a target feature from index 8.
+
+        Returns:
+            A Keras sequence that yields batches of sliced windows of features, and, optionally,
+            selected target values.
+        """
         return SlidingFeaturesNodeSequence(
             self._features,
             self.window_size,
@@ -93,6 +154,8 @@ class SlidingFeaturesNodeSequence(Sequence):
 
             total_sequence_samples = features.shape[1]
             start, stop, step = sequence_iloc_slice.indices(total_sequence_samples)
+            # non-trivial steps aren't supported at the moment, so this doesn't need to be included
+            # in the message
             assert step == 1
 
             raise ValueError(
