@@ -346,12 +346,15 @@ class BiasedRandomWalk(RandomWalk):
             return
 
         # Check that all edge weights are greater than or equal to 0.
-        edges, weights = self.graph.edges(include_edge_weight=True, use_ilocs=True)
+        source, target, _, weights = self.graph.edge_arrays(
+            include_edge_weight=True, use_ilocs=True
+        )
         (invalid,) = np.where((weights < 0) | ~np.isfinite(weights))
         if len(invalid) > 0:
 
             def format(idx):
-                s, t = edges[idx]
+                s = source[idx]
+                t = target[idx]
                 w = weights[idx]
                 return f"{s!r} to {t!r} (weight = {w})"
 
