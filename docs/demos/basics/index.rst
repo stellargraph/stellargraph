@@ -8,6 +8,7 @@ Find demos for a format
 
 
 * :doc:`loading-pandas <loading-pandas>` shows the recommended way to load data, using Pandas (supporting any input format that Pandas supports, including CSV files and SQL databases)
+* :doc:`loading-numpy <loading-numpy>` shows the lowest-overhead way to load data, using NumPy
 * :doc:`loading-networkx <loading-networkx>` shows how to load data from a `NetworkX <https://networkx.github.io>`_ graph
 * :doc:`loading-saving-neo4j <loading-saving-neo4j>` shows how to load data from a `Neo4j <https://neo4j.com>`_ database, and save results back to it
 
