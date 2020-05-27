@@ -410,8 +410,7 @@ class BiasedRandomWalk(RandomWalk):
             )
         if np.isinf(iq):
             raise ValueError(
-                f"p: value is too small. It must be possible to "
-                f"represent 1/p in {str(weight_dtype)}"
+                f"q: value ({q}) is too small. It must be possible to represent 1/q in {weight_dtype}, but this value overflows to infinity."
             )
 
         walks = []
