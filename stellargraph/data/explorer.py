@@ -303,8 +303,8 @@ def naive_weighted_choices(rs, weights):
     requires a lot of preprocessing (normalized probabilties), and
     does a lot of conversions/checks/preprocessing internally.
     """
-    probs = np.cumsum(weights) / weights.sum()
-    idx = np.searchsorted(probs, rs.random(), side="right")
+    probs = np.cumsum(weights)
+    idx = np.searchsorted(probs, rs.random() * probs[-1], side="right")
 
     return idx
 
