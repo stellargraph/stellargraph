@@ -140,10 +140,11 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         idx = 0
         for nodes in nodes_per_hop:
             features_for_slot = batch_features[idx : idx + len(nodes)]
+            resize = -1 if np.size(features_for_slot) > 0 else 0
             features.append(
                 np.reshape(
                     features_for_slot,
-                    (len(head_nodes), -1 if np.size(a) > 0 else 0, a.shape[1]),
+                    (len(head_nodes), resize, features_for_slot.shape[1]),
                 )
             )
             idx += len(nodes)

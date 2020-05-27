@@ -100,7 +100,8 @@ class Neo4jStellarGraph:
             result = self.graph_db.run(feature_query)
             rows = result.data()
             return IndexedArray(
-                [node["features"] for node in rows], index=[node["ID"] for node in rows]
+                np.array([node["node_data"]["features"] for node in rows]),
+                index=[node["node_data"]["ID"] for node in rows],
             )
         else:
             if isinstance(nodes, np.ndarray):
@@ -133,7 +134,7 @@ class Neo4jStellarGraph:
             # this method currently doesn't handle any other invalid IDs. If there are other
             # invalid ids, we should raise an error
             if len(rows) != sum(valid):
-                ids = {node["ID"] for node in rows}
+                ids = {node["node_data"]["ID"] for node in rows}
                 invalid = [
                     node for node in nodes if node is not None and node not in ids
                 ]
@@ -141,7 +142,7 @@ class Neo4jStellarGraph:
                     f"nodes: Found values that did not return any results from the database: {comma_sep(invalid)}"
                 )
 
-            features[valid, :] = [row["features"] for row in rows]
+            features[valid, :] = [row["node_data"]["features"] for row in rows]
 
             return IndexedArray(features, index=nodes)
 
