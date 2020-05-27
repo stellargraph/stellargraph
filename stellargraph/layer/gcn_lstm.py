@@ -126,7 +126,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         Builds the layer
 
         Args:
-            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
+            input_shapes (list of int): shapes of the layer's inputs (the batches of node features)
 
         """
         _batch_dim, n_nodes, t_steps = input_shapes
@@ -164,7 +164,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (ndarray): node features (size B x N x T), where B is the batch size, T is the
+            features (ndarray): node features (size B x N x T), where B is the batch size, T is the
                 sequence length, and N is the number of nodes in the graph.
 
         Returns:
@@ -296,6 +296,7 @@ class GraphConvolutionLSTM:
                 )
             )
 
+        # put time-sequence dimension last for LSTM layers
         self._layers.append(Permute((2, 1)))
 
         for ii in range(n_lstm_layers - 1):
