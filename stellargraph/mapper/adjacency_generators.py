@@ -32,17 +32,19 @@ class AdjacencyPowerGenerator(Generator):
         G (StellarGraph): a machine-learning StellarGraph-type graph
         num_powers (int): the number of adjacency powers to calculate. Defaults
             to `10` as this value was found to perform well by the authors of the paper.
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
 
     """
 
-    def __init__(self, G, num_powers=10):
+    def __init__(self, G, num_powers=10, weighted=False):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
         require_integer_in_range(num_powers, "num_powers", min_val=1)
 
-        Aadj = G.to_adjacency_matrix().tocoo()
+        Aadj = G.to_adjacency_matrix(weighted=weighted).tocoo()
         indices = np.column_stack((Aadj.col, Aadj.row))
 
         self.Aadj_T = tf.sparse.SparseTensor(

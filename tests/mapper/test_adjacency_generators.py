@@ -16,7 +16,7 @@
 
 from stellargraph.core.utils import normalize_adj
 from stellargraph.mapper.adjacency_generators import AdjacencyPowerGenerator
-from ..test_utils.graphs import barbell
+from ..test_utils.graphs import barbell, example_graph
 import tensorflow as tf
 
 
@@ -110,3 +110,22 @@ def test_partial_powers(barbell, num_powers):
         for j in range(num_powers):
             print(i, j)
             assert np.allclose(partial_powers[0, j, :], actual_powers[j][i, :])
+
+
+def test_weighted(barbell):
+    num_powers = 8
+
+    base_adj = barbell.to_adjacency_matrix(weighted=True)
+    Aadj = np.asarray(normalize_adj(base_adj, symmetric=False).todense()).T
+    actual_powers = [Aadj]
+    for _ in range(num_powers - 1):
+        actual_powers.append(actual_powers[-1].dot(Aadj))
+
+    generator = AdjacencyPowerGenerator(barbell, num_powers=num_powers, weighted=True)
+    dataset = generator.flow(batch_size=1)
+    for i, (x, y) in enumerate(dataset.take(barbell.number_of_nodes())):
+
+        partial_powers = x[1].numpy()
+        for j in range(num_powers):
+            print(i, j)
+            np.testing.assert_allclose(partial_powers[0, j, :], actual_powers[j][i, :])
