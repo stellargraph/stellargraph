@@ -119,6 +119,14 @@ This table lists all node classification demos, including the algorithms trained
      - yes
      -
      - yes
+   * - :doc:`GCN, Deep Graph Infomax and fine-tuning <gcn-deep-graph-infomax-fine-tuning-node-classification>`
+     - GCN, DeepGraphInfomax, semi-supervised training
+     - yes
+     -
+     -
+     -
+     -
+     - yes
 
 
 See :doc:`the root README <../../README>` or each algorithm's documentation for the relevant citation(s). See :doc:`the demo index <../index>` for more tasks, and a summary of each algorithm.

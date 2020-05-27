@@ -70,6 +70,9 @@ class ClusterNodeGenerator(Generator):
         self.q = q  # The number of clusters to sample per mini-batch
         self.lam = lam
         self.clusters = clusters
+        self.method = "cluster_gcn"
+        self.multiplicity = 1
+        self.use_sparse = False
 
         if isinstance(clusters, list):
             self.k = len(clusters)

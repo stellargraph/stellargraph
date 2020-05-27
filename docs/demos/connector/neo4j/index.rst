@@ -7,6 +7,9 @@ In this folder:
 
 - :doc:`load-cora-into-neo4j` provides demo of loading Cora network citation dataset into neo4j database.
 
+- :doc:`cluster-gcn-on-cora-neo4j-example` provide an example of running Cluster GCN with connection to a graph database.
+
+
 Required Installations:
 
 - **Neo4J**: `Instruction to download <https://neo4j.com/docs/operations-manual/current/installation/>`_.

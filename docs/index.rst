@@ -14,6 +14,7 @@ Welcome to StellarGraph's documentation!
    demos/index
    api
    hinsage
+   glossary
 
 
 Indices and tables
