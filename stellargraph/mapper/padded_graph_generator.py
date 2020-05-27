@@ -85,6 +85,7 @@ class PaddedGraphGenerator(Generator):
         graphs,
         targets=None,
         symmetric_normalization=True,
+        weighted=False,
         batch_size=1,
         name=None,
         shuffle=False,
@@ -103,6 +104,8 @@ class PaddedGraphGenerator(Generator):
                 matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
                 degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
                 matrix.
+            weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+                graph as unweighted.
             batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
             shuffle (bool, optional): If True the node IDs will be shuffled at the end of each epoch.
@@ -144,6 +147,7 @@ class PaddedGraphGenerator(Generator):
             graphs=graphs,
             targets=targets,
             symmetric_normalization=symmetric_normalization,
+            weighted=weighted,
             batch_size=batch_size,
             name=name,
             shuffle=shuffle,

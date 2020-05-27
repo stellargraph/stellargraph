@@ -27,7 +27,8 @@ from ..test_utils.graphs import example_graph_random
 def create_stellargraph():
     nodes = pd.DataFrame([[1, 1], [1, 0], [0, 1], [0.5, 1]], index=["a", "b", "c", "d"])
     edges = pd.DataFrame(
-        [("a", "b"), ("b", "c"), ("a", "c"), ("b", "d")], columns=["source", "target"]
+        [("a", "b", 1.0), ("b", "c", 0.4), ("a", "c", 2.0), ("b", "d", 10.0)],
+        columns=["source", "target", "weight"],
     )
     return StellarGraph(nodes, edges)
 
@@ -149,18 +150,26 @@ def test_ClusterNodeSquence():
 
     G = create_stellargraph()
 
-    generator = ClusterNodeGenerator(G, clusters=1, q=1).flow(
+    generator = ClusterNodeGenerator(G, clusters=1, q=1, weighted=False).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
+    weighted_generator = ClusterNodeGenerator(G, clusters=1, q=1, weighted=True).flow(
         node_ids=["a", "b", "c", "d"]
     )
 
     assert len(generator) == 1
+    batch = generator[0]
+    weighted_batch = generator[0]
+    assert not np.allclose(
+        np.sort(weighted_batch[0][2].ravel()), np.sort(batch[0][2].ravel())
+    )
 
-    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(
+    generator = ClusterNodeGenerator(G, clusters=4, q=1, weighted=weighted).flow(
         node_ids=["a", "b", "c", "d"]
     )
     assert len(generator) == 4
 
-    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(
+    generator = ClusterNodeGenerator(G, clusters=4, q=1, weighted=weighted).flow(
         node_ids=["a", "b", "c", "d"]
     )
 
@@ -177,7 +186,7 @@ def test_ClusterNodeSquence():
         assert batch[1] is None
 
     # Use 2 clusters
-    generator = ClusterNodeGenerator(G, clusters=2, q=1).flow(
+    generator = ClusterNodeGenerator(G, clusters=2, q=1, weighted=weighted).flow(
         node_ids=["a", "b", "c", "d"]
     )
     assert len(generator) == 2
@@ -193,6 +202,29 @@ def test_ClusterNodeSquence():
         assert batch[0][2].shape == (1, 2, 2)
         # no targets given
         assert batch[1] is None
+
+
+def test_cluster_weighted():
+
+    G = create_stellargraph()
+
+    unweighted = ClusterNodeGenerator(G, clusters=1, q=1, weighted=False).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
+    weighted = ClusterNodeGenerator(G, clusters=1, q=1, weighted=True).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
+
+    assert len(unweighted) == len(weighted) == 1
+    unweighted_features, _ = unweighted[0]
+    weighted_features, _ = weighted[0]
+
+    def canonical(adj):
+        return np.sort(adj.ravel())
+
+    assert not np.allclose(
+        canonical(weighted_features[2]), canonical(unweighted_features[2])
+    )
 
 
 @pytest.mark.benchmark(group="ClusterGCN generator")

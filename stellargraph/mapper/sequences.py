@@ -563,6 +563,7 @@ class PaddedGraphSequence(Sequence):
         targets=None,
         normalize=True,
         symmetric_normalization=True,
+        weighted=False,
         batch_size=1,
         name=None,
         shuffle=False,
@@ -584,17 +585,17 @@ class PaddedGraphSequence(Sequence):
 
             self.targets = np.asanyarray(targets)
 
+        adjacencies = [graph.to_adjacency_matrix(weighted=weighted) for graph in graphs]
+
         if self.normalize_adj:
             self.normalized_adjs = [
                 normalize_adj(
-                    graph.to_adjacency_matrix(),
-                    symmetric=symmetric_normalization,
-                    add_self_loops=True,
+                    adj, symmetric=symmetric_normalization, add_self_loops=True,
                 )
-                for graph in graphs
+                for adj in adjacencies
             ]
         else:
-            self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
+            self.normalize_adjs = adjacencies
 
         self.normalized_adjs = np.asanyarray(self.normalized_adjs)
         _, self._np_rs = random_state(seed)
