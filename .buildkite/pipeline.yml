@@ -83,7 +83,7 @@ steps:
         <<: *compose-config
         run: runner-3_6
     agents:
-      queue: "t2medium"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
 
   - label: ":python: 3.7"
     <<: *timeout
@@ -96,7 +96,7 @@ steps:
         <<: *compose-config
         run: runner-3_7
     agents:
-      queue: "t2medium"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
 
   - label: ":python: 3.8"
     <<: *timeout
@@ -109,13 +109,13 @@ steps:
         <<: *compose-config
         run: runner-3_8
     agents:
-      queue: "t2medium"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
 
   - label: ":python::book: test notebooks %n"
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 49
+    parallelism: 52
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -123,7 +123,7 @@ steps:
         <<: *compose-config
         run: runner-3_6
     agents:
-      queue: "t2large"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
     soft_fail:
       - exit_status: 2
 
@@ -143,7 +143,7 @@ steps:
       RUNNER_DEPENDS_ON: neo4j
       NEO4J_VERSION: "4.0"
     agents:
-      queue: "t2large"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
 
   - <<: *test-neo4j-notebooks
     label: ":python::book: test neo4j notebooks against neo4j 3.5"

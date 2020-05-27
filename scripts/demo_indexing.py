@@ -436,6 +436,7 @@ ALGORITHMS = [
         nc=T(link="node-classification/attri2vec-node-classification"),
         lp=T(link="link-prediction/attri2vec-link-prediction"),
         rl=T(link="embeddings/attri2vec-embeddings"),
+        inductive=True,
     ),
     Algorithm(
         "GraphSAGE",

@@ -63,6 +63,7 @@ extensions = [
     "sphinx_markdown_tables",
     "nbsphinx",
     "nbsphinx_link",
+    "notfound.extension",
 ]
 
 # Add mappings

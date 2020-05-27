@@ -30,7 +30,7 @@ Find algorithms for a task
 * Time series or sequence prediction for nodes within a graph (including spatio-temporal data): :doc:`time series <./time-series/index>`
 * Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
 * Loading data into a ``StellarGraph`` object, with Pandas, Neo4j or NetworkX: :doc:`basics <./basics/index>`
-* Experimental: running GraphSAGE on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
+* Experimental: running GraphSAGE or Cluster-GCN on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
 
 Find a demo for an algorithm
 ----------------------------
@@ -170,7 +170,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/attri2vec-node-classification>`
      - :any:`demo <link-prediction/attri2vec-link-prediction>`
      - :any:`demo <embeddings/attri2vec-embeddings>`
-     -
+     - yes
      -
    *
      - GraphSAGE
