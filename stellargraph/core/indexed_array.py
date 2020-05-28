@@ -16,6 +16,8 @@
 
 import numpy as np
 
+from .utils import zero_sized_array
+
 
 class IndexedArray:
     """
@@ -58,7 +60,7 @@ class IndexedArray:
                 index = range(0)
 
             # uint8 is essentially maximally promotable
-            values = np.empty((index_len(), 0), dtype=np.uint8)
+            values = zero_sized_array((index_len(), 0), dtype=np.uint8)
 
         if not isinstance(values, np.ndarray):
             raise TypeError(
