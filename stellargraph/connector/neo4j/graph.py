@@ -94,7 +94,7 @@ class Neo4jStellarGraph:
         """
 
         # this param is for compatibility with StellarGraph.to_adjacency_matrix
-        if weighted is not False:
+        if weighted:
             raise ValueError("weighted: expected False, found {weighted!r}")
 
         # neo4j optimizes this query to be O(edges incident to nodes)
