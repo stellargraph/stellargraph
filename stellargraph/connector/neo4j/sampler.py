@@ -23,16 +23,22 @@ from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph, Neo4jStellarDiGraph
 
 
-def _bfs_neighbor_query(sampling_direction):
+def _bfs_neighbor_query(sampling_direction, node_label=None):
     """
     Generate the Cypher neighbor sampling query for a batch of nodes.
 
     Args:
         sampling_direction (String): indicate type of neighbors needed to sample. Direction must be 'in', 'out' or 'both'.
+        node_label (str, optional): Common label for all nodes in the graph, if such label exists.
+            Providing this is useful if there are any indexes created on this label (e.g. on node IDs),
+            as it will improve performance of queries.
     Returns:
         The cypher query that samples the neighbor ids for a batch of nodes.
     """
     direction_arrow = {"BOTH": "--", "IN": "<--", "OUT": "-->"}[sampling_direction]
+    match_cur_node = (
+        "MATCH(cur_node)" if node_label is None else f"MATCH(cur_node:{node_label})"
+    )
 
     return f"""
         // expand the list of node id in seperate rows of ids.
@@ -41,7 +47,7 @@ def _bfs_neighbor_query(sampling_direction):
         // for each node id in every row, collect the random list of its neighbors.
         CALL apoc.cypher.run(
 
-            'MATCH(cur_node) WHERE cur_node.ID = $node_id
+            '{match_cur_node} WHERE cur_node.ID = $node_id
 
             // find the neighbors
             MATCH (cur_node){direction_arrow}(neighbors)
@@ -90,7 +96,9 @@ class Neo4JSampledBreadthFirstWalk:
         """
 
         samples = [[head_node for head_node in nodes for _ in range(n)]]
-        neighbor_query = _bfs_neighbor_query(sampling_direction="BOTH")
+        neighbor_query = _bfs_neighbor_query(
+            sampling_direction="BOTH", node_label=self.graph.node_label
+        )
 
         # this sends O(number of hops) queries to the database, because the code is cleanest like that
         for num_sample in n_size:
@@ -142,8 +150,12 @@ class Neo4JDirectedBreadthFirstNeighbors:
         head_nodes = [head_node for head_node in nodes for _ in range(n)]
         hops = [[head_nodes]]
 
-        in_sample_query = _bfs_neighbor_query(sampling_direction="IN")
-        out_sample_query = _bfs_neighbor_query(sampling_direction="OUT")
+        in_sample_query = _bfs_neighbor_query(
+            sampling_direction="IN", node_label=self.graph.node_label
+        )
+        out_sample_query = _bfs_neighbor_query(
+            sampling_direction="OUT", node_label=self.graph.node_label
+        )
 
         # this sends O(2^number of hops) queries to the database, because the code is cleanest like that
         for in_num, out_num in zip(in_size, out_size):

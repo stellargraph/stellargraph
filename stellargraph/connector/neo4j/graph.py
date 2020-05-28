@@ -39,19 +39,29 @@ class Neo4jStellarGraph:
 
     Args:
         graph (py2neo.Graph): a py2neo.Graph connected to a Neo4j graph database.
+        node_label (str, optional): Common label for all nodes in the graph, if such label exists.
+            Providing this is useful if there are any indexes created on this label (e.g. on node IDs),
+            as it will improve performance of queries.
         is_directed (bool, optional): If True, the data represents a
             directed multigraph, otherwise an undirected multigraph.
     """
 
-    def __init__(self, graph_db, is_directed=False):
+    def __init__(self, graph_db, node_label=None, is_directed=False):
 
         self.graph_db = graph_db
+        self.node_label = node_label
         self._is_directed = is_directed
         self._node_feature_size = None
         self._nodes = None
 
         # FIXME: methods in this class currently only support homogeneous graphs with default node type
         self._node_type = globalvar.NODE_TYPE_DEFAULT
+
+    def _match_node(self):
+        if self.node_label is not None:
+            return f"MATCH (node:{self.node_label})"
+        else:
+            return "MATCH (node)"
 
     def nodes(self):
         """
@@ -61,8 +71,8 @@ class Neo4jStellarGraph:
             The node IDs of all the nodes in the graph.
         """
         node_ids_query = f"""
-            MATCH (n)
-            RETURN n.ID as node_id
+            {self._match_node()}
+            RETURN node.ID as node_id
             """
 
         result = self.graph_db.run(node_ids_query)
@@ -94,7 +104,7 @@ class Neo4jStellarGraph:
             """
         if nodes is None:
             feature_query = f"""
-                MATCH(node)
+                {self._match_node()}
                 {return_node}
                 """
             result = self.graph_db.run(feature_query)
@@ -123,7 +133,7 @@ class Neo4jStellarGraph:
             # fill valid locs with features
             feature_query = f"""
                 UNWIND $node_id_list AS node_id
-                MATCH(node) WHERE node.ID = node_id
+                {self._match_node()} WHERE node.ID = node_id
                 {return_node}
                 """
             result = self.graph_db.run(
@@ -187,7 +197,7 @@ class Neo4jStellarGraph:
         if self._node_feature_size is None:
             # if feature size is unknown, take a random node's features
             feature_query = f"""
-                MATCH(node)
+                {self._match_node()}
                 RETURN node.features as features LIMIT 1
                 """
             result = self.graph_db.run(feature_query)
@@ -258,5 +268,5 @@ class Neo4jStellarGraph:
 
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
-    def __init__(self, graph_db):
-        super().__init__(graph_db, is_directed=True)
+    def __init__(self, graph_db, node_label=None):
+        super().__init__(graph_db, node_label=node_label, is_directed=True)
