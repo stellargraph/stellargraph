@@ -163,7 +163,6 @@ def test_gcn_lstm_model():
     # check model training
     history = model.fit(fx, fy, epochs=5, batch_size=2, shuffle=True, verbose=0)
 
-    assert history.params["batch_size"] == 2
     assert history.params["epochs"] == 5
     assert len(history.history["loss"]) == 5
 
