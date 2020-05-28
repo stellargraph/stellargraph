@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri May  1 13:02:32 2020
-
-@author: hab031
-"""
-
 # -*- coding: utf-8 -*-
 #
 # Copyright 2019-2020 Data61, CSIRO
