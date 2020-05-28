@@ -24,9 +24,9 @@ Created on Fri May  1 13:02:32 2020
 
 
 import numpy as np
+from tensorflow.keras import Model
 from stellargraph.layer import GraphConvolutionLSTM
 from stellargraph.layer import FixedAdjacencyGraphConvolution
-import pytest
 
 
 def get_timeseries_graph_data():
@@ -43,7 +43,7 @@ def test_GraphConvolution_config():
     gc_layer = FixedAdjacencyGraphConvolution(units=10, A=a, activation="relu")
     conf = gc_layer.get_config()
 
-    assert conf["units"] == (10,)
+    assert conf["units"] == 10
     assert conf["activation"] == "relu"
     assert conf["use_bias"] == True
     assert conf["kernel_initializer"]["class_name"] == "GlorotUniform"
@@ -60,47 +60,39 @@ def test_gcn_lstm_model_parameters():
     gcn_lstm_model = GraphConvolutionLSTM(
         seq_len=fx.shape[-2],
         adj=a,
-        gc_layers=2,
+        gc_layer_sizes=[2, 2],
         gc_activations=["relu", "relu"],
-        lstm_layer_size=[10],
+        lstm_layer_sizes=[10],
         lstm_activations=["tanh"],
     )
     assert gcn_lstm_model.gc_activations == ["relu", "relu"]
     assert gcn_lstm_model.dropout == 0.5
     assert gcn_lstm_model.lstm_activations == ["tanh"]
-    assert gcn_lstm_model.lstm_layer_size == [10]
-    assert len(gcn_lstm_model.lstm_layer_size) == len(gcn_lstm_model.lstm_activations)
+    assert gcn_lstm_model.lstm_layer_sizes == [10]
+    assert len(gcn_lstm_model.lstm_layer_sizes) == len(gcn_lstm_model.lstm_activations)
 
 
 def test_gcn_lstm_activations():
     fx, fy, a = get_timeseries_graph_data()
 
     gcn_lstm_model = GraphConvolutionLSTM(
-        seq_len=fx.shape[-2], adj=a, gc_layers=5, lstm_layer_size=[8, 16, 32, 64],
+        seq_len=fx.shape[-2],
+        adj=a,
+        gc_layer_sizes=[10, 10, 10, 10, 10],
+        lstm_layer_sizes=[8, 16, 32, 64],
     )
     assert gcn_lstm_model.gc_activations == ["relu", "relu", "relu", "relu", "relu"]
     assert gcn_lstm_model.lstm_activations == ["tanh", "tanh", "tanh", "tanh"]
 
-    with pytest.raises(ValueError):
-        # More regularisers than layers
-        gcn_lstm_model = GraphConvolutionLSTM(
-            seq_len=fx.shape[-2],
-            adj=a,
-            gc_layers=2,
-            gc_activations=["relu"],
-            lstm_layer_size=[8, 16, 32, 64],
-        )
+    gcn_lstm_model = GraphConvolutionLSTM(
+        seq_len=fx.shape[-2],
+        adj=a,
+        gc_layer_sizes=[10],
+        gc_activations=["relu"],
+        lstm_layer_sizes=[8, 16, 32, 64],
+    )
 
-    with pytest.raises(ValueError):
-        # More regularisers than layers
-        gcn_lstm_model = GraphConvolutionLSTM(
-            seq_len=fx.shape[-2],
-            adj=a,
-            gc_layers=1,
-            gc_activations=["relu"],
-            lstm_layer_size=[32],
-            lstm_activations=["tanh", "tanh"],
-        )
+    assert gcn_lstm_model.lstm_activations == ["tanh", "tanh", "tanh", "tanh"]
 
 
 def test_lstm_return_sequences():
@@ -109,9 +101,9 @@ def test_lstm_return_sequences():
     gcn_lstm_model = GraphConvolutionLSTM(
         seq_len=fx.shape[-2],
         adj=a,
-        gc_layers=3,
+        gc_layer_sizes=[16, 16, 16],
         gc_activations=["relu", "relu", "relu"],
-        lstm_layer_size=[8, 16, 32],
+        lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
     n_layers = len(gcn_lstm_model._layers)
@@ -128,12 +120,50 @@ def test_gcn_lstm_layers():
     gcn_lstm_model = GraphConvolutionLSTM(
         seq_len=fx.shape[-2],
         adj=a,
-        gc_layers=3,
+        gc_layer_sizes=[8, 8, 16],
         gc_activations=["relu", "relu", "relu"],
-        lstm_layer_size=[8, 16, 32],
+        lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
     assert (
         len(gcn_lstm_model._layers)
-        == len(gcn_lstm_model.gc_activations) + len(gcn_lstm_model.lstm_layer_size) + 2
+        == len(gcn_lstm_model.gc_layer_sizes) + len(gcn_lstm_model.lstm_layer_sizes) + 2
     )
+
+
+def test_gcn_lstm_model_input_output():
+    fx, fy, a = get_timeseries_graph_data()
+
+    gcn_lstm_model = GraphConvolutionLSTM(
+        seq_len=fx.shape[-2],
+        adj=a,
+        gc_layer_sizes=[8, 8, 16],
+        gc_activations=["relu", "relu", "relu"],
+        lstm_layer_sizes=[8, 16, 32],
+        lstm_activations=["tanh"],
+    )
+
+    x_input, x_output = gcn_lstm_model.in_out_tensors()
+    assert x_input.shape[1] == fx.shape[-2]
+    assert x_input.shape[2] == fx.shape[-1]
+    assert x_output.shape[1] == fx.shape[-1]
+
+
+def test_gcn_lstm_model():
+    fx, fy, a = get_timeseries_graph_data()
+
+    gcn_lstm_model = GraphConvolutionLSTM(
+        seq_len=fx.shape[-2],
+        adj=a,
+        gc_layer_sizes=[8, 8, 16],
+        gc_activations=["relu", "relu", "relu"],
+        lstm_layer_sizes=[8, 16, 32],
+        lstm_activations=["tanh"],
+    )
+
+    x_input, x_output = gcn_lstm_model.in_out_tensors()
+    model = Model(inputs=x_input, outputs=x_output)
+
+    test_sample = np.random.rand(1, 4, 5)
+    pred = model.predict(test_sample)
+    assert pred.shape == (1, 5)
