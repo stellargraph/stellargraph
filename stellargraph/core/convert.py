@@ -202,7 +202,11 @@ class ColumnarConverter:
         ids = ids[sorting]
         type_column = type_column[sorting]
         columns = {name: array[sorting] for name, array in columns.items()}
-        features = features[sorting, ...]
+
+        if features.size > 0:
+            # FIXME: https://github.com/numpy/numpy/issues/16410, fancy indexing a zero-sized array
+            # creates an unnecessarily large allocation
+            features = features[sorting, ...]
 
         # deduce the type ranges based on the first index of each of the known values
         types, first_occurance = np.unique(type_column, return_index=True)

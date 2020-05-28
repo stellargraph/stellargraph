@@ -31,6 +31,7 @@ def is_real_iterable(x):
     """
     return isinstance(x, collections.abc.Iterable) and not isinstance(x, (str, bytes))
 
+
 def zero_sized_array(shape, dtype):
     """
     Create an array with no data, without allocation.
