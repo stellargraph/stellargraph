@@ -150,26 +150,18 @@ def test_ClusterNodeSquence():
 
     G = create_stellargraph()
 
-    generator = ClusterNodeGenerator(G, clusters=1, q=1, weighted=False).flow(
-        node_ids=["a", "b", "c", "d"]
-    )
-    weighted_generator = ClusterNodeGenerator(G, clusters=1, q=1, weighted=True).flow(
+    generator = ClusterNodeGenerator(G, clusters=1, q=1).flow(
         node_ids=["a", "b", "c", "d"]
     )
 
     assert len(generator) == 1
-    batch = generator[0]
-    weighted_batch = generator[0]
-    assert not np.allclose(
-        np.sort(weighted_batch[0][2].ravel()), np.sort(batch[0][2].ravel())
-    )
 
-    generator = ClusterNodeGenerator(G, clusters=4, q=1, weighted=weighted).flow(
+    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(
         node_ids=["a", "b", "c", "d"]
     )
     assert len(generator) == 4
 
-    generator = ClusterNodeGenerator(G, clusters=4, q=1, weighted=weighted).flow(
+    generator = ClusterNodeGenerator(G, clusters=4, q=1).flow(
         node_ids=["a", "b", "c", "d"]
     )
 
@@ -186,7 +178,7 @@ def test_ClusterNodeSquence():
         assert batch[1] is None
 
     # Use 2 clusters
-    generator = ClusterNodeGenerator(G, clusters=2, q=1, weighted=weighted).flow(
+    generator = ClusterNodeGenerator(G, clusters=2, q=1).flow(
         node_ids=["a", "b", "c", "d"]
     )
     assert len(generator) == 2
