@@ -18,7 +18,7 @@ Find demos for a format
      - Good
      - Via Pandas and `scikit-learn <http://scikit-learn.github.io/stable>`__ and more
    * - :doc:`loading-networkx`
-     - Anything `supported by NetworkX <https://networkx.github.io/documentation/stable/reference/readwrite/index.html>`__: GEXF, GML, GraphML, Shapefiles, many more
+     - Anything `supported by NetworkX <https://networkx.github.io/documentation/stable/reference/readwrite/index.html>`__: Adjacency lists, GEXF, GML, GraphML, Shapefiles, many more
      - Poor
      - Via graph-focused transforms and functions in NetworkX
    * - :doc:`loading-saving-neo4j`
