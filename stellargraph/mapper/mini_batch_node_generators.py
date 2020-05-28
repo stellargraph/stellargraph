@@ -341,7 +341,8 @@ class ClusterNodeSequence(Sequence):
             # Dictionary to store node indices for quicker node index lookups
             # The list of indices of the target nodes in self.node_list
             cluster_target_indices = np.array(
-                [self.target_node_lookup[n] for n in target_nodes_in_cluster]
+                [self.target_node_lookup[n] for n in target_nodes_in_cluster],
+                dtype=np.int64,
             )
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)
