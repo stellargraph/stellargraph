@@ -397,5 +397,6 @@ class Neo4jClusterNodeGenerator(ClusterNodeGenerator):
         self.name = name
         self.q = q  # The number of clusters to sample per mini-batch
         self.lam = lam
+        self.weighted = False
         # store features of one node to feed ClusterGCN the feature shape
         self.features = self.graph.node_features(self.node_list[0])

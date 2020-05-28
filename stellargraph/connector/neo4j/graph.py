@@ -78,7 +78,7 @@ class Neo4jStellarGraph:
         features = np.array([row["features"] for row in result.data()])
         return features
 
-    def to_adjacency_matrix(self, node_ids):
+    def to_adjacency_matrix(self, node_ids, weighted=False):
         """
         Obtains a SciPy sparse adjacency matrix for the subgraph containing
         the nodes specified in node_ids.
@@ -87,10 +87,15 @@ class Neo4jStellarGraph:
             nodes (list): The collection of nodes
                 comprising the subgraph. The adjacency matrix is
                 computed for this subgraph.
+            weighted (bool, optional): Must be false, at the moment.
 
         Returns:
              The weighted adjacency matrix.
         """
+
+        # this param is for compatibility with StellarGraph.to_adjacency_matrix
+        if weighted is not False:
+            raise ValueError("weighted: expected False, found {weighted!r}")
 
         # neo4j optimizes this query to be O(edges incident to nodes)
         # not O(E) as it appears
