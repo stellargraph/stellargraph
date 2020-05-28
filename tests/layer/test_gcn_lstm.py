@@ -73,6 +73,7 @@ def test_gcn_lstm_activations():
         gc_layer_sizes=[10, 10, 10, 10, 10],
         lstm_layer_sizes=[8, 16, 32, 64],
     )
+    # check when no activations provided, defaults to 'relu' and 'tanh' for gc and lstm respectively
     assert gcn_lstm_model.gc_activations == ["relu", "relu", "relu", "relu", "relu"]
     assert gcn_lstm_model.lstm_activations == ["tanh", "tanh", "tanh", "tanh"]
 
@@ -116,6 +117,7 @@ def test_gcn_lstm_layers():
         lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
+    # check number of layers should be gc + lstm + 2 (dense and dropout)
     assert (
         len(gcn_lstm_model._layers)
         == len(gcn_lstm_model.gc_layer_sizes) + len(gcn_lstm_model.lstm_layer_sizes) + 2
@@ -134,6 +136,7 @@ def test_gcn_lstm_model_input_output():
         lstm_activations=["tanh"],
     )
 
+    # check model input and output tensors
     x_input, x_output = gcn_lstm_model.in_out_tensors()
     assert x_input.shape[1] == fx.shape[-2]
     assert x_input.shape[2] == fx.shape[-1]
@@ -157,6 +160,7 @@ def test_gcn_lstm_model():
 
     model.compile(optimizer="adam", loss="mae", metrics=["mse"])
 
+    # check model training
     history = model.fit(fx, fy, epochs=5, batch_size=2, shuffle=True, verbose=0)
 
     assert history.params["batch_size"] == 2
@@ -182,4 +186,5 @@ def test_gcn_lstm_model_prediction():
     test_sample = np.random.rand(1, 4, 5)
     pred = model.predict(test_sample)
 
+    # check 1 prediction for each node
     assert pred.shape == (1, 5)
