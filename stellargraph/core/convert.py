@@ -95,7 +95,7 @@ class ColumnarConverter:
             if old_name in data.columns:
                 column = data[old_name].to_numpy()
             elif old_name in self.column_defaults:
-                column = np.full(len(ids), self.column_defaults[old_name])
+                column = np.broadcast_to(self.column_defaults[old_name], len(ids))
             else:
                 nonlocal missing_columns
                 missing_columns.append(old_name)
