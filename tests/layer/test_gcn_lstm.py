@@ -105,7 +105,6 @@ def test_lstm_return_sequences():
     assert gcn_lstm_model._layers[n_layers - 3].return_sequences == False
 
 
-# this will change once the graph convolution units change is merged
 def test_gcn_lstm_layers():
     fx, fy, a = get_timeseries_graph_data()
 
@@ -156,6 +155,31 @@ def test_gcn_lstm_model():
     x_input, x_output = gcn_lstm_model.in_out_tensors()
     model = Model(inputs=x_input, outputs=x_output)
 
+    model.compile(optimizer="adam", loss="mae", metrics=["mse"])
+
+    history = model.fit(fx, fy, epochs=5, batch_size=2, shuffle=True, verbose=0)
+
+    assert history.params["batch_size"] == 2
+    assert history.params["epochs"] == 5
+    assert len(history.history["loss"]) == 5
+
+
+def test_gcn_lstm_model_prediction():
+    fx, fy, a = get_timeseries_graph_data()
+
+    gcn_lstm_model = GraphConvolutionLSTM(
+        seq_len=fx.shape[-2],
+        adj=a,
+        gc_layer_sizes=[8, 8, 16],
+        gc_activations=["relu", "relu", "relu"],
+        lstm_layer_sizes=[8, 16, 32],
+        lstm_activations=["tanh"],
+    )
+
+    x_input, x_output = gcn_lstm_model.in_out_tensors()
+    model = Model(inputs=x_input, outputs=x_output)
+
     test_sample = np.random.rand(1, 4, 5)
     pred = model.predict(test_sample)
+
     assert pred.shape == (1, 5)
