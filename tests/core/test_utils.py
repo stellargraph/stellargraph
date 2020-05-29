@@ -20,6 +20,7 @@ Utils tests:
 
 """
 import pytest
+import numpy as np
 
 from stellargraph.core.utils import *
 from ..test_utils.graphs import example_graph_random
@@ -28,6 +29,124 @@ from ..test_utils.graphs import example_graph_random
 @pytest.fixture
 def example_graph():
     return example_graph_random()
+
+
+def _check_smart_index(array, idx, should_be_broadcast=False):
+    result = smart_array_index(array, idx)
+    np.testing.assert_array_equal(result, array[idx])
+
+    if should_be_broadcast:
+        assert result.strides[0] == 0
+    else:
+        assert result.strides[0] > 0
+
+
+def test_smart_array_index_empty():
+    d1 = np.zeros(0)
+    d2 = np.zeros((0, 2))
+    _check_smart_index(d1, np.array([], dtype=int))
+    _check_smart_index(d2, np.array([], dtype=int))
+
+    with pytest.raises(IndexError, match="index 0 is out of bounds"):
+        smart_array_index(d1, np.array([0], dtype=int))
+
+    with pytest.raises(IndexError, match="index -1 is out of bounds"):
+        smart_array_index(d1, np.array([-1], dtype=int))
+
+    with pytest.raises(IndexError, match="index -1 is out of bounds"):
+        smart_array_index(d2, np.array([-1], dtype=int))
+
+    with pytest.raises(IndexError, match="index -1 is out of bounds"):
+        smart_array_index(d2, np.array([-1], dtype=int))
+
+
+def test_smart_array_index_normal():
+    arr = np.array([[1, 2], [3, 4], [5, 6]])
+    _check_smart_index(arr, np.array([1]))
+    _check_smart_index(arr, np.array([2, 1, 0]))
+    _check_smart_index(arr, np.array([[0, 2], [0, 0]]))
+
+    with pytest.raises(IndexError, match="index 6 is out of bounds"):
+        smart_array_index(arr, np.array([6], dtype=int))
+
+    with pytest.raises(IndexError, match="index -6 is out of bounds"):
+        smart_array_index(arr, np.array([-6], dtype=int))
+
+
+def test_smart_array_index_size_0():
+    arr = np.zeros((3, 0, 2))
+    _check_smart_index(arr, np.array([1]), should_be_broadcast=True)
+    _check_smart_index(arr, np.array([2, 1, 0]), should_be_broadcast=True)
+    _check_smart_index(arr, np.array([[0, 2], [0, 0]]), should_be_broadcast=True)
+
+    # strangely enough, numpy doesn't fail for these OOB indices
+    _check_smart_index(arr, np.array([6], dtype=int), should_be_broadcast=True)
+    _check_smart_index(arr, np.array([-6], dtype=int), should_be_broadcast=True)
+
+
+def test_smart_array_index_broadcast():
+    arr = np.broadcast_to(123, (3, 4, 5))
+    _check_smart_index(arr, np.array([1]), should_be_broadcast=True)
+    _check_smart_index(arr, np.array([2, 1, 0]), should_be_broadcast=True)
+    _check_smart_index(arr, np.array([[0, 2], [0, 0]]), should_be_broadcast=True)
+
+    with pytest.raises(IndexError, match="index 6 is out of bounds"):
+        smart_array_index(arr, np.array([6], dtype=int))
+
+    with pytest.raises(IndexError, match="index -6 is out of bounds"):
+        smart_array_index(arr, np.array([-6], dtype=int))
+
+
+def _check_smart_concatenate(arrays, should_be_broadcast=False):
+    result = smart_array_concatenate(arrays)
+    np.testing.assert_array_equal(result, np.concatenate(arrays))
+
+    if should_be_broadcast:
+        assert result.strides[0] == 0
+    else:
+        assert result.strides[0] > 0
+
+    return result
+
+
+def test_smart_array_concatenate_empty():
+    with pytest.raises(ValueError, match="need at least one array to concatenate"):
+        smart_array_concatenate([])
+
+
+def test_smart_array_concatenate_normal():
+    _check_smart_concatenate(
+        [
+            np.random.rand(0, 4, 5),
+            np.random.rand(3, 4, 5),
+            np.random.rand(1, 4, 5),
+            np.random.rand(2, 4, 5),
+        ]
+    )
+
+
+def test_smart_array_concatenate_single():
+    arr = np.random.rand(3, 4, 5)
+    result = _check_smart_concatenate([arr])
+    assert result is arr
+
+
+def test_smart_array_concatenate_broadcast():
+    a0 = np.broadcast_to(123, (0,))
+    a1 = np.broadcast_to(123, (1,))
+    a2 = np.broadcast_to(123, (2,))
+    b1 = np.broadcast_to(456, (1,))
+    _check_smart_concatenate([a0, a1, a2], should_be_broadcast=True)
+    _check_smart_concatenate([a0, b1, a2], should_be_broadcast=False)
+
+    # multidimensional broadcasting isn't handled
+    c43 = np.broadcast_to(123, (4, 3))
+    c53 = np.broadcast_to(123, (5, 3))
+    _check_smart_concatenate([c43, c53], should_be_broadcast=False)
+
+    d43 = np.broadcast_to([123, 456, 789], (4, 3))
+    d53 = np.broadcast_to([123, 456, 789], (5, 3))
+    _check_smart_concatenate([d43, d53], should_be_broadcast=False)
 
 
 def test_normalize_adj(example_graph):

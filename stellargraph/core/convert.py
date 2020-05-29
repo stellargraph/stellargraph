@@ -26,7 +26,12 @@ from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
 from .indexed_array import IndexedArray
 from .validation import comma_sep, require_dataframe_has_columns
-from .utils import is_real_iterable, zero_sized_array
+from .utils import (
+    is_real_iterable,
+    zero_sized_array,
+    smart_array_concatenate,
+    smart_array_index,
+)
 
 
 class ColumnarConverter:
@@ -161,16 +166,10 @@ class ColumnarConverter:
             for col_name, col_array in columns.items():
                 type_columns[col_name].append(col_array)
 
-        if len(type_ids) == 1:
-            # if there's only one type, avoid copying everything in a no-op concatentation
-            ids = type_ids[0]
+        if type_ids:
+            ids = smart_array_concatenate(type_ids)
             columns = {
-                col_name: col_arrays[0] for col_name, col_arrays in type_columns.items()
-            }
-        elif type_ids:
-            ids = np.concatenate(type_ids)
-            columns = {
-                col_name: np.concatenate(col_arrays)
+                col_name: smart_array_concatenate(col_arrays)
                 for col_name, col_arrays in type_columns.items()
             }
         else:
@@ -201,12 +200,14 @@ class ColumnarConverter:
         # arrange everything to be sorted by type
         ids = ids[sorting]
         type_column = type_column[sorting]
-        columns = {name: array[sorting] for name, array in columns.items()}
 
-        if features.size > 0:
-            # FIXME: https://github.com/numpy/numpy/issues/16410, fancy indexing a zero-sized array
-            # creates an unnecessarily large allocation
-            features = features[sorting, ...]
+        # For many graphs these end up with values for which actually indexing would be suboptimal
+        # (require allocating a new array, in particular), e.g. default edge weights in columns, or
+        # features.size == 0.
+        columns = {
+            name: smart_array_index(array, sorting) for name, array in columns.items()
+        }
+        features = smart_array_index(features, sorting)
 
         # deduce the type ranges based on the first index of each of the known values
         types, first_occurance = np.unique(type_column, return_index=True)
