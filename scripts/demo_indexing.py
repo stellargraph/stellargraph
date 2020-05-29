@@ -426,6 +426,7 @@ ALGORITHMS = [
     ),
     Algorithm(
         "GraphWave",
+        weighted=True,
         nc=via_rl(),
         lp=via_rl(),
         rl=T(link="embeddings/graphwave-embeddings"),
