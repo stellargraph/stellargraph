@@ -85,7 +85,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/rgcn-node-classification>`
      - yes
-     -
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *

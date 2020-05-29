@@ -482,3 +482,6 @@ class RelationalFullBatchNodeGenerator(Generator):
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
+
+    def default_corrupt_input_index_groups(self):
+        return [[0]]
