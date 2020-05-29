@@ -1,3 +1,21 @@
+.sg-star-button {
+    margin-top: 1em;
+}
+
+.sg-fork-me-banner {
+    display: none;
+}
+
+/* only show the fork-me banner if the screen is wide enough */
+@media screen and (min-width: 768px) {
+    .sg-fork-me-banner {
+        display: block;
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+}
+
 div.wy-nav-content {
     /* make the main content wider, for wider tables */
     max-width: 1000px;
