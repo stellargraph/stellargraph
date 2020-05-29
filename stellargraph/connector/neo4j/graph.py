@@ -19,6 +19,7 @@ __all__ = ["Neo4jStellarGraph"]
 import numpy as np
 import scipy.sparse as sps
 import pandas as pd
+from collections import defaultdict
 from ...core.experimental import experimental
 
 
@@ -138,31 +139,28 @@ class Neo4jStellarGraph:
     def is_directed(self):
         return self._is_directed
 
-    def cluster(self):
+    def clusters(self, method="louvain"):
         """
-        Performs Louvain community detection to cluster the graph.
+        Performs community detection to cluster the graph.
+
+        Args:
+            method (str, optional): specifies the algorithm to use,
+                can be one of: "louvain", "labelPropagation".
 
         Returns:
              A list of lists, where each inner list corresponds to a cluster and
               contains the node ids of the nodes in that cluster.
         """
-        cluster_query = """
-            CALL gds.louvain.stream({
+        cluster_query = f"""
+            CALL gds.{method}.stream({{
                 nodeQuery: 'MATCH (n) RETURN id(n) AS id',
                 relationshipQuery: 'MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target'
-            })
+            }})
             YIELD nodeId, communityId
-            RETURN gds.util.asNode(nodeId).ID AS node_id, communityId AS community_id
+            RETURN communityId, collect(gds.util.asNode(nodeId).ID) AS node_ids
         """
-        result = self.graph_db.run(cluster_query).data()
-
-        clusters = dict()
-        for row in result:
-            node_id = row["node_id"]
-            community_id = row["community_id"]
-            clusters.setdefault(community_id, []).append(node_id)
-
-        return list(clusters.values())
+        clusters = [row[1] for row in self.graph_db.run(cluster_query)]
+        return clusters
 
 
 # A convenience class that merely specifies that edges have direction.
