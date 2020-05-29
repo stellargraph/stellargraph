@@ -90,7 +90,10 @@ class Neo4jStellarGraph:
 
         self.graph_db = graph_db
         self.raw_node_label = node_label
-        self.cypher_node_label = py2neo.cypher_escape(self.raw_node_label)
+        if node_label is not None:
+            self.cypher_node_label = py2neo.cypher_escape(self.raw_node_label)
+        else:
+            self.cypher_node_label = None
         self._is_directed = is_directed
         self._node_feature_size = None
         self._nodes = None
