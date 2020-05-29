@@ -368,6 +368,7 @@ ALGORITHMS = [
         T("GCN", details="Graph Convolutional Network (GCN)"),
         heterogeneous="see RGCN",
         features=True,
+        weighted=True,
         temporal="see T-GCN",
         nc=T(link="node-classification/gcn-node-classification"),
         interpretability_nc=T(link="interpretability/gcn-node-link-importance"),
@@ -379,6 +380,7 @@ ALGORITHMS = [
     Algorithm(
         "Cluster-GCN",
         features=True,
+        weighted=True,
         nc=T(link="node-classification/cluster-gcn-node-classification"),
         lp=True,
         inductive=True,
@@ -387,6 +389,7 @@ ALGORITHMS = [
         T("RGCN", details="Relational GCN (RGCN)"),
         heterogeneous=HETEROGENEOUS_EDGE,
         features=True,
+        weighted=True,
         nc=T(link="node-classification/rgcn-node-classification"),
         lp=True,
     ),
@@ -399,6 +402,7 @@ ALGORITHMS = [
     Algorithm(
         T("GAT", details="Graph ATtention Network (GAT)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/gat-node-classification"),
         interpretability_nc=T(link="interpretability/gat-node-link-importance"),
         lp=True,
@@ -407,12 +411,14 @@ ALGORITHMS = [
     Algorithm(
         T("SGC", details="Simplified Graph Convolution (SGC)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/sgc-node-classification"),
         lp=True,
     ),
     Algorithm(
         T("PPNP", details="Personalized Propagation of Neural Predictions (PPNP)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi(link=None)],
@@ -420,6 +426,7 @@ ALGORITHMS = [
     Algorithm(
         T("APPNP", details="Approximate PPNP (APPNP)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
@@ -511,6 +518,7 @@ ALGORITHMS = [
     Algorithm(
         T("DGCNN", details="Deep Graph CNN"),
         features=True,
+        weighted=True,
         gc=T(link="graph-classification/dgcnn-graph-classification"),
     ),
 ]
