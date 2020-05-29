@@ -158,8 +158,8 @@ class Neo4jStellarGraph:
 
         clusters = dict()
         for row in result:
-            node_id = row['node_id']
-            community_id = row['community_id']
+            node_id = row["node_id"]
+            community_id = row["community_id"]
             clusters.setdefault(community_id, []).append(node_id)
 
         return list(clusters.values())
