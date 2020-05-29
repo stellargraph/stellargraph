@@ -33,99 +33,99 @@ steps:
           - runner-3_6:index.docker.io/stellargraph/stellargraph-ci-runner:3_6-${IMAGE_TAG}
     agents:
       queue: "t2medium"
-#
-#  - label: ":docker::python: build 3.7 runner"
-#    <<: *timeout
-#    key: "runner-3_7"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        build: runner-3_7
-#        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
-#        no-cache: ${REFRESH_BUILD-false}
-#        cache-from:
-#          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
-#          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
-#
-#        push:
-#          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
-#    agents:
-#      queue: "t2medium"
-#
-#  - label: ":docker::python: build 3.8 runner"
-#    <<: *timeout
-#    key: "runner-3_8"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        build: runner-3_8
-#        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
-#        no-cache: ${REFRESH_BUILD-false}
-#        cache-from:
-#          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-${IMAGE_TAG}
-#          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-latest
-#
-#        push:
-#          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-${IMAGE_TAG}
-#    agents:
-#      queue: "t2medium"
-#
-#  - label: ":python: 3.6"
-#    <<: *timeout
-#    key: "python_3_6"
-#    depends_on: "runner-3_6"
-#    command: ".buildkite/steps/script.sh"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_6
-#    agents:
-#      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
-#
-#  - label: ":python: 3.7"
-#    <<: *timeout
-#    key: "python_3_7"
-#    depends_on: "runner-3_7"
-#    command: ".buildkite/steps/script.sh"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_7
-#    agents:
-#      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
-#
-#  - label: ":python: 3.8"
-#    <<: *timeout
-#    key: "python_3_8"
-#    depends_on: "runner-3_8"
-#    command: ".buildkite/steps/script.sh"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_8
-#    agents:
-#      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
-#
-#  - label: ":python::book: test notebooks %n"
-#    <<: *timeout
-#    key: "test-notebooks"
-#    depends_on: "runner-3_6"
-#    parallelism: 52
-#    command: ".buildkite/steps/test-demo-notebooks.sh"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_6
-#    agents:
-#      queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
-#    soft_fail:
-#      - exit_status: 2
+
+  - label: ":docker::python: build 3.7 runner"
+    <<: *timeout
+    key: "runner-3_7"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        build: runner-3_7
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-latest
+
+        push:
+          - runner-3_7:index.docker.io/stellargraph/stellargraph-ci-runner:3_7-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
+  - label: ":docker::python: build 3.8 runner"
+    <<: *timeout
+    key: "runner-3_8"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        build: runner-3_8
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-${IMAGE_TAG}
+          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-latest
+
+        push:
+          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
+  - label: ":python: 3.6"
+    <<: *timeout
+    key: "python_3_6"
+    depends_on: "runner-3_6"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
+
+  - label: ":python: 3.7"
+    <<: *timeout
+    key: "python_3_7"
+    depends_on: "runner-3_7"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_7
+    agents:
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
+
+  - label: ":python: 3.8"
+    <<: *timeout
+    key: "python_3_8"
+    depends_on: "runner-3_8"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_8
+    agents:
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
+
+  - label: ":python::book: test notebooks %n"
+    <<: *timeout
+    key: "test-notebooks"
+    depends_on: "runner-3_6"
+    parallelism: 52
+    command: ".buildkite/steps/test-demo-notebooks.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
+    soft_fail:
+      - exit_status: 2
 
   - &test-neo4j-notebooks
     label: ":python::book: test neo4j notebooks against neo4j 4.0"
@@ -145,146 +145,146 @@ steps:
     agents:
       queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
 
-#  - <<: *test-neo4j-notebooks
-#    label: ":python::book: test neo4j notebooks against neo4j 3.5"
-#    env:
-#      RUNNER_DEPENDS_ON: neo4j
-#      NEO4J_VERSION: "3.5"
+  - <<: *test-neo4j-notebooks
+    label: ":python::book: test neo4j notebooks against neo4j 3.5"
+    env:
+      RUNNER_DEPENDS_ON: neo4j
+      NEO4J_VERSION: "3.5"
 
-#  - label: ":python-black: format"
-#    <<: *timeout
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "stellargraph/black:snapshot"
+  - label: ":python-black: format"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "stellargraph/black:snapshot"
 
-#  - label: ":python-black::jupyter: check notebook format"
-#    <<: *timeout
-#    depends_on: "runner-3_6"
-#    command: "python scripts/format_notebooks.py --default --ci demos/"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_6
-#    agents:
-#      queue: "t2medium"
-#
-#  - label: ":jupyter::book: check notebook text"
-#    <<: *timeout
-#    depends_on: "runner-3_6"
-#    command: "python scripts/notebook_text_checker.py demos/"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_6
-#    agents:
-#      queue: "t2medium"
-#
-#  - label: ":book: check demo indexing"
-#    command: "python scripts/demo_indexing.py --action=compare"
-#    <<: *timeout
-#    depends_on: "runner-3_6"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_6
-#    agents:
-#      queue: "t2medium"
-#
-#  - label: ":book: check documentation"
-#    command: ".buildkite/steps/test-documentation.sh"
-#    <<: *timeout
-#    depends_on: "runner-3_6"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: runner-3_6
-#    agents:
-#      queue: "t2medium"
-#
-#  - label: ":shell: format"
-#    <<: *timeout
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "mvdan/shfmt:v2.6.4"
-#        command: ["-d", "-i", "2", "-ci", "-sr", "."]
-#
-#  - label: ":shell: shellcheck"
-#    <<: *timeout
-#    command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "koalaman/shellcheck-alpine:stable"
-#
-#  - label: ":docker: :hadolint: lint Dockerfiles"
-#    <<: *timeout
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "stellargraph/hadolint:snapshot"
-#
-#  - label: ":docker: format Dockerfiles"
-#    <<: *timeout
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "stellargraph/dockerfile-utils:snapshot"
-#
-#  - label: ":prettier::yaml: format YAML"
-#    <<: *timeout
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "stellargraph/prettier:snapshot"
-#        command: [
-#            "--check",
-#            "**/*.yml",
-#            "**/*.yaml",
-#            # not valid YAML because of jinja templating
-#            "!meta.yaml",
-#          ]
-#
-#  - label: ":yaml::lint-roller: lint YAML"
-#    <<: *timeout
-#    plugins:
-#      <<: *plugins
-#      docker#v3.5.0:
-#        image: "stellargraph/yamllint:snapshot"
-#
-#  - label: ":copyright: check copyright headers"
-#    <<: *timeout
-#    command: ".buildkite/steps/check-copyright-headers.sh"
-#
-#  - label: ":space_invader: check whitespace"
-#    <<: *timeout
-#    command: "scripts/whitespace.sh --ci"
-#
-#  - label: ":snake: conda build"
-#    <<: *timeout
-#    command: ".buildkite/steps/conda-build.sh"
-#    plugins:
-#      <<: *plugins
-#      docker-compose#v3.2.0:
-#        <<: *compose-config
-#        run: conda
-#    agents:
-#      queue: "t2medium"
-#
-#  # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
-#  # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
-#  # it runs in parallel with them.
-#  - label: ":memo: annotate with junit"
-#    <<: *timeout
-#    plugins:
-#      junit-annotate#v1.7.0:
-#        artifacts: junit-*.xml
-#    depends_on:
-#      - "python_3_6"
-#      - "python_3_7"
-#    allow_dependency_failure: true
+  - label: ":python-black::jupyter: check notebook format"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    command: "python scripts/format_notebooks.py --default --ci demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":jupyter::book: check notebook text"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    command: "python scripts/notebook_text_checker.py demos/"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":book: check demo indexing"
+    command: "python scripts/demo_indexing.py --action=compare"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":book: check documentation"
+    command: ".buildkite/steps/test-documentation.sh"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":shell: format"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "mvdan/shfmt:v2.6.4"
+        command: ["-d", "-i", "2", "-ci", "-sr", "."]
+
+  - label: ":shell: shellcheck"
+    <<: *timeout
+    command: 'find ./ -type f -name "*.sh" -print0 | xargs -0 shellcheck --color=always'
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "koalaman/shellcheck-alpine:stable"
+
+  - label: ":docker: :hadolint: lint Dockerfiles"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "stellargraph/hadolint:snapshot"
+
+  - label: ":docker: format Dockerfiles"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "stellargraph/dockerfile-utils:snapshot"
+
+  - label: ":prettier::yaml: format YAML"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "stellargraph/prettier:snapshot"
+        command: [
+            "--check",
+            "**/*.yml",
+            "**/*.yaml",
+            # not valid YAML because of jinja templating
+            "!meta.yaml",
+          ]
+
+  - label: ":yaml::lint-roller: lint YAML"
+    <<: *timeout
+    plugins:
+      <<: *plugins
+      docker#v3.5.0:
+        image: "stellargraph/yamllint:snapshot"
+
+  - label: ":copyright: check copyright headers"
+    <<: *timeout
+    command: ".buildkite/steps/check-copyright-headers.sh"
+
+  - label: ":space_invader: check whitespace"
+    <<: *timeout
+    command: "scripts/whitespace.sh --ci"
+
+  - label: ":snake: conda build"
+    <<: *timeout
+    command: ".buildkite/steps/conda-build.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: conda
+    agents:
+      queue: "t2medium"
+
+  # Analyse the results of the testing, e.g. failures. This is not part of the testing, and has
+  # explicit dependencies, so can be listed after all of the `wait` steps and publishings, so that
+  # it runs in parallel with them.
+  - label: ":memo: annotate with junit"
+    <<: *timeout
+    plugins:
+      junit-annotate#v1.7.0:
+        artifacts: junit-*.xml
+    depends_on:
+      - "python_3_6"
+      - "python_3_7"
+    allow_dependency_failure: true
