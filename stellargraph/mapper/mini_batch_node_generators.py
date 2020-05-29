@@ -116,11 +116,10 @@ class ClusterNodeGenerator(Generator):
 
         self.node_list = list(G.nodes())
 
-        # If the graph is in the StellaGraph format check that there
-        # is only a single node type and that the graph has features
-        if isinstance(G, StellarGraph):
-            G.check_graph_for_ml()
-            _ = G.unique_node_type()
+        # if graph is a StellarGraph check that the graph has features
+        G.check_graph_for_ml(expensive_check=False)
+        # Check that there is only a single node type
+        _ = G.unique_node_type()
 
         if isinstance(clusters, int):
             # We are not given graph clusters.
