@@ -14,7 +14,6 @@ case "$NEO4J_VERSION" in
     gds_sha="3add8fd44849ddc257903a3e11c8b617ee0150fdbf722b254b7da588df4383a5b2655b6a121525d66f5b6d7d767dea069dcd5966636775f7b0c7506d3f6233f9"
     apoc_version="3.5.0.9"
     apoc_sha="b4b1a8f8940ad250c17b45296459afcfff2eb1beee18b8c8a394e2b5a434183b924b34cb5b04fea1a371fbfb87a286228bd4ae814829e0ef99f9e190a764fa1d"
-
     ;;
   *)
     echo "NEO4J_VERSION: unsupported version '${NEO4J_VERSION}'"
