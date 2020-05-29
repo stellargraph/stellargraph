@@ -151,12 +151,12 @@ steps:
       RUNNER_DEPENDS_ON: neo4j
       NEO4J_VERSION: "3.5"
 
-  - label: ":python-black: format"
-    <<: *timeout
-    plugins:
-      <<: *plugins
-      docker#v3.5.0:
-        image: "stellargraph/black:snapshot"
+#  - label: ":python-black: format"
+#    <<: *timeout
+#    plugins:
+#      <<: *plugins
+#      docker#v3.5.0:
+#        image: "stellargraph/black:snapshot"
 
 #  - label: ":python-black::jupyter: check notebook format"
 #    <<: *timeout
