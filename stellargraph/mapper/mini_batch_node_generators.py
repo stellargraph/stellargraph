@@ -119,8 +119,9 @@ class ClusterNodeGenerator(Generator):
         # if graph is a StellarGraph check that the graph has features
         G.check_graph_for_ml(expensive_check=False)
         # Check that there is only a single node type
-        _ = G.unique_node_type()
-
+        _ = G.unique_node_type(
+            "G: expected a graph with a single node type, found a graph with node types: %(found)s"
+        )
         if isinstance(clusters, int):
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
