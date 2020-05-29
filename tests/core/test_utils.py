@@ -97,14 +97,15 @@ def test_smart_array_index_broadcast():
         smart_array_index(arr, np.array([-6], dtype=int))
 
 
-def _check_smart_concatenate(arrays, should_be_broadcast=False):
+def _check_smart_concatenate(arrays, should_be_broadcast=False, check_strides=True):
     result = smart_array_concatenate(arrays)
     np.testing.assert_array_equal(result, np.concatenate(arrays))
 
-    if should_be_broadcast:
-        assert result.strides[0] == 0
-    else:
-        assert result.strides[0] > 0
+    if check_strides:
+        if should_be_broadcast:
+            assert result.strides[0] == 0
+        else:
+            assert result.strides[0] > 0
 
     return result
 
@@ -123,6 +124,8 @@ def test_smart_array_concatenate_normal():
             np.random.rand(2, 4, 5),
         ]
     )
+
+    _check_smart_concatenate([range(10), range(20)])
 
     with pytest.raises(ValueError, match="must match exactly.* size 4 .* size 6"):
         _check_smart_concatenate(
@@ -146,6 +149,11 @@ def test_smart_array_concatenate_single():
     result = _check_smart_concatenate([arr])
     assert result is arr
 
+    # this should pass through sequences directly, because downstream might handle it better. For
+    # instance, pandas.Index(range(...)) is far more efficient than pandas.Index(np.arange(...)).
+    rng = range(10)
+    result = _check_smart_concatenate([rng], check_strides=False)
+    assert result is rng
 
 def test_smart_array_concatenate_broadcast():
     a0 = np.broadcast_to(123, (0,))

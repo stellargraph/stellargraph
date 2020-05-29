@@ -85,11 +85,11 @@ def smart_array_concatenate(arrays):
     Concatenate the arrays in ``arrays``, smartly handling 1D broadcasted arrays that contain all
     contain an identical value, and when ``arrays`` contains a single array.
     """
-    arrays = [np.asanyarray(arr) for arr in arrays]
-
     if len(arrays) == 1:
         # concatenate allocates a new array even in this case, so we can avoid a copy
         return arrays[0]
+
+    arrays = [np.asanyarray(arr) for arr in arrays]
 
     # check whether all of the arrays contain a single value, broadcasted
     nonempty = (arr for arr in arrays if len(arr) > 0)
