@@ -20,3 +20,4 @@
 
 from .sampler import *
 from .mapper import *
+from .graph import *

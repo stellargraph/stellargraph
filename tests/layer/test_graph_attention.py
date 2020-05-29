@@ -54,11 +54,8 @@ class Test_GraphAttention:
             Input(batch_shape=(1, self.N, self.N)),
         ]
 
-        # For dense matrix, remove batch dimension
-        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[1])
-        layer_inp = x_inp[:1] + [A_mat]
-
-        return x_inp, layer_inp
+        # duplicate input here for Test_GraphAttentionSparse to work
+        return x_inp, x_inp
 
     def get_matrix(self, edges=[]):
         # adjacency matrix with self-loops only

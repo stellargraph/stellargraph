@@ -21,7 +21,7 @@ This table lists all representation learning demos, including the algorithms tra
      - node features
      - downstream tasks shown
    * - :doc:`Deep Graph Infomax <deep-graph-infomax-embeddings>`
-     - GCN, GAT, PPNP, APPNP, GraphSAGE, HinSAGE
+     - GCN, GAT, PPNP, APPNP, GraphSAGE, HinSAGE, RGCN
      - ``DeepGraphInfomax`` (mutual information)
      - yes
      - visualisation, node classification

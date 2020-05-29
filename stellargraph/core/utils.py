@@ -32,6 +32,24 @@ def is_real_iterable(x):
     return isinstance(x, collections.abc.Iterable) and not isinstance(x, (str, bytes))
 
 
+def zero_sized_array(shape, dtype):
+    """
+    Create an array with no data, without allocation.
+
+    Args:
+        shape (tuple): a shape tuple that contains at least one 0
+
+    Returns:
+        An NumPy array that contains no elements, and has a small allocation.
+    """
+    # FIXME: https://github.com/numpy/numpy/issues/16410
+    if 0 not in shape:
+        raise ValueError("shape: expected at least one zero, found {shape}")
+
+    dtype = np.dtype(dtype)
+    return np.broadcast_to(dtype.type(), shape)
+
+
 def normalize_adj(adj, symmetric=True, add_self_loops=False):
     """
     Normalize adjacency matrix.
