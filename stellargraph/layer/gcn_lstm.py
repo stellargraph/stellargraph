@@ -67,7 +67,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
 
-        self.units = (units,)
+        self.units = units
         self.adj = calculate_laplacian(A)
         self.activation = activations.get(activation)
         self.use_bias = use_bias
@@ -131,7 +131,6 @@ class FixedAdjacencyGraphConvolution(Layer):
         """
         n_nodes = input_shapes[-1]
         t_steps = input_shapes[-2]
-        self.units = t_steps
 
         self.A = self.add_weight(
             name="A",
@@ -187,51 +186,45 @@ class FixedAdjacencyGraphConvolution(Layer):
         return output
 
 
-@experimental(reason="Lack of unit tests and some code refinement", issues=[1131, 1132])
+@experimental(
+    reason="Lack of unit tests and code refinement", issues=[1132, 1526, 1564]
+)
 class GraphConvolutionLSTM:
 
     """
     GraphConvolutionLSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
-    This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction (https://arxiv.org/abs/1811.05320)
-
+    This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction (https://arxiv.org/abs/1811.05320).
     The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
-
     The StellarGraph implementation is built as a stack of the following set of layers:
-
     1. User specified no. of Graph Convolutional layers
     2. User specified no. of LSTM layers
     3. 1 Dense layer
-    4. 1 Dropout layer
-
-    The last two layers consistently showed better performance and regularization experimentally.
-
+    4. 1 Dropout layer. The last two layers consistently showed better performance and regularization experimentally.
     Args:
-        seq_len: No. of LSTM cells
-        adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
-        gc_layers: No. of Graph Convolution  layers in the stack. The output of each layer is equal to sequence length.
-        lstm_layer_size (list of int): Output sizes of LSTM layers in the stack.
-        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
-        dropout (float): Dropout rate applied to input features of each GCN layer.
-        gc_activations (list of str or func): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu'].
-        lstm_activations (list of str or func): Activations applied to each layer's output;
-            defaults to ['tanh', ..., 'tanh'].
-        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
-        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
-        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
-        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
-    """
+       seq_len: No. of LSTM cells
+       adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
+       gc_layer_sizes (list of int): Output sizes of Graph Convolution  layers in the stack.
+       lstm_layer_sizes (list of int): Output sizes of LSTM layers in the stack.
+       bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
+       dropout (float): Dropout rate applied to input features of each GCN layer.
+       gc_activations (list of str or func): Activations applied to each layer's output; defaults to ['relu', ..., 'relu'].
+       lstm_activations (list of str or func): Activations applied to each layer's output; sdefaults to ['tanh', ..., 'tanh'].
+       kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
+       kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
+       kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
+       bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
+       bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+       bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+     """
 
     def __init__(
         self,
         seq_len,
         adj,
-        gc_layers,
-        lstm_layer_size,
-        gc_activations,
-        lstm_activations=["tanh"],
+        gc_layer_sizes,
+        lstm_layer_sizes,
+        gc_activations=None,
+        lstm_activations=None,
         bias=True,
         dropout=0.5,
         kernel_initializer=None,
@@ -244,10 +237,11 @@ class GraphConvolutionLSTM:
 
         super(GraphConvolutionLSTM, self).__init__()
 
-        n_gc_layers = gc_layers
-        n_lstm_layers = len(lstm_layer_size)
+        n_gc_layers = len(gc_layer_sizes)
+        n_lstm_layers = len(lstm_layer_sizes)
 
-        self.lstm_layer_size = lstm_layer_size
+        self.lstm_layer_sizes = lstm_layer_sizes
+        self.gc_layer_sizes = gc_layer_sizes
         self.bias = bias
         self.dropout = dropout
         self.outputs = adj.shape[0]
@@ -289,14 +283,22 @@ class GraphConvolutionLSTM:
         for ii in range(n_gc_layers):
             self._layers.append(
                 FixedAdjacencyGraphConvolution(
-                    units=self.seq_len, A=self.adj, activation=self.gc_activations[ii]
+                    units=self.gc_layer_sizes[ii],
+                    A=self.adj,
+                    activation=self.gc_activations[ii],
+                    kernel_initializer=self.kernel_initializer,
+                    kernel_regularizer=self.kernel_regularizer,
+                    kernel_constraint=self.kernel_constraint,
+                    bias_initializer=self.bias_initializer,
+                    bias_regularizer=self.bias_regularizer,
+                    bias_constraint=self.bias_constraint,
                 )
             )
 
         for ii in range(n_lstm_layers - 1):
             self._layers.append(
                 LSTM(
-                    self.lstm_layer_size[ii],
+                    self.lstm_layer_sizes[ii],
                     activation=self.lstm_activations[ii],
                     return_sequences=True,
                 )
@@ -304,7 +306,7 @@ class GraphConvolutionLSTM:
 
         self._layers.append(
             LSTM(
-                self.lstm_layer_size[-1],
+                self.lstm_layer_sizes[-1],
                 activation=self.lstm_activations[-1],
                 return_sequences=False,
             )

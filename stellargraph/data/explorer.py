@@ -303,26 +303,8 @@ def naive_weighted_choices(rs, weights):
     requires a lot of preprocessing (normalized probabilties), and
     does a lot of conversions/checks/preprocessing internally.
     """
-
-    # divide the interval [0, sum(weights)) into len(weights)
-    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
-    # weights[i]
-    subinterval_ends = []
-    running_total = 0
-    for w in weights:
-        if w < 0:
-            raise ValueError("Detected negative weight: {}".format(w))
-        running_total += w
-        subinterval_ends.append(running_total)
-
-    # pick a place in the overall interval
-    x = rs.random() * running_total
-
-    # find the subinterval that contains the place, by looking for the
-    # first subinterval where the end is (strictly) after it
-    for idx, end in enumerate(subinterval_ends):
-        if x < end:
-            break
+    probs = np.cumsum(weights)
+    idx = np.searchsorted(probs, rs.random() * probs[-1], side="left")
 
     return idx
 
@@ -364,12 +346,15 @@ class BiasedRandomWalk(RandomWalk):
             return
 
         # Check that all edge weights are greater than or equal to 0.
-        edges, weights = self.graph.edges(include_edge_weight=True, use_ilocs=True)
+        source, target, _, weights = self.graph.edge_arrays(
+            include_edge_weight=True, use_ilocs=True
+        )
         (invalid,) = np.where((weights < 0) | ~np.isfinite(weights))
         if len(invalid) > 0:
 
             def format(idx):
-                s, t = edges[idx]
+                s = source[idx]
+                t = target[idx]
                 w = weights[idx]
                 return f"{s!r} to {t!r} (weight = {w})"
 
@@ -414,30 +399,19 @@ class BiasedRandomWalk(RandomWalk):
         if weighted:
             self._check_weights_valid()
 
-            # calculate the appropriate unnormalised transition probability, given the history of
-            # the walk
-            def transition_probability(nn):
-                nn, weight = nn
+        weight_dtype = self.graph._edges.weights.dtype
+        cast_func = np.cast[weight_dtype]
+        ip = cast_func(1.0 / p)
+        iq = cast_func(1.0 / q)
 
-                if nn == previous_node:  # d_tx = 0
-                    return ip * weight
-                elif any(nn == pn for pn, _ in previous_node_neighbours):  # d_tx = 1
-                    return weight
-                else:  # d_tx = 2
-                    return iq * weight
-
-        else:
-            # without weights
-            def transition_probability(nn):
-                if nn == previous_node:  ## d_tx = 0
-                    return ip
-                elif nn in previous_node_neighbours:  # d_tx = 1
-                    return 1.0
-                else:  # d_tx = 2
-                    return iq
-
-        ip = 1.0 / p
-        iq = 1.0 / q
+        if np.isinf(ip):
+            raise ValueError(
+                f"p: value ({p}) is too small. It must be possible to represent 1/p in {weight_dtype}, but this value overflows to infinity."
+            )
+        if np.isinf(iq):
+            raise ValueError(
+                f"q: value ({q}) is too small. It must be possible to represent 1/q in {weight_dtype}, but this value overflows to infinity."
+            )
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -451,24 +425,30 @@ class BiasedRandomWalk(RandomWalk):
                 current_node = node
 
                 for _ in range(length - 1):
-                    neighbours = self.graph.neighbors(
-                        current_node, use_ilocs=True, include_edge_weight=weighted
-                    )
-
-                    if not neighbours:
-                        break
-
                     # select one of the neighbours using the
                     # appropriate transition probabilities
-                    choice = naive_weighted_choices(
-                        rs, (transition_probability(nn) for nn in neighbours),
-                    )
+                    if weighted:
+                        neighbours, weights = self.graph.neighbor_arrays(
+                            current_node, include_edge_weight=True, use_ilocs=True
+                        )
+                    else:
+                        neighbours = self.graph.neighbor_arrays(
+                            current_node, use_ilocs=True
+                        )
+                        weights = np.ones(neighbours.shape, dtype=weight_dtype)
+                    if len(neighbours) == 0:
+                        break
+
+                    mask = neighbours == previous_node
+                    weights[mask] *= ip
+                    mask |= np.isin(neighbours, previous_node_neighbours)
+                    weights[~mask] *= iq
+
+                    choice = naive_weighted_choices(rs, weights)
 
                     previous_node = current_node
                     previous_node_neighbours = neighbours
                     current_node = neighbours[choice]
-                    if weighted:
-                        current_node = current_node.node
 
                     walk.append(current_node)
 

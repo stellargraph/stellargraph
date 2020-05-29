@@ -268,8 +268,7 @@ Neural Information Processing Systems (NIPS), 2017. ([link](https://arxiv.org/ab
 ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095,
-[cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
+4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, Data Mining and Knowledge Discovery, 2019. ([link](https://link.springer.com/article/10.1007/s10618-019-00650-2))
 
 5. Graph Attention Networks. P. Velickovic et al.
 International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
