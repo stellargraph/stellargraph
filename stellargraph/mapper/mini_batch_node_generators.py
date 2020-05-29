@@ -142,7 +142,9 @@ class ClusterNodeGenerator(Generator):
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
 
-        # Get the features for the nodes
+        # Store the features of one node to allow graph ML models to peak at the feature dimension
+        # FIXME 1621: store feature_dimension here instead of features. This must also update ClusterGCN, and all
+        # fullbactch methods and generators
         self.features = G.node_features(self.node_list[:1])
 
     def num_batch_dims(self):
