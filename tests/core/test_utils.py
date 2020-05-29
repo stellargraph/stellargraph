@@ -129,18 +129,14 @@ def test_smart_array_concatenate_normal():
 
     with pytest.raises(ValueError, match="must match exactly.* size 4 .* size 6"):
         _check_smart_concatenate(
-            [
-                np.random.rand(0, 4, 5),
-                np.random.rand(3, 6, 7),
-            ]
+            [np.random.rand(0, 4, 5), np.random.rand(3, 6, 7),]
         )
 
-    with pytest.raises(ValueError, match="must have same number.* 2 dimension.* 3 dimension"):
+    with pytest.raises(
+        ValueError, match="must have same number.* 2 dimension.* 3 dimension"
+    ):
         _check_smart_concatenate(
-            [
-                np.random.rand(0, 4),
-                np.random.rand(3, 6, 7),
-            ]
+            [np.random.rand(0, 4), np.random.rand(3, 6, 7),]
         )
 
 
@@ -154,6 +150,7 @@ def test_smart_array_concatenate_single():
     rng = range(10)
     result = _check_smart_concatenate([rng], check_strides=False)
     assert result is rng
+
 
 def test_smart_array_concatenate_broadcast():
     a0 = np.broadcast_to(123, (0,))
@@ -180,8 +177,11 @@ def test_smart_array_concatenate_broadcast():
     with pytest.raises(ValueError, match="must match exactly.* size 3 .* size 4"):
         _check_smart_concatenate([c43, c54])
 
-    with pytest.raises(ValueError, match="must have same number.* 1 dimension.* 2 dimension"):
+    with pytest.raises(
+        ValueError, match="must have same number.* 1 dimension.* 2 dimension"
+    ):
         _check_smart_concatenate([a0, c43])
+
 
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
