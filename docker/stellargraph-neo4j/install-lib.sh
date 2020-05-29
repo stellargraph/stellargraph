@@ -29,4 +29,4 @@ echo "--- downloading gds jar for neo4j ${NEO4J_VERSION}"
 wget --no-verbose "https://github.com/neo4j/graph-data-science/releases/download/${gds_version}/neo4j-graph-data-science-${gds_version}-standalone.jar" --directory-prefix plugins/
 echo "${gds_sha}  ${PWD}/plugins/neo4j-graph-data-science-${gds_version}-standalone.jar" | sha512sum -c
 
-echo 'dbms.security.procedures.unrestricted=apoc.*,gds.*' >> "${PWD}"/conf/neo4j.conf
+echo 'dbms.security.procedures.unrestricted=gds.*' >> "${PWD}"/conf/neo4j.conf
