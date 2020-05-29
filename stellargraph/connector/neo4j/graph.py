@@ -19,6 +19,8 @@ __all__ = ["Neo4jStellarGraph", "Neo4jStellarDiGraph"]
 import numpy as np
 import scipy.sparse as sps
 import pandas as pd
+import re
+import warnings
 from ...core.experimental import experimental
 from ... import globalvar
 from ...core import convert
@@ -48,8 +50,47 @@ class Neo4jStellarGraph:
 
     def __init__(self, graph_db, node_label=None, is_directed=False):
 
+        try:
+            import py2neo
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                f"{e.msg}. StellarGraph can only connect to Neo4j using the 'py2neo' module; please install it",
+                name=e.name,
+                path=e.path,
+            ) from None
+
+        # check for node ID constraint
+        warn_msg = "Queries may be slow to run and may experience unexpected behaviour if there are duplicate IDs. Please consider creating a uniqueness constraint on a label applied to all nodes in the graph."
+        if node_label is None:
+            warnings.warn(
+                "node_label: No node label provided. " + warn_msg,
+                RuntimeWarning,
+                stacklevel=2,
+            )
+        else:
+            constraint_query = """
+                CALL db.constraints
+                """
+            constraint_regex = re.compile(
+                f"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.ID\) IS UNIQUE$"
+            )
+            constraint_exists = False
+            for c in graph_db.run(constraint_query).data():
+                if constraint_regex.match(c["description"]):
+                    # found constraint on node IDs
+                    constraint_exists = True
+                    break
+            if not constraint_exists:
+                warnings.warn(
+                    f"node_label: No uniqueness constraint found on IDs of nodes with label '{node_label}'. "
+                    + warn_msg,
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+
         self.graph_db = graph_db
-        self.node_label = node_label
+        self.raw_node_label = node_label
+        self.cypher_node_label = py2neo.cypher_escape(self.raw_node_label)
         self._is_directed = is_directed
         self._node_feature_size = None
         self._nodes = None
@@ -58,8 +99,8 @@ class Neo4jStellarGraph:
         self._node_type = globalvar.NODE_TYPE_DEFAULT
 
     def _match_node(self):
-        if self.node_label is not None:
-            return f"MATCH (node:{self.node_label})"
+        if self.cypher_node_label is not None:
+            return f"MATCH (node:{self.cypher_node_label})"
         else:
             return "MATCH (node)"
 
@@ -191,6 +232,8 @@ class Neo4jStellarGraph:
 
         - all nodes' features have the same size
 
+        - there's no mutations that change the size(s)
+
         Returns:
             A dictionary of node type and integer feature size.
         """
@@ -198,10 +241,9 @@ class Neo4jStellarGraph:
             # if feature size is unknown, take a random node's features
             feature_query = f"""
                 {self._match_node()}
-                RETURN node.features as features LIMIT 1
+                RETURN size(node.features) LIMIT 1
                 """
-            result = self.graph_db.run(feature_query)
-            self._node_feature_size = len(result.data()[0]["features"])
+            self._node_feature_size = self.graph_db.evaluate(feature_query)
 
         return {self._node_type: self._node_feature_size}
 

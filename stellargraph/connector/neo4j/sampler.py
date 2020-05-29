@@ -97,7 +97,7 @@ class Neo4JSampledBreadthFirstWalk:
 
         samples = [[head_node for head_node in nodes for _ in range(n)]]
         neighbor_query = _bfs_neighbor_query(
-            sampling_direction="BOTH", node_label=self.graph.node_label
+            sampling_direction="BOTH", node_label=self.graph.cypher_node_label
         )
 
         # this sends O(number of hops) queries to the database, because the code is cleanest like that
@@ -151,10 +151,10 @@ class Neo4JDirectedBreadthFirstNeighbors:
         hops = [[head_nodes]]
 
         in_sample_query = _bfs_neighbor_query(
-            sampling_direction="IN", node_label=self.graph.node_label
+            sampling_direction="IN", node_label=self.graph.cypher_node_label
         )
         out_sample_query = _bfs_neighbor_query(
-            sampling_direction="OUT", node_label=self.graph.node_label
+            sampling_direction="OUT", node_label=self.graph.cypher_node_label
         )
 
         # this sends O(2^number of hops) queries to the database, because the code is cleanest like that
