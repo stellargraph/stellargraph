@@ -62,6 +62,7 @@ class FullBatchGenerator(Generator):
         sparse=True,
         transform=None,
         teleport_probability=0.1,
+        weighted=False,
     ):
         if self.multiplicity is None:
             raise TypeError(
@@ -89,7 +90,7 @@ class FullBatchGenerator(Generator):
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes()
-        self.Aadj = G.to_adjacency_matrix()
+        self.Aadj = G.to_adjacency_matrix(weighted=weighted)
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
@@ -249,6 +250,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
             if False a dense adjacency matrix is used.
         teleport_probability (float): teleport probability between 0.0 and 1.0.
             "probability" of returning to the starting node in the propagation step as in [4].
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
     """
 
     multiplicity = 1
@@ -335,6 +338,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             if False a dense adjacency matrix is used.
         teleport_probability (float): teleport probability between 0.0 and 1.0. "probability"
             of returning to the starting node in the propagation step as in [4].
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
     """
 
     multiplicity = 2
@@ -393,10 +398,11 @@ class RelationalFullBatchNodeGenerator(Generator):
             the function takes (features, Aadj) as arguments.
         sparse (bool): If True (default) a list of sparse adjacency matrices is used,
             if False a list of dense adjacency matrices is used.
-
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
     """
 
-    def __init__(self, G, name=None, sparse=True, transform=None):
+    def __init__(self, G, name=None, sparse=True, transform=None, weighted=False):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -425,7 +431,9 @@ class RelationalFullBatchNodeGenerator(Generator):
         for edge_type in G.edge_types:
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
-            A = G.to_adjacency_matrix(edge_type=edge_type).transpose()
+            A = G.to_adjacency_matrix(
+                edge_type=edge_type, weighted=weighted
+            ).transpose()
 
             if transform is None:
                 # normalize here and replace zero row sums with 1

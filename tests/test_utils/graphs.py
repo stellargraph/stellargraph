@@ -33,7 +33,7 @@ def create_graph_features():
     return StellarGraph(nodes, edges), features
 
 
-def relational_create_graph_features(is_directed=False):
+def relational_create_graph_features(is_directed=False, edge_weights=False):
     # RGCN, relational node mappers
     r1 = {"label": "r1"}
     r2 = {"label": "r2"}
@@ -43,6 +43,9 @@ def relational_create_graph_features(is_directed=False):
         "r1": pd.DataFrame([("a", "b"), ("b", "c")], columns=["source", "target"]),
         "r2": pd.DataFrame([("a", "c")], columns=["source", "target"], index=[2]),
     }
+    if edge_weights:
+        edges["r1"]["weight"] = [2.0, 0.5]
+
     SG = StellarDiGraph if is_directed else StellarGraph
     return SG(nodes, edges), features
 
@@ -82,11 +85,14 @@ def example_graph(
     feature_name="feature",
     is_directed=False,
     edge_feature_size=None,
+    edge_weights=False,
 ):
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
     if edge_feature_size is not None:
         edge_features = repeated_features(-elist.index, edge_feature_size)
         elist = elist.join(pd.DataFrame(edge_features))
+    if edge_weights:
+        elist["weight"] = [0.1, 1.0, 20.0, 1.3]
 
     nodes = [1, 2, 3, 4]
     node_features = repeated_features(nodes, feature_size)
@@ -330,7 +336,10 @@ def tree_graph() -> StellarGraph:
 
 @pytest.fixture
 def barbell():
-    return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
+    graph = nx.barbell_graph(m1=10, m2=11)
+    for i, (src, tgt) in enumerate(graph.edges):
+        graph[src][tgt]["weight"] = (i + 1) / 5
+    return StellarGraph.from_networkx(graph)
 
 
 @pytest.fixture

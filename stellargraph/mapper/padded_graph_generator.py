@@ -86,6 +86,7 @@ class PaddedGraphGenerator(Generator):
         graphs,
         targets=None,
         symmetric_normalization=True,
+        weighted=False,
         batch_size=1,
         name=None,
         shuffle=False,
@@ -104,6 +105,8 @@ class PaddedGraphGenerator(Generator):
                 matrices. If True, the adjacency matrix is left and right multiplied by the inverse square root of the
                 degree matrix; otherwise, the adjacency matrix is only left multiplied by the inverse of the degree
                 matrix.
+            weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+                graph as unweighted.
             batch_size (int, optional): The batch size.
             name (str, optional): An optional name for the returned generator object.
             shuffle (bool, optional): If True the node IDs will be shuffled at the end of each epoch.
@@ -145,6 +148,7 @@ class PaddedGraphGenerator(Generator):
             graphs=graphs,
             targets=targets,
             symmetric_normalization=symmetric_normalization,
+            weighted=weighted,
             batch_size=batch_size,
             name=name,
             shuffle=shuffle,
@@ -183,6 +187,7 @@ class PaddedGraphSequence(Sequence):
         targets=None,
         normalize=True,
         symmetric_normalization=True,
+        weighted=False,
         batch_size=1,
         name=None,
         shuffle=False,
@@ -204,17 +209,17 @@ class PaddedGraphSequence(Sequence):
 
             self.targets = np.asanyarray(targets)
 
+        adjacencies = [graph.to_adjacency_matrix(weighted=weighted) for graph in graphs]
+
         if self.normalize_adj:
             self.normalized_adjs = [
                 normalize_adj(
-                    graph.to_adjacency_matrix(),
-                    symmetric=symmetric_normalization,
-                    add_self_loops=True,
+                    adj, symmetric=symmetric_normalization, add_self_loops=True,
                 )
-                for graph in graphs
+                for adj in adjacencies
             ]
         else:
-            self.normalize_adjs = [graph.to_adjacency_matrix() for graph in graphs]
+            self.normalize_adjs = adjacencies
 
         self.normalized_adjs = np.asanyarray(self.normalized_adjs)
         _, self._np_rs = random_state(seed)

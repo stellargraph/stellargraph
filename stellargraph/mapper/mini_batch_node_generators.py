@@ -57,10 +57,12 @@ class ClusterNodeGenerator(Generator):
             The total number of clusters must be divisible by `q`.
         lam (float, optional): The mixture coefficient for adjacency matrix normalisation (default is 0.1).
             Valid values are in the interval [0, 1].
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
         name (str, optional): Name for the node generator.
     """
 
-    def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
+    def __init__(self, G, clusters=1, q=1, lam=0.1, weighted=False, name=None):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
@@ -73,6 +75,7 @@ class ClusterNodeGenerator(Generator):
         self.method = "cluster_gcn"
         self.multiplicity = 1
         self.use_sparse = False
+        self.weighted = weighted
 
         if isinstance(clusters, list):
             self.k = len(clusters)
@@ -190,6 +193,7 @@ class ClusterNodeGenerator(Generator):
             node_ids=node_ids,
             q=self.q,
             lam=self.lam,
+            weighted=self.weighted,
             name=name,
         )
 
@@ -229,6 +233,7 @@ class ClusterNodeSequence(Sequence):
         normalize_adj=True,
         q=1,
         lam=0.1,
+        weighted=False,
         name=None,
     ):
 
@@ -240,6 +245,7 @@ class ClusterNodeSequence(Sequence):
         self.normalize_adj = normalize_adj
         self.q = q
         self.lam = lam
+        self.weighted = weighted
         self.node_order = list()
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
@@ -307,7 +313,7 @@ class ClusterNodeSequence(Sequence):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
-        adj_cluster = self.graph.to_adjacency_matrix(cluster)
+        adj_cluster = self.graph.to_adjacency_matrix(cluster, weighted=self.weighted)
 
         if self.normalize_adj:
             adj_cluster = self._diagonal_enhanced_normalization(adj_cluster)
