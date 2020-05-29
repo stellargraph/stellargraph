@@ -16,7 +16,7 @@ Find demos for a format
    * - :doc:`loading-pandas`
      - Anything `supported by Pandas <https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html>`__: CSV, TSV, Excel, JSON, SQL, HDF5, many more
      - Good
-     - Via Pandas and `scikit-learn <http://scikit-learn.github.io/stable>`__ and more
+     - Via Pandas, `scikit-learn <http://scikit-learn.github.io/stable>`__ and more
    * - :doc:`loading-networkx`
      - Anything `supported by NetworkX <https://networkx.github.io/documentation/stable/reference/readwrite/index.html>`__: Adjacency lists, GEXF, GML, GraphML, Shapefiles, many more
      - Poor
