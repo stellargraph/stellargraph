@@ -25,7 +25,7 @@ echo "--- downloading apoc jar for neo4j ${NEO4J_VERSION}"
 wget --no-verbose "https://github.com/neo4j-contrib/neo4j-apoc-procedures/releases/download/${apoc_version}/apoc-${apoc_version}-all.jar" --directory-prefix plugins/
 echo "${apoc_sha}  ${PWD}/plugins/apoc-${apoc_version}-all.jar" | sha512sum -c
 
-echo "--- downloading gds jar for neo4j ${NEO4J_VERSION}"
+echo "--- downloading gds jar ${gds_version} for neo4j ${NEO4J_VERSION}"
 wget --no-verbose "https://github.com/neo4j/graph-data-science/releases/download/${gds_version}/neo4j-graph-data-science-${gds_version}-standalone.jar" --directory-prefix plugins/
 echo "${gds_sha}  ${PWD}/plugins/neo4j-graph-data-science-${gds_version}-standalone.jar" | sha512sum -c
 
