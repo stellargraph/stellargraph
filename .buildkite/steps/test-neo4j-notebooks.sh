@@ -18,6 +18,7 @@ notebooks=(
   "load-cora-into-neo4j.ipynb"
   "directed-graphsage-on-cora-neo4j-example.ipynb"
   "undirected-graphsage-on-cora-neo4j-example.ipynb"
+  "cluster-gcn-on-cora-neo4j-example.ipynb"
 )
 
 for name in "${notebooks[@]}"; do

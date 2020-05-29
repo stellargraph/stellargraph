@@ -1,0 +1,16 @@
+{% extends '!layout.html' %}
+
+{# Customise some aspects of the sphinx-rtd-theme to insert github links #}
+
+{% block sidebartitle %}
+{{ super() }}
+  <iframe src="https://ghbtns.com/github-btn.html?user=stellargraph&repo=stellargraph&type=star&count=true&size=large&v=2"
+          class="sg-star-button" allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+{% endblock %}
+
+{% block document %}
+{{super()}}
+    <a class="sg-fork-me-banner" href="https://github.com/stellargraph/stellargraph">
+        <img src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub">
+    </a>
+{% endblock %}
