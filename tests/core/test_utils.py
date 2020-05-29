@@ -124,6 +124,22 @@ def test_smart_array_concatenate_normal():
         ]
     )
 
+    with pytest.raises(ValueError, match="must match exactly.* size 4 .* size 6"):
+        _check_smart_concatenate(
+            [
+                np.random.rand(0, 4, 5),
+                np.random.rand(3, 6, 7),
+            ]
+        )
+
+    with pytest.raises(ValueError, match="must have same number.* 2 dimension.* 3 dimension"):
+        _check_smart_concatenate(
+            [
+                np.random.rand(0, 4),
+                np.random.rand(3, 6, 7),
+            ]
+        )
+
 
 def test_smart_array_concatenate_single():
     arr = np.random.rand(3, 4, 5)
@@ -136,8 +152,11 @@ def test_smart_array_concatenate_broadcast():
     a1 = np.broadcast_to(123, (1,))
     a2 = np.broadcast_to(123, (2,))
     b1 = np.broadcast_to(456, (1,))
+    nonbroadcast = np.array([456, 789])
+
     _check_smart_concatenate([a0, a1, a2], should_be_broadcast=True)
     _check_smart_concatenate([a0, b1, a2], should_be_broadcast=False)
+    _check_smart_concatenate([a0, nonbroadcast, a2], should_be_broadcast=False)
 
     # multidimensional broadcasting isn't handled
     c43 = np.broadcast_to(123, (4, 3))
@@ -148,6 +167,13 @@ def test_smart_array_concatenate_broadcast():
     d53 = np.broadcast_to([123, 456, 789], (5, 3))
     _check_smart_concatenate([d43, d53], should_be_broadcast=False)
 
+    # weird dimensions should have normal errors
+    c54 = np.broadcast_to(123, (5, 4))
+    with pytest.raises(ValueError, match="must match exactly.* size 3 .* size 4"):
+        _check_smart_concatenate([c43, c54])
+
+    with pytest.raises(ValueError, match="must have same number.* 1 dimension.* 2 dimension"):
+        _check_smart_concatenate([a0, c43])
 
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
