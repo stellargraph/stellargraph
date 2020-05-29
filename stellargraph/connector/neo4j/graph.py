@@ -152,13 +152,12 @@ class Neo4jStellarGraph:
 
         if expensive_check:
             num_nodes_with_feats_query = f"""
-                MATCH(n)
-                WHERE "features" in keys(n)
-                return COUNT(*)
+                MATCH (n)
+                WHERE EXISTS(n.features)
+                RETURN n LIMIT 1
             """
-            result = self.graph_db.run(num_nodes_with_feats_query)
-            num_nodes_with_feats = result.data()[0]["COUNT(*)"]
-            if num_nodes_with_feats == 0:
+            result = list(self.graph_db.run(num_nodes_with_feats_query))
+            if len(result) == 0:
                 raise RuntimeError(
                     "This StellarGraph has no numeric feature attributes for nodes"
                     "Node features are required for machine learning"
