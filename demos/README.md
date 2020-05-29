@@ -231,7 +231,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/metapath2vec-link-prediction.ipynb'>via unsup.</a></span></td>
     <td><a href='embeddings/metapath2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
