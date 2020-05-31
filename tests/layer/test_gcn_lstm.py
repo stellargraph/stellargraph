@@ -14,11 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
+import pandas as pd
 from tensorflow.keras import Model
+from stellargraph import StellarGraph, IndexedArray
 from stellargraph.layer import GraphConvolutionLSTM
 from stellargraph.layer import FixedAdjacencyGraphConvolution
+from stellargraph.mapper import SlidingFeaturesNodeGenerator
 
 
 def get_timeseries_graph_data():
@@ -187,3 +189,24 @@ def test_gcn_lstm_model_prediction():
 
     # check 1 prediction for each node
     assert pred.shape == (1, 5)
+
+
+def test_gcn_lstm_generator():
+    nodes = IndexedArray(np.arange(3 * 7).reshape(3, 7) / 21, index=["a", "b", "c"])
+    edges = pd.DataFrame({"source": ["a", "b"], "target": ["b", "c"]})
+    graph = StellarGraph(nodes, edges)
+
+    gen = SlidingFeaturesNodeGenerator(graph, 2, batch_size=3)
+    gcn_lstm = GraphConvolutionLSTM(None, None, [2], [4], generator=gen)
+
+    model = Model(*gcn_lstm.in_out_tensors())
+
+    model.compile("adam", loss="mse")
+
+    history = model.fit(gen.flow(slice(0, 5), target_distance=1))
+
+    predictions = model.predict(gen.flow(slice(5, 7)))
+
+    model2 = Model(*gcn_lstm.in_out_tensors())
+    predictions2 = model2.predict(gen.flow(slice(5, 7)))
+    np.testing.assert_array_equal(predictions, predictions2)
