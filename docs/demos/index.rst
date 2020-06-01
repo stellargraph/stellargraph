@@ -228,7 +228,7 @@ Find a demo for an algorithm
      -
      -
      - via embedding vectors
-     - via embedding vectors
+     - :any:`via embedding vectors <link-prediction/metapath2vec-link-prediction>`
      - :any:`demo <embeddings/metapath2vec-embeddings>`
      -
      -
