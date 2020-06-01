@@ -865,7 +865,7 @@ class METR_LA(
         self.download()
         los_adj = pd.read_csv(self._resolve_path(self.expected_files[1]), header=None)
         adj = np.mat(los_adj)
-        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0]))
+        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0])).transpose()
         return los_tf, adj
 
     def train_test_split(self, data, train_portion):

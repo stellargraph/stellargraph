@@ -56,7 +56,7 @@ Find a demo for an algorithm
      - Graph Convolutional Network (GCN)
      - see RGCN
      -
-     -
+     - yes
      - see T-GCN
      - yes
      - :any:`demo <node-classification/gcn-node-classification>`
@@ -68,7 +68,7 @@ Find a demo for an algorithm
      - Cluster-GCN
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/cluster-gcn-node-classification>`
@@ -80,12 +80,12 @@ Find a demo for an algorithm
      - Relational GCN (RGCN)
      - multiple edges types
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/rgcn-node-classification>`
      - yes
-     -
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *
@@ -104,7 +104,7 @@ Find a demo for an algorithm
      - Graph ATtention Network (GAT)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/gat-node-classification>`
@@ -116,7 +116,7 @@ Find a demo for an algorithm
      - Simplified Graph Convolution (SGC)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/sgc-node-classification>`
@@ -128,7 +128,7 @@ Find a demo for an algorithm
      - Personalized Propagation of Neural Predictions (PPNP)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/ppnp-node-classification>`
@@ -140,7 +140,7 @@ Find a demo for an algorithm
      - Approximate PPNP (APPNP)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/ppnp-node-classification>`
@@ -284,7 +284,7 @@ Find a demo for an algorithm
      - Deep Graph CNN
      -
      -
-     -
+     - yes
      -
      - yes
      -

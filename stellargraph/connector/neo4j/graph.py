@@ -19,7 +19,9 @@ __all__ = ["Neo4jStellarGraph"]
 import numpy as np
 import scipy.sparse as sps
 import pandas as pd
+from ... import globalvar
 from ...core.experimental import experimental
+from ...core.validation import comma_sep
 
 
 @experimental(reason="the class is not tested", issues=[1578])
@@ -42,6 +44,9 @@ class Neo4jStellarGraph:
 
         self.graph_db = graph_db
         self._is_directed = is_directed
+
+        # FIXME: methods in this class currently only support homogeneous graphs with default node type
+        self._node_type = globalvar.NODE_TYPE_DEFAULT
 
     def nodes(self):
         """
@@ -78,7 +83,7 @@ class Neo4jStellarGraph:
         features = np.array([row["features"] for row in result.data()])
         return features
 
-    def to_adjacency_matrix(self, node_ids):
+    def to_adjacency_matrix(self, node_ids, weighted=False):
         """
         Obtains a SciPy sparse adjacency matrix for the subgraph containing
         the nodes specified in node_ids.
@@ -87,10 +92,15 @@ class Neo4jStellarGraph:
             nodes (list): The collection of nodes
                 comprising the subgraph. The adjacency matrix is
                 computed for this subgraph.
+            weighted (bool, optional): Must be false, at the moment.
 
         Returns:
              The weighted adjacency matrix.
         """
+
+        # this param is for compatibility with StellarGraph.to_adjacency_matrix
+        if weighted:
+            raise ValueError("weighted: expected False, found {weighted!r}")
 
         # neo4j optimizes this query to be O(edges incident to nodes)
         # not O(E) as it appears
@@ -137,6 +147,37 @@ class Neo4jStellarGraph:
 
     def is_directed(self):
         return self._is_directed
+
+    def check_graph_for_ml(self, expensive_check=False):
+        """
+        Checks if all properties required for machine learning training/inference are set up.
+        An error will be raised if the graph is not correctly setup.
+        """
+
+        if expensive_check:
+            num_nodes_with_feats_query = f"""
+                MATCH (n)
+                WHERE EXISTS(n.features)
+                RETURN n LIMIT 1
+            """
+            result = list(self.graph_db.run(num_nodes_with_feats_query))
+            if len(result) == 0:
+                raise RuntimeError(
+                    "This StellarGraph has no numeric feature attributes for nodes"
+                    "Node features are required for machine learning"
+                )
+
+    def unique_node_type(self, error_message=None):
+        """
+        Return the unique node type, for a homogeneous-node graph.
+        Args:
+            error_message (str, optional): a custom message to use for the exception; this can use
+                the ``%(found)s`` placeholder to insert the real sequence of node types.
+        Returns:
+            If this graph has only one node type, this returns that node type, otherwise it raises a
+            ``ValueError`` exception.
+        """
+        return self._node_type
 
 
 # A convenience class that merely specifies that edges have direction.

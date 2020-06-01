@@ -200,16 +200,19 @@ def test_generator_flow_with_targets():
 
 
 @pytest.mark.parametrize("symmetric_normalization", [True, False])
-def test_generator_adj_normalisation(symmetric_normalization):
+@pytest.mark.parametrize("weighted", [True, False])
+def test_generator_adj_normalisation(symmetric_normalization, weighted):
 
-    graph = example_graph(feature_size=4)
+    graph = example_graph(feature_size=4, edge_weights=True)
 
     generator = PaddedGraphGenerator(graphs=[graph])
-    seq = generator.flow(graphs=[0], symmetric_normalization=symmetric_normalization)
+    seq = generator.flow(
+        graphs=[0], symmetric_normalization=symmetric_normalization, weighted=weighted
+    )
 
     adj_norm_seq = seq.normalized_adjs[0].todense()
 
-    adj = np.array(graph.to_adjacency_matrix().todense())
+    adj = np.array(graph.to_adjacency_matrix(weighted=weighted).todense())
     np.fill_diagonal(adj, 1)
     if symmetric_normalization:
         inv_deg = np.diag(np.sqrt(1.0 / adj.sum(axis=1)))
@@ -218,7 +221,7 @@ def test_generator_adj_normalisation(symmetric_normalization):
         inv_deg = np.diag(1.0 / adj.sum(axis=1))
         adj_norm = inv_deg.dot(adj)
 
-    assert np.allclose(adj_norm_seq, adj_norm)
+    np.testing.assert_allclose(np.asarray(adj_norm_seq), adj_norm)
 
 
 def test_generator_flow_shuffle():
