@@ -72,7 +72,7 @@ class Neo4jStellarGraph:
                 CALL db.constraints
                 """
             constraint_regex = re.compile(
-                f"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.ID\) IS UNIQUE$"
+                rf"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.ID\) IS UNIQUE$"
             )
             constraint_exists = False
             for c in graph_db.run(constraint_query).data():
@@ -82,8 +82,7 @@ class Neo4jStellarGraph:
                     break
             if not constraint_exists:
                 warnings.warn(
-                    f"node_label: No uniqueness constraint found on IDs of nodes with label '{node_label}'. "
-                    + warn_msg,
+                    f"node_label: No uniqueness constraint found on IDs of nodes with label '{node_label}'. {warn_msg}",
                     RuntimeWarning,
                     stacklevel=2,
                 )
