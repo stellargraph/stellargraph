@@ -19,6 +19,7 @@ __all__ = ["Neo4jStellarGraph"]
 import numpy as np
 import scipy.sparse as sps
 import pandas as pd
+from ... import globalvar
 from ...core.experimental import experimental
 from ...core.validation import comma_sep
 
@@ -43,6 +44,9 @@ class Neo4jStellarGraph:
 
         self.graph_db = graph_db
         self._is_directed = is_directed
+
+        # FIXME: methods in this class currently only support homogeneous graphs with default node type
+        self._node_type = globalvar.NODE_TYPE_DEFAULT
 
     def nodes(self):
         """
@@ -173,17 +177,7 @@ class Neo4jStellarGraph:
             If this graph has only one node type, this returns that node type, otherwise it raises a
             ``ValueError`` exception.
         """
-        all_types = [row[0] for row in self.graph_db.run("CALL db.labels();")]
-        if len(all_types) == 1:
-            return all_types[0]
-
-        found = comma_sep(all_types)
-        if error_message is None:
-            error_message = (
-                "Expected only one node type for 'unique_node_type', found: %(found)s"
-            )
-
-        raise ValueError(error_message % {"found": found})
+        return self._node_type
 
 
 # A convenience class that merely specifies that edges have direction.
