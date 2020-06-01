@@ -107,9 +107,6 @@ class Neo4jStellarGraph:
         else:
             return "MATCH (node)"
 
-        # FIXME: methods in this class currently only support homogeneous graphs with default node type
-        self._node_type = globalvar.NODE_TYPE_DEFAULT
-
     def nodes(self):
         """
         Obtains the collection of nodes in the graph.
