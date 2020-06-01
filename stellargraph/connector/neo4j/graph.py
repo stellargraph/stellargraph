@@ -22,6 +22,7 @@ import pandas as pd
 import re
 import warnings
 from ... import globalvar
+from collections import defaultdict
 from ...core.experimental import experimental
 from ...core import convert
 from ...core.indexed_array import IndexedArray
@@ -310,6 +311,29 @@ class Neo4jStellarGraph:
 
     def is_directed(self):
         return self._is_directed
+
+    def clusters(self, method="louvain"):
+        """
+        Performs community detection to cluster the graph.
+
+        Args:
+            method (str, optional): specifies the algorithm to use,
+                can be one of: "louvain", "labelPropagation".
+
+        Returns:
+             A list of lists, where each inner list corresponds to a cluster and
+              contains the node ids of the nodes in that cluster.
+        """
+        cluster_query = f"""
+            CALL gds.{method}.stream({{
+                nodeQuery: 'MATCH (n) RETURN id(n) AS id',
+                relationshipQuery: 'MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target'
+            }})
+            YIELD nodeId, communityId
+            RETURN communityId, collect(gds.util.asNode(nodeId).ID) AS node_ids
+        """
+        clusters = [row[1] for row in self.graph_db.run(cluster_query)]
+        return clusters
 
     def check_graph_for_ml(self, expensive_check=False):
         """
