@@ -25,7 +25,7 @@ Find algorithms for a task
 
 * Representation learning or computing embedding vectors (including unsupervised tasks):
 
-  * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>`
+  * For nodes/vertices/entities, edges/links/connections and graphs: :doc:`embeddings <./embeddings/index>`
 
 * Time series or sequence prediction for nodes within a graph (including spatio-temporal data): :doc:`time series <./time-series/index>`
 * Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
