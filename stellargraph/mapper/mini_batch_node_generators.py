@@ -29,6 +29,7 @@ from tensorflow.keras.utils import Sequence
 from scipy import sparse
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable, normalize_adj
+from ..connector.neo4j.graph import Neo4jStellarGraph
 from .base import Generator
 
 
@@ -64,7 +65,7 @@ class ClusterNodeGenerator(Generator):
 
     def __init__(self, G, clusters=1, q=1, lam=0.1, weighted=False, name=None):
 
-        if not isinstance(G, StellarGraph):
+        if not isinstance(G, (StellarGraph, Neo4jStellarGraph)):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
@@ -116,16 +117,14 @@ class ClusterNodeGenerator(Generator):
                 )
             )
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
         self.node_list = list(G.nodes())
 
+        # if graph is a StellarGraph check that the graph has features
+        G.check_graph_for_ml(expensive_check=False)
         # Check that there is only a single node type
         _ = G.unique_node_type(
             "G: expected a graph with a single node type, found a graph with node types: %(found)s"
         )
-
         if isinstance(clusters, int):
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
@@ -146,8 +145,10 @@ class ClusterNodeGenerator(Generator):
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        # Store the features of one node to allow graph ML models to peak at the feature dimension
+        # FIXME 1621: store feature_dimension here instead of features. This must also update ClusterGCN, and all
+        # fullbactch methods and generators
+        self.features = G.node_features(self.node_list[:1])
 
     def num_batch_dims(self):
         return 2
