@@ -139,6 +139,8 @@ steps:
         run: runner-3_6
         env:
           - STELLARGRAPH_NEO4J_HOST=neo4j
+        upload-container-logs: always
+
     env:
       RUNNER_DEPENDS_ON: neo4j
       NEO4J_VERSION: "4.0"
