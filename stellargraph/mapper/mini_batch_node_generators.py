@@ -29,6 +29,7 @@ from tensorflow.keras.utils import Sequence
 from scipy import sparse
 from ..core.graph import StellarGraph
 from ..core.utils import is_real_iterable, normalize_adj
+from ..connector.neo4j.graph import Neo4jStellarGraph
 from .base import Generator
 
 
@@ -57,12 +58,14 @@ class ClusterNodeGenerator(Generator):
             The total number of clusters must be divisible by `q`.
         lam (float, optional): The mixture coefficient for adjacency matrix normalisation (default is 0.1).
             Valid values are in the interval [0, 1].
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
         name (str, optional): Name for the node generator.
     """
 
-    def __init__(self, G, clusters=1, q=1, lam=0.1, name=None):
+    def __init__(self, G, clusters=1, q=1, lam=0.1, weighted=False, name=None):
 
-        if not isinstance(G, StellarGraph):
+        if not isinstance(G, (StellarGraph, Neo4jStellarGraph)):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
         self.graph = G
@@ -73,6 +76,7 @@ class ClusterNodeGenerator(Generator):
         self.method = "cluster_gcn"
         self.multiplicity = 1
         self.use_sparse = False
+        self.weighted = weighted
 
         if isinstance(clusters, list):
             self.k = len(clusters)
@@ -113,16 +117,14 @@ class ClusterNodeGenerator(Generator):
                 )
             )
 
-        # Check if the graph has features
-        G.check_graph_for_ml()
-
         self.node_list = list(G.nodes())
 
+        # if graph is a StellarGraph check that the graph has features
+        G.check_graph_for_ml(expensive_check=False)
         # Check that there is only a single node type
         _ = G.unique_node_type(
             "G: expected a graph with a single node type, found a graph with node types: %(found)s"
         )
-
         if isinstance(clusters, int):
             # We are not given graph clusters.
             # We are going to split the graph into self.k random clusters
@@ -143,8 +145,10 @@ class ClusterNodeGenerator(Generator):
         for i, c in enumerate(self.clusters):
             print(f"{i} cluster has size {len(c)}")
 
-        # Get the features for the nodes
-        self.features = G.node_features(self.node_list)
+        # Store the features of one node to allow graph ML models to peak at the feature dimension
+        # FIXME 1621: store feature_dimension here instead of features. This must also update ClusterGCN, and all
+        # fullbactch methods and generators
+        self.features = G.node_features(self.node_list[:1])
 
     def num_batch_dims(self):
         return 2
@@ -190,6 +194,7 @@ class ClusterNodeGenerator(Generator):
             node_ids=node_ids,
             q=self.q,
             lam=self.lam,
+            weighted=self.weighted,
             name=name,
         )
 
@@ -229,6 +234,7 @@ class ClusterNodeSequence(Sequence):
         normalize_adj=True,
         q=1,
         lam=0.1,
+        weighted=False,
         name=None,
     ):
 
@@ -240,6 +246,7 @@ class ClusterNodeSequence(Sequence):
         self.normalize_adj = normalize_adj
         self.q = q
         self.lam = lam
+        self.weighted = weighted
         self.node_order = list()
         self._node_order_in_progress = list()
         self.__node_buffer = dict()
@@ -307,7 +314,7 @@ class ClusterNodeSequence(Sequence):
         # The next batch should be the adjacency matrix for the cluster and the corresponding feature vectors
         # and targets if available.
         cluster = self.clusters[index]
-        adj_cluster = self.graph.to_adjacency_matrix(cluster)
+        adj_cluster = self.graph.to_adjacency_matrix(cluster, weighted=self.weighted)
 
         if self.normalize_adj:
             adj_cluster = self._diagonal_enhanced_normalization(adj_cluster)
@@ -341,7 +348,8 @@ class ClusterNodeSequence(Sequence):
             # Dictionary to store node indices for quicker node index lookups
             # The list of indices of the target nodes in self.node_list
             cluster_target_indices = np.array(
-                [self.target_node_lookup[n] for n in target_nodes_in_cluster]
+                [self.target_node_lookup[n] for n in target_nodes_in_cluster],
+                dtype=np.int64,
             )
             cluster_targets = self.targets[cluster_target_indices]
             cluster_targets = cluster_targets.reshape((1,) + cluster_targets.shape)

@@ -26,7 +26,12 @@ from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
 from .indexed_array import IndexedArray
 from .validation import comma_sep, require_dataframe_has_columns
-from .utils import is_real_iterable
+from .utils import (
+    is_real_iterable,
+    zero_sized_array,
+    smart_array_concatenate,
+    smart_array_index,
+)
 
 
 class ColumnarConverter:
@@ -95,7 +100,7 @@ class ColumnarConverter:
             if old_name in data.columns:
                 column = data[old_name].to_numpy()
             elif old_name in self.column_defaults:
-                column = np.full(len(ids), self.column_defaults[old_name])
+                column = np.broadcast_to(self.column_defaults[old_name], len(ids))
             else:
                 nonlocal missing_columns
                 missing_columns.append(old_name)
@@ -116,13 +121,18 @@ class ColumnarConverter:
                 f"{self.name(type_name)}: expected {comma_sep(self.selected_columns)} columns, found: {comma_sep(data.columns)}"
             )
 
-        other = data.drop(columns=existing)
+        if len(existing) != len(data.columns):
+            other = data.drop(columns=existing)
 
-        # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
-        # operations are more common (e.g. slicing out a couple of row, when sampling a few
-        # nodes) than column-level ones so having rows be contiguous (C order) is much more
-        # efficient.
-        features = np.ascontiguousarray(other.to_numpy(dtype=self.dtype))
+            # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
+            # operations are more common (e.g. slicing out a couple of row, when sampling a few
+            # nodes) than column-level ones so having rows be contiguous (C order) is much more
+            # efficient.
+            features = np.ascontiguousarray(other.to_numpy(dtype=self.dtype))
+        else:
+            # if there's no extra columns we can save some effort and some memory usage by entirely
+            # avoiding the Pandas tricks
+            features = zero_sized_array((len(data), 0), self.dtype)
 
         return ids, columns, features
 
@@ -156,16 +166,10 @@ class ColumnarConverter:
             for col_name, col_array in columns.items():
                 type_columns[col_name].append(col_array)
 
-        if len(type_ids) == 1:
-            # if there's only one type, avoid copying everything in a no-op concatentation
-            ids = type_ids[0]
+        if type_ids:
+            ids = smart_array_concatenate(type_ids)
             columns = {
-                col_name: col_arrays[0] for col_name, col_arrays in type_columns.items()
-            }
-        elif type_ids:
-            ids = np.concatenate(type_ids)
-            columns = {
-                col_name: np.concatenate(col_arrays)
+                col_name: smart_array_concatenate(col_arrays)
                 for col_name, col_arrays in type_columns.items()
             }
         else:
@@ -173,7 +177,7 @@ class ColumnarConverter:
             # that is maximally flexible by using a "minimal"/highly-promotable type
             ids = []
             columns = {
-                name: np.empty(0, dtype=np.uint8)
+                name: zero_sized_array((0,), dtype=np.uint8)
                 for name in self.selected_columns.values()
             }
 
@@ -196,8 +200,14 @@ class ColumnarConverter:
         # arrange everything to be sorted by type
         ids = ids[sorting]
         type_column = type_column[sorting]
-        columns = {name: array[sorting] for name, array in columns.items()}
-        features = features[sorting, ...]
+
+        # For many graphs these end up with values for which actually indexing would be suboptimal
+        # (require allocating a new array, in particular), e.g. default edge weights in columns, or
+        # features.size == 0.
+        columns = {
+            name: smart_array_index(array, sorting) for name, array in columns.items()
+        }
+        features = smart_array_index(features, sorting)
 
         # deduce the type ranges based on the first index of each of the known values
         types, first_occurance = np.unique(type_column, return_index=True)
@@ -326,7 +336,7 @@ def _features_from_attributes(node_type, ids, values, dtype):
 
     if size is None:
         # no features = zero-dimensional features, and skip the loop below
-        return np.empty((num_nodes, 0), dtype)
+        return zero_sized_array((num_nodes, 0), dtype)
 
     default_value = np.zeros(size, dtype)
 

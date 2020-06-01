@@ -1177,7 +1177,7 @@ class StellarGraph:
         """
         return self._feature_shapes(self._edges, edge_types)
 
-    def check_graph_for_ml(self, features=True):
+    def check_graph_for_ml(self, features=True, expensive_check=False):
         """
         Checks if all properties required for machine learning training/inference are set up.
         An error will be raised if the graph is not correctly setup.

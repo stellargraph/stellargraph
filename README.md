@@ -1,35 +1,17 @@
 ![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
 <p align="center">
-  <a href="https://stellargraph.readthedocs.io/" alt="Docs">
-    <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
-  </a>
-  <a href="https://community.stellargraph.io" alt="Discourse Forum">
-    <img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/>
-  </a>
-  <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
-    <img src="https://img.shields.io/pypi/v/stellargraph.svg"/>
-  </a>
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
-    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/>
-  </a>
+  <a href="https://stellargraph.readthedocs.io/" alt="Docs"><img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/></a>
+  <a href="https://community.stellargraph.io" alt="Discourse Forum"><img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/></a>
+  <a href="https://pypi.org/project/stellargraph/" alt="PyPI"><img src="https://img.shields.io/pypi/v/stellargraph.svg"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license"><img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/></a>
 </p>
 <p align="center">
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
-    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
-  </a>
-  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master">
-    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/>
-  </a>
-  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
-    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
-  </a>
-  <a href="https://codecov.io/gh/stellargraph/stellargraph">
-    <img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" />
-  </a>
-  <a href="https://pypi.org/project/stellargraph" alt="pypi downloads">
-    <img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph">
-  </a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/></a>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master"><img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/></a>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop"><img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/></a>
+  <a href="https://codecov.io/gh/stellargraph/stellargraph"><img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" /></a>
+  <a href="https://pypi.org/project/stellargraph" alt="pypi downloads"><img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph"></a>
 </p>
 
 
@@ -268,8 +250,7 @@ Neural Information Processing Systems (NIPS), 2017. ([link](https://arxiv.org/ab
 ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
 ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, arXiv:1901.04095,
-[cs.SI], 2019. ([link](https://arxiv.org/abs/1901.04095))
+4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, Data Mining and Knowledge Discovery, 2019. ([link](https://link.springer.com/article/10.1007/s10618-019-00650-2))
 
 5. Graph Attention Networks. P. Velickovic et al.
 International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
