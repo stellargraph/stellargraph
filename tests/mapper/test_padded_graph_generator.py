@@ -33,6 +33,7 @@ graphs = [
 def _mask(valid, total):
     return np.repeat([True, False], (valid, total - valid))
 
+
 def test_generator_init():
     generator = PaddedGraphGenerator(graphs=graphs)
     assert len(generator.graphs) == len(graphs)
@@ -282,6 +283,7 @@ def test_generator_flow_StellarGraphs():
 
         for arr_1, arr_2 in zip(values_1, values_2):
             np.testing.assert_array_equal(arr_1, arr_2)
+
 
 @pytest.mark.parametrize("use_targets", [False, True])
 @pytest.mark.parametrize("use_ilocs", [False, True])
