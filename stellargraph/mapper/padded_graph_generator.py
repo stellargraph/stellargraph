@@ -145,7 +145,7 @@ class PaddedGraphGenerator(Generator):
             graphs_array = graphs_array[:, None]
         elif len(graphs_array.shape) != 2:
             raise ValueError(
-                f"graphs: expected a shape of length 1 or 2, found shape {graphs_aray.shape}"
+                f"graphs: expected a shape of length 1 or 2, found shape {graphs_array.shape}"
             )
 
         flat_graphs = graphs_array.ravel()
@@ -157,8 +157,6 @@ class PaddedGraphGenerator(Generator):
         else:
             selected_ilocs = graphs_array
             graphs = self.graphs
-
-        # import pdb; pdb.set_trace()
 
         return PaddedGraphSequence(
             graphs=graphs,
@@ -268,7 +266,6 @@ class PaddedGraphSequence(Sequence):
         return int(np.ceil(self._epoch_size() / self.batch_size))
 
     def _pad_graphs(self, graphs, adj_graphs, max_nodes):
-        # import pdb; pdb.set_trace()
         # pad adjacency and feature matrices to equal the size of those from the largest graph
         features = [
             np.pad(

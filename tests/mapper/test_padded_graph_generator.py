@@ -145,6 +145,20 @@ def test_generator_flow_incorrect_targets():
         generator.flow(graphs=[0, 1], targets=1)
 
 
+def test_generator_flow_invalid_shape():
+    generator = PaddedGraphGenerator(graphs=graphs)
+
+    with pytest.raises(
+        ValueError, match=r"graphs: expected a shape .* found shape \(\)"
+    ):
+        generator.flow(0)
+
+    with pytest.raises(
+        ValueError, match=r"graphs: expected a shape .* found shape \(2, 3, 4\)"
+    ):
+        generator.flow(np.ones((2, 3, 4)))
+
+
 def test_generator_flow_no_targets():
 
     generator = PaddedGraphGenerator(graphs=graphs)
