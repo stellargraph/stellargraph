@@ -39,6 +39,70 @@ from . import convert
 NeighbourWithWeight = namedtuple("NeighbourWithWeight", ["node", "weight"])
 
 
+def extract_element_features(element_data, unique, name, ids, type, use_ilocs):
+    if ids is None:
+        if type is None:
+            type = unique(
+                f"{name}_type: in a non-homogeneous graph, expected a {name} type and/or '{name}s' to be passed; found neither '{name}_type' nor '{name}s', and the graph has {name} types: %(found)s"
+            )
+
+        return element_data.features_of_type(type)
+
+    ids = np.asarray(ids)
+
+    if len(ids) == 0:
+        # empty lists are cast to a default array type of float64 -
+        # must manually specify integer type if empty, in which case we can pretend we received ilocs
+        ilocs = ids.astype(dtype=np.uint8)
+        use_ilocs = True
+    elif use_ilocs:
+        ilocs = ids
+    else:
+        ilocs = element_data.ids.to_iloc(ids)
+
+    valid = element_data.ids.is_valid(ilocs)
+    all_valid = valid.all()
+    valid_ilocs = ilocs if all_valid else ilocs[valid]
+
+    if type is None:
+        try:
+            # no inference required in a homogeneous-node graph
+            type = unique()
+        except ValueError:
+            # infer the type based on the valid nodes
+            types = np.unique(element_data.type_of_iloc(valid_ilocs))
+
+            if len(types) == 0:
+                raise ValueError(
+                    f"must have at least one node for inference, if `{name}_type` is not specified"
+                )
+            if len(types) > 1:
+                raise ValueError(f"all {name}s must have the same type")
+
+            type = types[0]
+
+    if all_valid:
+        return element_data.features(type, valid_ilocs)
+
+    # If there's some invalid values, they get replaced by zeros; this is designed to allow
+    # models that build fixed-size structures (e.g. GraphSAGE) based on neighbours to fill out
+    # missing neighbours with zeros automatically, using None as a sentinel.
+
+    # FIXME: None as a sentinel forces nodes to have dtype=object even with integer IDs, could
+    # instead use an impossible integer (e.g. 2**64 - 1)
+
+    # everything that's not the sentinel should be valid
+    if not use_ilocs:
+        non_nones = ids != None
+        element_data.ids.require_valid(ids[non_nones], ilocs[non_nones])
+
+    sampled = element_data.features(type, valid_ilocs)
+    features = np.zeros((len(ids), sampled.shape[1]))
+    features[valid] = sampled
+
+    return features
+
+
 class StellarGraph:
     """
     StellarGraph class for graph machine learning.
@@ -1152,69 +1216,6 @@ class StellarGraph:
         """
         return self._nodes.ids.from_iloc(node_ilocs)
 
-    def _features(self, element_data, unique, name, ids, type, use_ilocs):
-        if ids is None:
-            if type is None:
-                type = unique(
-                    f"{name}_type: in a non-homogeneous graph, expected a {name} type and/or '{name}s' to be passed; found neither '{name}_type' nor '{name}s', and the graph has {name} types: %(found)s"
-                )
-
-            return element_data.features_of_type(type)
-
-        ids = np.asarray(ids)
-
-        if len(ids) == 0:
-            # empty lists are cast to a default array type of float64 -
-            # must manually specify integer type if empty, in which case we can pretend we received ilocs
-            ilocs = ids.astype(dtype=np.uint8)
-            use_ilocs = True
-        elif use_ilocs:
-            ilocs = ids
-        else:
-            ilocs = element_data.ids.to_iloc(ids)
-
-        valid = element_data.ids.is_valid(ilocs)
-        all_valid = valid.all()
-        valid_ilocs = ilocs if all_valid else ilocs[valid]
-
-        if type is None:
-            try:
-                # no inference required in a homogeneous-node graph
-                type = unique()
-            except ValueError:
-                # infer the type based on the valid nodes
-                types = np.unique(element_data.type_of_iloc(valid_ilocs))
-
-                if len(types) == 0:
-                    raise ValueError(
-                        f"must have at least one node for inference, if `{name}_type` is not specified"
-                    )
-                if len(types) > 1:
-                    raise ValueError(f"all {name}s must have the same type")
-
-                type = types[0]
-
-        if all_valid:
-            return element_data.features(type, valid_ilocs)
-
-        # If there's some invalid values, they get replaced by zeros; this is designed to allow
-        # models that build fixed-size structures (e.g. GraphSAGE) based on neighbours to fill out
-        # missing neighbours with zeros automatically, using None as a sentinel.
-
-        # FIXME: None as a sentinel forces nodes to have dtype=object even with integer IDs, could
-        # instead use an impossible integer (e.g. 2**64 - 1)
-
-        # everything that's not the sentinel should be valid
-        if not use_ilocs:
-            non_nones = ids != None
-            element_data.ids.require_valid(ids[non_nones], ilocs[non_nones])
-
-        sampled = element_data.features(type, valid_ilocs)
-        features = np.zeros((len(ids), sampled.shape[1]))
-        features[valid] = sampled
-
-        return features
-
     def node_features(self, nodes=None, node_type=None, use_ilocs=False):
         """
         Get the numeric feature vectors for the specified nodes or node type.
@@ -1246,7 +1247,7 @@ class StellarGraph:
         Returns:
             Numpy array containing the node features for the requested nodes or node type.
         """
-        return self._features(
+        return extract_element_features(
             self._nodes, self.unique_node_type, "node", nodes, node_type, use_ilocs
         )
 
@@ -1281,7 +1282,7 @@ class StellarGraph:
         Returns:
             Numpy array containing the edge features for the requested edges or edge type.
         """
-        return self._features(
+        return extract_element_features(
             self._edges, self.unique_edge_type, "edge", edges, edge_type, use_ilocs
         )
 
