@@ -139,13 +139,30 @@ class PaddedGraphGenerator(Generator):
                 f"expected batch_size to be strictly positive integer, found {batch_size}"
             )
 
-        if isinstance(graphs[0], StellarGraph):
-            self._check_graphs(graphs)
+        graphs_array = np.asarray(graphs)
+
+        if len(graphs_array.shape) == 1:
+            graphs_array = graphs_array[:, None]
+        elif len(graphs_array.shape) != 2:
+            raise ValueError(
+                f"graphs: expected a shape of length 1 or 2, found shape {graphs_aray.shape}"
+            )
+
+        flat_graphs = graphs_array.ravel()
+
+        if isinstance(flat_graphs[0], StellarGraph):
+            self._check_graphs(flat_graphs)
+            graphs = flat_graphs
+            selected_ilocs = np.arange(len(graphs)).reshape(graphs_array.shape)
         else:
-            graphs = [self.graphs[i] for i in graphs]
+            selected_ilocs = graphs_array
+            graphs = self.graphs
+
+        # import pdb; pdb.set_trace()
 
         return PaddedGraphSequence(
             graphs=graphs,
+            selected_ilocs=selected_ilocs,
             targets=targets,
             symmetric_normalization=symmetric_normalization,
             weighted=weighted,
@@ -168,8 +185,9 @@ class PaddedGraphSequence(Sequence):
 
     Args:
         graphs (list)): The graphs as StellarGraph objects.
+        selected_ilocs (array): an array of indices into ``graphs``, of shape N × K for some N and K.
         targets (np.ndarray, optional): An optional array of graph targets of size (N x C),
-            where N is the number of graphs and C is the target size (e.g., number of classes.)
+            where N is the number of selected graph ilocs and C is the target size (e.g., number of classes.)
         normalize (bool, optional): Specifies whether the adjacency matrix for each graph should
             be normalized or not. The default is True.
         symmetric_normalization (bool, optional): Use symmetric normalization if True, that is left and right multiply
@@ -184,6 +202,7 @@ class PaddedGraphSequence(Sequence):
     def __init__(
         self,
         graphs,
+        selected_ilocs,
         targets=None,
         normalize=True,
         symmetric_normalization=True,
@@ -196,15 +215,30 @@ class PaddedGraphSequence(Sequence):
 
         self.name = name
         self.graphs = np.asanyarray(graphs)
+
+        if not isinstance(selected_ilocs, np.ndarray):
+            raise TypeError(
+                "selected_ilocs: expected a NumPy array, found {type(selected_ilocs).__name__}"
+            )
+
+        if not len(selected_ilocs.shape) == 2:
+            raise ValueError(
+                "selected_ilocs: expected a NumPy array of rank 2, found shape {selected_ilocs.shape}"
+            )
+
+        # each row of the input corresponds to a single dataset example, but we want to handle
+        # columns as bulk operations, and iterating over the major axis is easier
+        self.selected_ilocs = selected_ilocs.transpose()
+
         self.normalize_adj = normalize
         self.targets = targets
         self.batch_size = batch_size
 
         if targets is not None:
-            if len(graphs) != len(targets):
+            if len(selected_ilocs) != len(targets):
                 raise ValueError(
-                    "expected the number of target values and the number of graphs to be the same length,"
-                    f"found {len(graphs)} graphs and {len(targets)} targets."
+                    "expected the number of target values and the number of graph ilocs to be the same length,"
+                    f"found {len(selected_ilocs)} graph ilocs and {len(targets)} targets."
                 )
 
             self.targets = np.asanyarray(targets)
@@ -227,25 +261,14 @@ class PaddedGraphSequence(Sequence):
 
         self.on_epoch_end()
 
+    def _epoch_size(self):
+        return self.selected_ilocs.shape[1]
+
     def __len__(self):
-        return int(np.ceil(len(self.graphs) / self.batch_size))
+        return int(np.ceil(self._epoch_size() / self.batch_size))
 
-    def __getitem__(self, index):
-
-        batch_start, batch_end = index * self.batch_size, (index + 1) * self.batch_size
-
-        graphs = self.graphs[batch_start:batch_end]
-        adj_graphs = self.normalized_adjs[batch_start:batch_end]
-
-        # The number of nodes for the largest graph in the batch. We are going to pad with 0 rows and columns
-        # the adjacency and node feature matrices (only the rows in this case) to equal in size the adjacency and
-        # feature matrices of the largest graph.
-        max_nodes = max([graph.number_of_nodes() for graph in graphs])
-
-        graph_targets = None
-        if self.targets is not None:
-            graph_targets = self.targets[batch_start:batch_end]
-
+    def _pad_graphs(self, graphs, adj_graphs, max_nodes):
+        # import pdb; pdb.set_trace()
         # pad adjacency and feature matrices to equal the size of those from the largest graph
         features = [
             np.pad(
@@ -274,15 +297,37 @@ class PaddedGraphSequence(Sequence):
         #      batch size x C
         # where N is the maximum number of nodes for largest graph in the batch, F is
         # the node feature dimensionality, and C is the number of target classes
-        return [features, masks, adj_graphs], graph_targets
+        return [features, masks, adj_graphs]
+
+    def __getitem__(self, index):
+
+        batch_start, batch_end = index * self.batch_size, (index + 1) * self.batch_size
+
+        batch_ilocs = self.selected_ilocs[:, batch_start:batch_end]
+        graphs = self.graphs[batch_ilocs]
+        adj_graphs = self.normalized_adjs[batch_ilocs]
+
+        # The number of nodes for the largest graph in the batch. We are going to pad with 0 rows and columns
+        # the adjacency and node feature matrices (only the rows in this case) to equal in size the adjacency and
+        # feature matrices of the largest graph.
+        max_nodes = max(graph.number_of_nodes() for graph in graphs.ravel())
+
+        graph_targets = None
+        if self.targets is not None:
+            graph_targets = self.targets[batch_start:batch_end]
+
+        padded = [
+            self._pad_graphs(g, adj, max_nodes) for g, adj in zip(graphs, adj_graphs)
+        ]
+
+        return [output for arrays in padded for output in arrays], graph_targets
 
     def on_epoch_end(self):
         """
          Shuffle all graphs at the end of each epoch
         """
         if self.shuffle:
-            indexes = self._np_rs.permutation(len(self.graphs))
-            self.graphs = self.graphs[indexes]
-            self.normalized_adjs = self.normalized_adjs[indexes]
+            indexes = self._np_rs.permutation(self._epoch_size())
+            self.selected_ilocs = self.selected_ilocs[:, indexes]
             if self.targets is not None:
                 self.targets = self.targets[indexes]

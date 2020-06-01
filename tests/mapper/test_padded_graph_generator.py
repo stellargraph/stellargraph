@@ -30,6 +30,9 @@ graphs = [
 ]
 
 
+def _mask(valid, total):
+    return np.repeat([True, False], (valid, total - valid))
+
 def test_generator_init():
     generator = PaddedGraphGenerator(graphs=graphs)
     assert len(generator.graphs) == len(graphs)
@@ -151,17 +154,21 @@ def test_generator_flow_no_targets():
     assert len(seq) == 2  # two batches
 
     # The first batch should be size 2 and the second batch size 1
-    batch_0 = seq[0]
-    assert batch_0[0][0].shape[0] == 2
-    assert batch_0[0][1].shape[0] == 2
-    assert batch_0[0][2].shape[0] == 2
-    assert batch_0[1] is None
+    values_0, targets_0 = seq[0]
 
-    batch_1 = seq[1]
-    assert batch_1[0][0].shape[0] == 1
-    assert batch_1[0][1].shape[0] == 1
-    assert batch_1[0][2].shape[0] == 1
-    assert batch_1[1] is None
+    assert len(values_0) == 3
+    assert values_0[0].shape[0] == 2
+    assert values_0[1].shape[0] == 2
+    assert values_0[2].shape[0] == 2
+    assert targets_0 is None
+
+    values_1, targets_1 = seq[1]
+
+    assert len(values_1) == 3
+    assert values_1[0].shape[0] == 1
+    assert values_1[1].shape[0] == 1
+    assert values_1[2].shape[0] == 1
+    assert targets_1 is None
 
 
 def test_generator_flow_check_padding():
@@ -267,4 +274,50 @@ def test_generator_flow_StellarGraphs():
     seq_1 = generator.flow(graph_ilocs)
     seq_2 = generator.flow([graphs[1], graphs[2], graphs[0]])
 
-    assert all(g1 == g2 for g1, g2 in zip(seq_1.graphs, seq_2.graphs))
+    assert len(seq_1) == len(seq_2) == 3
+
+    for (values_1, targets_1), (values_2, targets_2) in zip(seq_1, seq_2):
+        assert len(values_1) == len(values_2) == 3
+        assert targets_1 is targets_2 is None
+
+        for arr_1, arr_2 in zip(values_1, values_2):
+            np.testing.assert_array_equal(arr_1, arr_2)
+
+@pytest.mark.parametrize("use_targets", [False, True])
+@pytest.mark.parametrize("use_ilocs", [False, True])
+def test_generator_pairs(use_targets, use_ilocs):
+    generator = PaddedGraphGenerator(graphs=graphs)
+
+    targets = [12, 34, 56] if use_targets else None
+    ilocs = [(1, 0), (0, 2), (2, 1)]
+    input = ilocs if use_ilocs else [[graphs[x] for x in pair] for pair in ilocs]
+
+    seq = generator.flow(input, targets=targets, batch_size=2)
+
+    assert len(seq) == 2
+
+    values_0, targets_0 = seq[0]
+    assert len(values_0) == 6
+    assert values_0[0].shape == (2, 6, 4)
+    assert values_0[3].shape == (2, 6, 4)
+    np.testing.assert_array_equal(values_0[1], [_mask(5, 6), _mask(6, 6)])
+    np.testing.assert_array_equal(values_0[4], [_mask(6, 6), _mask(3, 6)])
+    assert values_0[2].shape == (2, 6, 6)
+    assert values_0[5].shape == (2, 6, 6)
+    if use_targets:
+        np.testing.assert_array_equal(targets_0, [12, 34])
+    else:
+        assert targets_0 is None
+
+    values_1, targets_1 = seq[1]
+    assert len(values_1) == 6
+    assert values_1[0].shape == (1, 5, 4)
+    assert values_1[3].shape == (1, 5, 4)
+    np.testing.assert_array_equal(values_1[1], [_mask(3, 5)])
+    np.testing.assert_array_equal(values_1[4], [_mask(5, 5)])
+    assert values_1[2].shape == (1, 5, 5)
+    assert values_1[5].shape == (1, 5, 5)
+    if use_targets:
+        np.testing.assert_array_equal(targets_1, [56])
+    else:
+        assert targets_1 is None
