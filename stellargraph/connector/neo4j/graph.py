@@ -54,7 +54,7 @@ class Neo4jStellarGraph:
         self,
         graph_db,
         node_label=None,
-        id_property="id",
+        id_property="ID",
         features_property="features",
         is_directed=False,
     ):
@@ -97,18 +97,23 @@ class Neo4jStellarGraph:
                 )
 
         self.graph_db = graph_db
-        self.raw_node_label = node_label
-        if node_label is not None:
-            self.cypher_node_label = py2neo.cypher_escape(self.raw_node_label)
-        else:
-            self.cypher_node_label = None
+
+        def raw_and_cypher(raw):
+            if raw is not None:
+                return raw, py2neo.cypher_escape(raw)
+            else:
+                return None, None
+
+        self.raw_node_label, self.cypher_node_label = raw_and_cypher(node_label)
         self._is_directed = is_directed
         self._node_feature_size = None
         self._nodes = None
 
         # names of properties to use when querying the database
-        self._id_property = id_property
-        self._features_property = features_property
+        self.raw_id_property, self.cypher_id_property = raw_and_cypher(id_property)
+        self.raw_features_property, self.cypher_features_property = raw_and_cypher(
+            features_property
+        )
 
         # FIXME: methods in this class currently only support homogeneous graphs with default node type
         self._node_type = globalvar.NODE_TYPE_DEFAULT
@@ -128,7 +133,7 @@ class Neo4jStellarGraph:
         """
         node_ids_query = f"""
             {self._match_node()}
-            RETURN node.{self._id_property} as node_id
+            RETURN node.{self.cypher_id_property} as node_id
             """
 
         result = self.graph_db.run(node_ids_query)
@@ -155,7 +160,7 @@ class Neo4jStellarGraph:
 
     def _node_features_from_db(self, nodes):
         return_node = f"""
-            WITH {{ID: node.{self._id_property}, features: node.{self._features_property}}} AS node_data
+            WITH {{ID: node.{self.cypher_id_property}, features: node.{self.cypher_features_property}}} AS node_data
             RETURN node_data
             """
         if nodes is None:
@@ -189,7 +194,7 @@ class Neo4jStellarGraph:
             # fill valid locs with features
             feature_query = f"""
                 UNWIND $node_id_list AS node_id
-                {self._match_node()} WHERE node.{self._id_property} = node_id
+                {self._match_node()} WHERE node.{self.cypher_id_property} = node_id
                 {return_node}
                 """
             result = self.graph_db.run(
@@ -253,7 +258,7 @@ class Neo4jStellarGraph:
             # if feature size is unknown, take a random node's features
             feature_query = f"""
                 {self._match_node()}
-                RETURN size(node.{self._features_property}) LIMIT 1
+                RETURN size(node.{self.cypher_features_property}) LIMIT 1
                 """
             self._node_feature_size = self.graph_db.evaluate(feature_query)
 
@@ -282,8 +287,8 @@ class Neo4jStellarGraph:
         # not O(E) as it appears
         subgraph_query = f"""
             MATCH (source)-->(target)
-            WHERE source.{self._id_property} IN $node_id_list AND target.{self._id_property} IN $node_id_list
-            RETURN collect(source.{self._id_property}) AS sources, collect(target.{self._id_property}) as targets
+            WHERE source.{self.cypher_id_property} IN $node_id_list AND target.{self.cypher_id_property} IN $node_id_list
+            RETURN collect(source.{self.cypher_id_property}) AS sources, collect(target.{self.cypher_id_property}) as targets
             """
 
         result = self.graph_db.run(
@@ -356,7 +361,7 @@ class Neo4jStellarGraph:
         if expensive_check:
             num_nodes_with_feats_query = f"""
                 MATCH (n)
-                WHERE EXISTS(n.{self._features_property})
+                WHERE EXISTS(n.{self.cypher_features_property})
                 RETURN n LIMIT 1
             """
             result = list(self.graph_db.run(num_nodes_with_feats_query))
