@@ -36,7 +36,6 @@ This table lists all Neo4J demos, including the algorithms trained, the types of
      - Node classification
      - yes
      -
-     -
    * - :doc:`Directed GraphSAGE <directed-graphsage-on-cora-neo4j-example>`
      - GraphSAGE
      - Node classification
