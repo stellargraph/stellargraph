@@ -27,7 +27,7 @@ import numpy as np
 def _model_data(model_type, sparse):
     emb_dim = 16
 
-    sparse_support = (GCN, APPNP, GAT)
+    sparse_support = (GCN, APPNP, GAT, RGCN)
     if sparse and model_type not in sparse_support:
         pytest.skip(f"{model_type.__name__} doesn't support/use sparse=True")
 
@@ -63,12 +63,17 @@ def _model_data(model_type, sparse):
         )
         model = HinSAGE(generator=generator, layer_sizes=[4, emb_dim])
         nodes = G.nodes(node_type=head_node_type)
+    elif model_type is RGCN:
+        G = example_graph_random(10, edge_types=3)
+        generator = RelationalFullBatchNodeGenerator(G, sparse=sparse)
+        model = RGCN([4, emb_dim], generator)
+        nodes = G.nodes()
 
     return generator, model, nodes
 
 
 @pytest.mark.parametrize(
-    "model_type", [GCN, APPNP, GAT, PPNP, GraphSAGE, DirectedGraphSAGE, HinSAGE]
+    "model_type", [GCN, APPNP, GAT, PPNP, GraphSAGE, DirectedGraphSAGE, HinSAGE, RGCN]
 )
 @pytest.mark.parametrize("sparse", [False, True])
 def test_dgi(model_type, sparse):
@@ -85,7 +90,9 @@ def test_dgi(model_type, sparse):
     emb_model = tf.keras.Model(*base_model.in_out_tensors())
     embeddings = emb_model.predict(base_generator.flow(nodes))
 
-    if isinstance(base_generator, FullBatchNodeGenerator):
+    if isinstance(
+        base_generator, (FullBatchNodeGenerator, RelationalFullBatchNodeGenerator)
+    ):
         assert embeddings.shape == (1, len(nodes), 16)
     else:
         assert embeddings.shape == (len(nodes), 16)

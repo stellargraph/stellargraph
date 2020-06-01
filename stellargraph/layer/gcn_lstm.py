@@ -17,7 +17,8 @@
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
-from tensorflow.keras.layers import Input, Layer, Dropout, LSTM, Dense
+from tensorflow.keras.layers import Input, Layer, Dropout, LSTM, Dense, Permute
+from ..mapper import SlidingFeaturesNodeGenerator
 from ..core.experimental import experimental
 from ..core.utils import calculate_laplacian
 
@@ -62,7 +63,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
@@ -126,11 +127,10 @@ class FixedAdjacencyGraphConvolution(Layer):
         Builds the layer
 
         Args:
-            input_shapes (list of int): shapes of the layer's inputs (node features and adjacency matrix)
+            input_shapes (list of int): shapes of the layer's inputs (the batches of node features)
 
         """
-        n_nodes = input_shapes[-1]
-        t_steps = input_shapes[-2]
+        _batch_dim, n_nodes, t_steps = input_shapes
 
         self.A = self.add_weight(
             name="A",
@@ -148,7 +148,8 @@ class FixedAdjacencyGraphConvolution(Layer):
 
         if self.use_bias:
             self.bias = self.add_weight(
-                shape=(n_nodes,),
+                # ensure the per-node bias can be broadcast across each feature
+                shape=(n_nodes, 1),
                 initializer=self.bias_initializer,
                 name="bias",
                 regularizer=self.bias_regularizer,
@@ -163,7 +164,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         Applies the layer.
 
         Args:
-            inputs (ndarray): node features (size B x T x N), where B is the batch size, T is the
+            features (ndarray): node features (size B x N x T), where B is the batch size, T is the
                 sequence length, and N is the number of nodes in the graph.
 
         Returns:
@@ -172,10 +173,14 @@ class FixedAdjacencyGraphConvolution(Layer):
 
         # Calculate the layer operation of GCN
 
-        h_graph = K.dot(features, self.A)
-        output = tf.transpose(
-            K.dot(tf.transpose(h_graph, [0, 2, 1]), self.kernel), [0, 2, 1]
-        )
+        # shape = B x T x N
+        nodes_last = tf.transpose(features, [0, 2, 1])
+        neighbours = K.dot(nodes_last, self.A)
+
+        # shape = B x N x T
+        h_graph = tf.transpose(neighbours, [0, 2, 1])
+        # shape = B x N x units
+        output = K.dot(h_graph, self.kernel)
 
         # Add optional bias & apply activation
         if self.bias is not None:
@@ -186,7 +191,9 @@ class FixedAdjacencyGraphConvolution(Layer):
         return output
 
 
-@experimental(reason="Lack of unit tests and some code refinement", issues=[1131, 1132])
+@experimental(
+    reason="Lack of unit tests and code refinement", issues=[1132, 1526, 1564]
+)
 class GraphConvolutionLSTM:
 
     """
@@ -203,6 +210,7 @@ class GraphConvolutionLSTM:
        adj: unweighted/weighted adjacency matrix of [no.of nodes by no. of nodes dimension
        gc_layer_sizes (list of int): Output sizes of Graph Convolution  layers in the stack.
        lstm_layer_sizes (list of int): Output sizes of LSTM layers in the stack.
+       generator (SlidingFeaturesNodeGenerator): A generator instance.
        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
        dropout (float): Dropout rate applied to input features of each GCN layer.
        gc_activations (list of str or func): Activations applied to each layer's output; defaults to ['relu', ..., 'relu'].
@@ -221,8 +229,9 @@ class GraphConvolutionLSTM:
         adj,
         gc_layer_sizes,
         lstm_layer_sizes,
-        gc_activations,
-        lstm_activations,
+        gc_activations=None,
+        generator=None,
+        lstm_activations=None,
         bias=True,
         dropout=0.5,
         kernel_initializer=None,
@@ -232,6 +241,19 @@ class GraphConvolutionLSTM:
         bias_regularizer=None,
         bias_constraint=None,
     ):
+        if generator is not None:
+            if not isinstance(generator, SlidingFeaturesNodeGenerator):
+                raise ValueError(
+                    f"generator: expected a SlidingFeaturesNodeGenerator, found {type(generator).__name__}"
+                )
+
+            if seq_len is not None or adj is not None:
+                raise ValueError(
+                    "expected only one of generator and (seq_len, adj) to be specified, found multiple"
+                )
+
+            adj = generator.graph.to_adjacency_matrix(weighted=True).todense()
+            seq_len = generator.window_size
 
         super(GraphConvolutionLSTM, self).__init__()
 
@@ -293,6 +315,9 @@ class GraphConvolutionLSTM:
                 )
             )
 
+        # put time-sequence dimension last for LSTM layers
+        self._layers.append(Permute((2, 1)))
+
         for ii in range(n_lstm_layers - 1):
             self._layers.append(
                 LSTM(
@@ -330,7 +355,7 @@ class GraphConvolutionLSTM:
             input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
         """
         # Inputs for features
-        x_t = Input(batch_shape=(None, self.n_features, self.n_nodes))
+        x_t = Input(batch_shape=(None, self.n_nodes, self.n_features))
 
         # Indices to gather for model output
         out_indices_t = Input(batch_shape=(None, self.n_nodes), dtype="int32")
