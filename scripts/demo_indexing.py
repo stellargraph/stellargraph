@@ -484,7 +484,7 @@ ALGORITHMS = [
         "Metapath2Vec",
         heterogeneous=True,
         nc=via_rl(),
-        lp=via_rl(),
+        lp=via_rl(link="link-prediction/metapath2vec-link-prediction"),
         rl=T(link="embeddings/metapath2vec-embeddings"),
     ),
     Algorithm(

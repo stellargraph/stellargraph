@@ -45,6 +45,11 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      -
+   * - :doc:`Metapath2Vec <metapath2vec-link-prediction>`
+     - Metapath2Vec
+     -
+     - yes
+     -
    * - :doc:`CTDNE <ctdne-link-prediction>`
      - CTDNE
      -

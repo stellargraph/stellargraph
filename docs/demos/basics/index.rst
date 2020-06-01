@@ -17,6 +17,10 @@ Find demos for a format
      - Anything `supported by Pandas <https://pandas.pydata.org/pandas-docs/stable/user_guide/io.html>`__: CSV, TSV, Excel, JSON, SQL, HDF5, many more
      - Good
      - Via Pandas, `scikit-learn <http://scikit-learn.github.io/stable>`__ and more
+   * - :doc:`loading-numpy`
+     - Anything supported by `NumPy <https://numpy.org/doc/1.18/reference/routines.io.html>`__, `SciPy <https://docs.scipy.org/doc/scipy/reference/io.html>`__ or other libraries: CSV, TSV, MATLAB ``.mat``, NetCDF, many more
+     - Best
+     - Via NumPy, `scikit-learn <http://scikit-learn.github.io/stable>`__ and more
    * - :doc:`loading-networkx`
      - Anything `supported by NetworkX <https://networkx.github.io/documentation/stable/reference/readwrite/index.html>`__: Adjacency lists, GEXF, GML, GraphML, Shapefiles, many more
      - Poor
