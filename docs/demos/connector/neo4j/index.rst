@@ -6,8 +6,8 @@ Neo4j
 Required Installations:
 
 - **Neo4J**: `Instruction to download <https://neo4j.com/docs/operations-manual/current/installation/>`_.
-- **APOC library** plug-in: APOC provides utilities for common procedures and functions in Neo4J. `Instruction to download and install <https://neo4j.com/developer/neo4j-apoc/>`_.
-- **Graph data science library**: This library provides a collection of graph algorithms in Neo4j. `Instruction to download and install <https://neo4j.com/graph-data-science-library/>`_.
+- **APOC library** plug-in: APOC provides utilities for common procedures and functions in Neo4J. `Instruction to download and install APOC <https://neo4j.com/developer/neo4j-apoc/>`_.
+- **Graph data science library**: This library provides a collection of graph algorithms in Neo4j. `Instruction to download and install the data science library <https://neo4j.com/graph-data-science-library/>`_.
 - **py2neo**: A client library and toolkit to connect to Neo4J database from within python applications. Install ``py2neo`` by using pip: ``pip install stellargraph[neo4j]`` or ``pip install py2neo``. `documentation <https://py2neo.org/v4/>`_.
 
 .. warning::
