@@ -1345,12 +1345,11 @@ class StellarGraph:
             }
         )
 
-        # if graph is undirected and edges exist, we want to sort the triple
-        if not self.is_directed() and len(df):
-            sorted_types = df.apply(
-                lambda r: sorted([r.src_ty, r.tgt_ty]) + [r.rel_ty], axis=1
-            )
-            df[["src_ty", "tgt_ty", "rel_ty"]] = pd.DataFrame(sorted_types.tolist())
+        # if graph is undirected, we want to sort the triple
+        if not self.is_directed():
+            sorted_types = df[["src_ty", "tgt_ty"]].to_numpy()
+            sorted_types.sort(axis=1)
+            df[["src_ty", "tgt_ty"]] = sorted_types
 
         return df.groupby(["src_ty", "rel_ty", "tgt_ty"]).agg(metrics)["weight"]
 
