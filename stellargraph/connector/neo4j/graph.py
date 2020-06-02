@@ -54,8 +54,8 @@ class Neo4jStellarGraph:
         self,
         graph_db,
         node_label=None,
-        id_property="ID",
-        features_property="features",
+        id_property=globalvar.NEO4J_ID_PROPERTY,
+        features_property=globalvar.NEO4J_FEATURES_PROPERTY,
         is_directed=False,
     ):
 
@@ -387,7 +387,11 @@ class Neo4jStellarGraph:
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
     def __init__(
-        self, graph_db, node_label=None, id_property="ID", features_property="features"
+        self,
+        graph_db,
+        node_label=None,
+        id_property=globalvar.NEO4J_ID_PROPERTY,
+        features_property=globalvar.NEO4J_FEATURES_PROPERTY,
     ):
         super().__init__(
             graph_db,
