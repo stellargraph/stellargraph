@@ -471,14 +471,24 @@ ALGORITHMS = [
     Algorithm(
         "Node2Vec",
         weighted=T(link="node-classification/node2vec-weighted-node-classification"),
-        nc=via_rl(link="node-classification/node2vec-node-classification"),
+        nc=[
+            T(text="via", details="via embedding vectors",),
+            T(
+                text="keras",
+                link="node-classification/keras-node2vec-node-classification",
+                details="keras layer",
+            ),
+            T(text="gensim", link="node-classification/node2vec-node-classification",),
+        ],
         lp=via_rl(link="link-prediction/node2vec-link-prediction"),
-        rl=T(link="embeddings/node2vec-embeddings"),
-    ),
-    Algorithm(
-        "Keras-Node2Vec",
-        nc=via_rl(link="node-classification/keras-node2vec-node-classification"),
-        rl=T(link="embeddings/keras-node2vec-embeddings"),
+        rl=[
+            T(
+                text="keras",
+                link="embeddings/keras-node2vec-embeddings",
+                details="keras layer",
+            ),
+            T(text="gensim", link="embeddings/node2vec-embeddings"),
+        ],
     ),
     Algorithm(
         "Metapath2Vec",
