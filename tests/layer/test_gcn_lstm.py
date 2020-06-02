@@ -19,7 +19,7 @@ import pandas as pd
 import pytest
 from tensorflow.keras import Model
 from stellargraph import StellarGraph, IndexedArray
-from stellargraph.layer import GraphConvolutionLSTM
+from stellargraph.layer import GCN_LSTM
 from stellargraph.layer import FixedAdjacencyGraphConvolution
 from stellargraph.mapper import SlidingFeaturesNodeGenerator
 
@@ -52,7 +52,7 @@ def test_GraphConvolution_config():
 def test_gcn_lstm_model_parameters():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[2, 2],
@@ -70,7 +70,7 @@ def test_gcn_lstm_model_parameters():
 def test_gcn_lstm_activations():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[10, 10, 10, 10, 10],
@@ -80,7 +80,7 @@ def test_gcn_lstm_activations():
     assert gcn_lstm_model.gc_activations == ["relu", "relu", "relu", "relu", "relu"]
     assert gcn_lstm_model.lstm_activations == ["tanh", "tanh", "tanh", "tanh"]
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[10],
@@ -94,7 +94,7 @@ def test_gcn_lstm_activations():
 def test_lstm_return_sequences():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[16, 16, 16],
@@ -110,7 +110,7 @@ def test_lstm_return_sequences():
 def test_gcn_lstm_layers():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
@@ -126,7 +126,7 @@ def test_gcn_lstm_layers():
 def test_gcn_lstm_model_input_output():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-1],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
@@ -145,7 +145,7 @@ def test_gcn_lstm_model_input_output():
 def test_gcn_lstm_model():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-1],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
@@ -169,7 +169,7 @@ def test_gcn_lstm_model():
 def test_gcn_lstm_model_prediction():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-1],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
@@ -199,7 +199,7 @@ def test_gcn_lstm_generator(multivariate):
     graph = StellarGraph(nodes, edges)
 
     gen = SlidingFeaturesNodeGenerator(graph, 2, batch_size=3)
-    gcn_lstm = GraphConvolutionLSTM(None, None, [2], [4], generator=gen)
+    gcn_lstm = GCN_LSTM(None, None, [2], [4], generator=gen)
 
     model = Model(*gcn_lstm.in_out_tensors())
 

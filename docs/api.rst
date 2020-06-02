@@ -178,7 +178,7 @@ Deep Graph Convolutional Neural Network
 Graph Convolution LSTM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: GraphConvolutionLSTM
+.. autoclass:: GCN_LSTM
   :members:
 
 .. autoclass:: FixedAdjacencyGraphConvolution
