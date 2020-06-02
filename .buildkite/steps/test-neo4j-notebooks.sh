@@ -21,6 +21,9 @@ notebooks=(
   "cluster-gcn-on-cora-neo4j-example.ipynb"
 )
 
+# delay to wait for Neo4j startup with plugins (fix for #1648)
+sleep 10s
+
 for name in "${notebooks[@]}"; do
   .buildkite/steps/test-single-notebook.sh "$directory/$name" " using Neo4j ${NEO4J_VERSION}"
 done
