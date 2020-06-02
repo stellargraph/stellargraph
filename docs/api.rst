@@ -217,6 +217,14 @@ Calibration
 .. automodule:: stellargraph.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration
 
+
+Neo4j Connector
+----------------
+
+.. automodule:: stellargraph.connector.neo4j
+  :members: Neo4jStellarGraph, Neo4jStellarDiGraph, Neo4jGraphSAGENodeGenerator, Neo4jDirectedGraphSAGENodeGenerator, Neo4jSampledBreadthFirstWalk, Neo4jDirectedBreadthFirstNeighbors
+
+
 Utilities
 ------------------------
 
