@@ -194,10 +194,10 @@ class FixedAdjacencyGraphConvolution(Layer):
 @experimental(
     reason="Lack of unit tests and code refinement", issues=[1132, 1526, 1564]
 )
-class GraphConvolutionLSTM:
+class GCN_LSTM:
 
     """
-    GraphConvolutionLSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
+    GCN_LSTM is a univariate timeseries forecasting method. The architecture  comprises of a stack of N1 Graph Convolutional layers followed by N2 LSTM layers, a Dropout layer, and  a Dense layer.
     This main components of GNN architecture is inspired by: T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction (https://arxiv.org/abs/1811.05320).
     The implementation of the above paper is based on one graph convolution layer stacked with a GRU layer.
     The StellarGraph implementation is built as a stack of the following set of layers:
@@ -258,7 +258,7 @@ class GraphConvolutionLSTM:
         else:
             variates = None
 
-        super(GraphConvolutionLSTM, self).__init__()
+        super(GCN_LSTM, self).__init__()
 
         n_gc_layers = len(gc_layer_sizes)
         n_lstm_layers = len(lstm_layer_sizes)
