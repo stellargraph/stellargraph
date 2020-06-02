@@ -59,7 +59,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 - Tensorflow 2.2 and thus Python 3.8 are now supported [\#1278](https://github.com/stellargraph/stellargraph/pull/1278)
 
 [glossary-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/glossary.html
-[neo4j-sg-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/api.html#module-stellargraph.connector.neo4j
+[neo4j-sg-1.1.0]: https://stellargraph.readthedocs.io/en/latest/api.html#stellargraph.connector.neo4j.Neo4jStellarGraph
 [edge-features-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/demos/basics/loading-pandas.html#Edge-features
 
 
