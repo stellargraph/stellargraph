@@ -205,7 +205,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>
-      <span title='via embedding vectors'>via unsup.</span>
+      <span title='via embedding vectors'>via</span>
       <span title='keras layer'><a href='node-classification/keras-node2vec-node-classification.ipynb'>keras</a></span>
       <a href='node-classification/node2vec-node-classification.ipynb'>gensim</a>
     </td>

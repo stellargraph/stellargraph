@@ -472,7 +472,7 @@ ALGORITHMS = [
         "Node2Vec",
         weighted=T(link="node-classification/node2vec-weighted-node-classification"),
         nc=[
-            T(text="via unsup.", details="via embedding vectors",),
+            T(text="via", details="via embedding vectors",),
             T(
                 text="keras",
                 link="node-classification/keras-node2vec-node-classification",
