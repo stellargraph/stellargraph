@@ -222,7 +222,7 @@ Neo4j Connector
 ----------------
 
 .. automodule:: stellargraph.connector.neo4j
-  :members: Neo4jStellarGraph, Neo4jStellarDiGraph, Neo4JGraphSAGENodeGenerator, Neo4JDirectedGraphSAGENodeGenerator, Neo4jSampledBreadthFirstWalk, Neo4jDirectedBreadthFirstNeighbors
+  :members: Neo4jStellarGraph, Neo4jStellarDiGraph, Neo4JGraphSAGENodeGenerator, Neo4JDirectedGraphSAGENodeGenerator, Neo4JSampledBreadthFirstWalk, Neo4JDirectedBreadthFirstNeighbors
 
 
 Utilities
