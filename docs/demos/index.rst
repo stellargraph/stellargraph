@@ -203,7 +203,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/node2vec-weighted-node-classification>`
      -
      -
-     - :any:`via embedding vectors (keras layer) <node-classification/keras-node2vec-node-classification>`, :any:`via embedding vectors (gensim) <node-classification/node2vec-node-classification>`
+     - via embedding vectors, :any:`keras layer <node-classification/keras-node2vec-node-classification>`, :any:`gensim <node-classification/node2vec-node-classification>`
      - :any:`via embedding vectors <link-prediction/node2vec-link-prediction>`
      - :any:`keras layer <embeddings/keras-node2vec-embeddings>`, :any:`gensim <embeddings/node2vec-embeddings>`
      -

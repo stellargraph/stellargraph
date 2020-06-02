@@ -205,12 +205,13 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td>
-      <span title='via embedding vectors (keras layer)'><a href='node-classification/keras-node2vec-node-classification.ipynb'>via unsup. keras</a></span>
-      <span title='via embedding vectors (gensim)'><a href='node-classification/node2vec-node-classification.ipynb'>via unsup. gensim</a></span>
+      <span title='via embedding vectors'>via unsup.</span>
+      <span title='keras layer'><a href='node-classification/keras-node2vec-node-classification.ipynb'>keras</a></span>
+      <a href='node-classification/node2vec-node-classification.ipynb'>gensim</a>
     </td>
     <td><span title='via embedding vectors'><a href='link-prediction/node2vec-link-prediction.ipynb'>via unsup.</a></span></td>
     <td>
-      <span title='keras layer'><a href='embeddings/keras-node2vec-embeddings.ipynb'>keras layer</a></span>
+      <span title='keras layer'><a href='embeddings/keras-node2vec-embeddings.ipynb'>keras</a></span>
       <a href='embeddings/node2vec-embeddings.ipynb'>gensim</a>
     </td>
     <td></td>
