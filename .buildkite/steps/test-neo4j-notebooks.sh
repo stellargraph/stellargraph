@@ -21,6 +21,7 @@ notebooks=(
   "cluster-gcn-on-cora-neo4j-example.ipynb"
 )
 
+echo "--- :hourglass::neo4j: waiting for neo4j startup"
 # delay to wait for Neo4j startup with plugins (fix for #1648)
 sleep 10s
 
