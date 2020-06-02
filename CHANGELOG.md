@@ -12,7 +12,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 - [Link prediction with Metapath2Vec][metapath-lp-1.1.0]
 - [Unsupervised graph classification/representation learning via distances][unsup-graph-rl-1.1.0]
 - [RGCN section of Node representation learning with Deep Graph Infomax][unsup-rgcn-1.1.0]
-- Node2Vec with StellarGraph components: [representation learning][keras-n2v-rl-1.1.0], [node classification][[keras-n2v-nc-1.1.0]]
+- Node2Vec with StellarGraph components: [representation learning][keras-n2v-rl-1.1.0], [node classification][keras-n2v-nc-1.1.0]
 - Expanded Attri2Vec explanation: [representation learning][a2v-rl-1.1.0], [node classification][a2v-nc-1.1.0], [link prediction][a2v-lp-1.1.0]
 
 [demos-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/demos/index.html
@@ -45,10 +45,10 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
   - Native Node2Vec using Tensorflow Keras, not the gensim library, [demo of representation learning][keras-n2v-rl-1.1.0], [demo of node classification][keras-n2v-nc-1.1.0] ([\#536](https://github.com/stellargraph/stellargraph/pull/536), [\#1566](https://github.com/stellargraph/stellargraph/pull/1566))
 - The `StellarGraph` class continues to get smaller, faster and more flexible:
   - Node features can now be specified as NumPy arrays or the newly added thin `IndexedArray` wrapper, which does no copies and has minimal runtime overhead [demo][loading-numpy-1.1.0] ([\#1535](https://github.com/stellargraph/stellargraph/pull/1535), [\#1556](https://github.com/stellargraph/stellargraph/pull/1556), [\#1599](https://github.com/stellargraph/stellargraph/pull/1599)). They can also now be multidimensional for each node [\#1561](https://github.com/stellargraph/stellargraph/pull/1561).
-  - Edges can now have features, taken as any extra/unused columns in the input DataFrames [\#1574](https://github.com/stellargraph/stellargraph/pull/1574)
-  - Adjacency lists used for random walks and GraphSAGE/HinSAGE are constructed with NumPy and stored as contiguous lists instead of dictionaries, cutting the time and memory or construction by an order of magnitude [\#1296](https://github.com/stellargraph/stellargraph/pull/1296)
+  - Edges can now have features, taken as any extra/unused columns in the input DataFrames [demo][edge-features-1.1.0] [\#1574](https://github.com/stellargraph/stellargraph/pull/1574)
+  - Adjacency lists used for random walks and GraphSAGE/HinSAGE are constructed with NumPy and stored as contiguous arrays instead of dictionaries, cutting the time and memory or construction by an order of magnitude [\#1296](https://github.com/stellargraph/stellargraph/pull/1296)
   - The peak memory usage of construction and adjacency list building is now monitored to ensure that there are not large spikes for large graphs, that exceed available memory [\#1546](https://github.com/stellargraph/stellargraph/pull/1546). This peak usage has thus been optimised: [\#1551](https://github.com/stellargraph/stellargraph/pull/1551),
-  - Other optimisations: the `edge_arrays`, `neighbor_arrays`, `in_node_arrays` and `out_node_arrays` methods have been added, reducing time and memory overhead by leaving data as its underlying NumPy array [\#1253](https://github.com/stellargraph/stellargraph/pull/1253), the `node_type` method now supports multiple nodes as input, making algorithms like HinSAGE and Metapath2Vec much faster [\#1452](https://github.com/stellargraph/stellargraph/pull/1452), the default edge weight of 1 no longer consumes significant memory [\#1610](https://github.com/stellargraph/stellargraph/pull/1610)
+  - Other optimisations: the `edge_arrays`, `neighbor_arrays`, `in_node_arrays` and `out_node_arrays` methods have been added, reducing time and memory overhead by leaving data as its underlying NumPy array [\#1253](https://github.com/stellargraph/stellargraph/pull/1253); the `node_type` method now supports multiple nodes as input, making algorithms like HinSAGE and Metapath2Vec much faster [\#1452](https://github.com/stellargraph/stellargraph/pull/1452); the default edge weight of 1 no longer consumes significant memory [\#1610](https://github.com/stellargraph/stellargraph/pull/1610).
 - Overall performance and memory usage improvements since 0.11, in numbers: TODO
   - The FB15k graph has 15 thousand nodes and 483 thousand edges: it is now 7× faster and 4× smaller to construct (without adjacency lists). It is still about 2× smaller when directed or undirected adjacency lists are computed.
   - Directed adjacency matrix construction is up to 2× faster
@@ -57,6 +57,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 
 [glossary-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/glossary.html
 [neo4j-sg-1.1.0]: TODO
+[edge-features-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/demos/basics/loading-pandas.html#Edge-features
 
 
 ### Experimental features
@@ -73,7 +74,7 @@ Some new algorithms and features are still under active development, and are ava
 ### Bug fixes and other changes
 
 - There is now [a notebook][resource-usage-1.1.0] capturing time and memory resource usage on non-synthetic datasets, designed to help StellarGraph contributors understand and optimise the `StellarGraph` class [\#1547](https://github.com/stellargraph/stellargraph/pull/1547)
-- The `StellarGraph` class now supports conversion between node type and edge type names and equivalent ilocs [\#1366](https://github.com/stellargraph/stellargraph/pull/1366), which allows optimising some algorithms ([\#1367](https://github.com/stellargraph/stellargraph/pull/1367) optimises model ranking with the DistMult algorithm from 42.6s to 20.7s on the FB15k dataset)
+- The `StellarGraph` class now supports conversion between node type and edge type names and equivalent ilocs [\#1366](https://github.com/stellargraph/stellargraph/pull/1366), which allows optimising some algorithms ([\#1367](https://github.com/stellargraph/stellargraph/pull/1367) optimises ranking with the DistMult algorithm from 42.6s to 20.7s on the FB15k dataset)
 - `EdgeSplitter` no longer prints progress updates [\#1619](https://github.com/stellargraph/stellargraph/pull/1619)
 - Various documentation, demo and error message fixes and improvements: [\#1516](https://github.com/stellargraph/stellargraph/pull/1516) (thanks @thatlittleboy), [\#1519](https://github.com/stellargraph/stellargraph/pull/1519), [\#1520](https://github.com/stellargraph/stellargraph/pull/1520), [\#1537](https://github.com/stellargraph/stellargraph/pull/1537), [\#1541](https://github.com/stellargraph/stellargraph/pull/1541), [\#1542](https://github.com/stellargraph/stellargraph/pull/1542), [\#1577](https://github.com/stellargraph/stellargraph/pull/1577), [\#1605](https://github.com/stellargraph/stellargraph/pull/1605), [\#1606](https://github.com/stellargraph/stellargraph/pull/1606), [\#1608](https://github.com/stellargraph/stellargraph/pull/1608), [\#1624](https://github.com/stellargraph/stellargraph/pull/1624), [\#1628](https://github.com/stellargraph/stellargraph/pull/1628)
 - DevOps changes:
