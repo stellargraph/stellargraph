@@ -49,10 +49,11 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
   - Adjacency lists used for random walks and GraphSAGE/HinSAGE are constructed with NumPy and stored as contiguous arrays instead of dictionaries, cutting the time and memory or construction by an order of magnitude [\#1296](https://github.com/stellargraph/stellargraph/pull/1296)
   - The peak memory usage of construction and adjacency list building is now monitored to ensure that there are not large spikes for large graphs, that exceed available memory [\#1546](https://github.com/stellargraph/stellargraph/pull/1546). This peak usage has thus been optimised: [\#1551](https://github.com/stellargraph/stellargraph/pull/1551),
   - Other optimisations: the `edge_arrays`, `neighbor_arrays`, `in_node_arrays` and `out_node_arrays` methods have been added, reducing time and memory overhead by leaving data as its underlying NumPy array [\#1253](https://github.com/stellargraph/stellargraph/pull/1253); the `node_type` method now supports multiple nodes as input, making algorithms like HinSAGE and Metapath2Vec much faster [\#1452](https://github.com/stellargraph/stellargraph/pull/1452); the default edge weight of 1 no longer consumes significant memory [\#1610](https://github.com/stellargraph/stellargraph/pull/1610).
-- Overall performance and memory usage improvements since 0.11, in numbers: TODO
-  - The FB15k graph has 15 thousand nodes and 483 thousand edges: it is now 7× faster and 4× smaller to construct (without adjacency lists). It is still about 2× smaller when directed or undirected adjacency lists are computed.
-  - Directed adjacency matrix construction is up to 2× faster
-  - Various samplers and random walkers are faster: `HinSAGENodeGenerator` is 3× faster (on `MovieLens`), `Attri2VecNodeGenerator` is 4× faster (on `CiteSeer`), weighted `BiasedRandomWalk` is up to 3× faster, `UniformRandomMetapathWalk` is up to 7× faster
+- Overall performance and memory usage improvements since 1.0.0, in numbers:
+  - A reddit graph has 233 thousand nodes and 11.6 million edges:
+    - without node features, it is now 2.3× faster to construct, uses 31% less memory and has a memory peak 47% smaller. Adjacency lists are 4.7-5.0× faster to construct and use 28% less memory.
+    - with node features from NumPy arrays (compared to Pandas DataFrames in 1.0.0), TODO
+  - Various samplers and random walkers are faster: TODO
 - Tensorflow 2.2 and thus Python 3.8 are now supported [\#1278](https://github.com/stellargraph/stellargraph/pull/1278)
 
 [glossary-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/glossary.html
