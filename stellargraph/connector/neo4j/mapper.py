@@ -15,16 +15,16 @@
 # limitations under the License.
 
 __all__ = [
-    "Neo4JGraphSAGENodeGenerator",
-    "Neo4JDirectedGraphSAGENodeGenerator",
+    "Neo4jGraphSAGENodeGenerator",
+    "Neo4jDirectedGraphSAGENodeGenerator",
 ]
 
 import numpy as np
 import random
 
 from .sampler import (
-    Neo4JDirectedBreadthFirstNeighbors,
-    Neo4JSampledBreadthFirstWalk,
+    Neo4jDirectedBreadthFirstNeighbors,
+    Neo4jSampledBreadthFirstWalk,
 )
 
 from ...core.graph import GraphSchema
@@ -35,7 +35,7 @@ from .graph import Neo4jStellarGraph
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JBatchedNodeGenerator:
+class Neo4jBatchedNodeGenerator:
     """
     Abstract base class for graph data generators from Neo4j.
 
@@ -77,7 +77,7 @@ class Neo4JBatchedNodeGenerator:
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
+class Neo4jGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
     """
     A data generator for node prediction with Homogeneous GraphSAGE models
 
@@ -110,7 +110,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
         # check that there is only a single node type for GraphSAGE
 
-        self.sampler = Neo4JSampledBreadthFirstWalk(graph)
+        self.sampler = Neo4jSampledBreadthFirstWalk(graph)
 
     def sample_features(self, head_nodes, batch_num):
         """
@@ -151,7 +151,7 @@ class Neo4JGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
+class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
     """
     A data generator for node prediction with homogeneous GraphSAGE models
     on directed graphs.
@@ -190,7 +190,7 @@ class Neo4JDirectedGraphSAGENodeGenerator(Neo4JBatchedNodeGenerator):
         self.name = name
 
         # Create sampler for GraphSAGE
-        self.sampler = Neo4JDirectedBreadthFirstNeighbors(graph)
+        self.sampler = Neo4jDirectedBreadthFirstNeighbors(graph)
 
     def sample_features(self, head_nodes, batch_num):
         """

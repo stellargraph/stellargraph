@@ -15,8 +15,8 @@
 # limitations under the License.
 
 __all__ = [
-    "Neo4JSampledBreadthFirstWalk",
-    "Neo4JDirectedBreadthFirstNeighbors",
+    "Neo4jSampledBreadthFirstWalk",
+    "Neo4jDirectedBreadthFirstNeighbors",
 ]
 
 from ...core.experimental import experimental
@@ -67,7 +67,7 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JSampledBreadthFirstWalk:
+class Neo4jSampledBreadthFirstWalk:
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4j database.
@@ -116,7 +116,7 @@ class Neo4JSampledBreadthFirstWalk:
 
 
 @experimental(reason="the class is not fully tested")
-class Neo4JDirectedBreadthFirstNeighbors:
+class Neo4jDirectedBreadthFirstNeighbors:
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
     It can be used to extract a random sub-graph starting from a set of initial nodes from Neo4j database.
