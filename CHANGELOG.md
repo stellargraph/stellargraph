@@ -43,6 +43,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
   - Unsupervised graph representation learning [demo][unsup-graph-rl-1.1.0] ([\#1626](https://github.com/stellargraph/stellargraph/pull/1626))
   - Unsupervised RGCN with Deep Graph Infomax [demo][unsup-rgcn-1.1.0] ([\#1258](https://github.com/stellargraph/stellargraph/pull/1258))
   - Native Node2Vec using Tensorflow Keras, not the gensim library, [demo of representation learning][keras-n2v-rl-1.1.0], [demo of node classification][keras-n2v-nc-1.1.0] ([\#536](https://github.com/stellargraph/stellargraph/pull/536), [\#1566](https://github.com/stellargraph/stellargraph/pull/1566))
+  - The `ClusterNodeGenerator` class can be used to train GCN, GAT, APPNP and PPNP models in addition to the ClusterGCN model [\#1585](https://github.com/stellargraph/stellargraph/pull/1585)
 - The `StellarGraph` class continues to get smaller, faster and more flexible:
   - Node features can now be specified as NumPy arrays or the newly added thin `IndexedArray` wrapper, which does no copies and has minimal runtime overhead [demo][loading-numpy-1.1.0] ([\#1535](https://github.com/stellargraph/stellargraph/pull/1535), [\#1556](https://github.com/stellargraph/stellargraph/pull/1556), [\#1599](https://github.com/stellargraph/stellargraph/pull/1599)). They can also now be multidimensional for each node [\#1561](https://github.com/stellargraph/stellargraph/pull/1561).
   - Edges can now have features, taken as any extra/unused columns in the input DataFrames [demo][edge-features-1.1.0] [\#1574](https://github.com/stellargraph/stellargraph/pull/1574)
@@ -58,7 +59,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 - Tensorflow 2.2 and thus Python 3.8 are now supported [\#1278](https://github.com/stellargraph/stellargraph/pull/1278)
 
 [glossary-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/glossary.html
-[neo4j-sg-1.1.0]: TODO
+[neo4j-sg-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/api.html#module-stellargraph.connector.neo4j
 [edge-features-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/demos/basics/loading-pandas.html#Edge-features
 
 
@@ -68,10 +69,12 @@ Some new algorithms and features are still under active development, and are ava
 
 - `RotatE`: a knowledge graph link prediction algorithm that uses complex rotations (`|z| = 1`) to encode relations [\#1522](https://github.com/stellargraph/stellargraph/pull/1522)
 - `GraphConvolutionLSTM`: time series prediction on spatio-temporal data. It is still experimental, but has been improved since last release:
-  - [the `SlidingFeaturesNodeGenerator` class](TODO) has been added to yield data appropriate for the model, straight from a `StellarGraph` instance containing time series data as node features [\#1564](https://github.com/stellargraph/stellargraph/pull/1564)
+  - [the `SlidingFeaturesNodeGenerator` class][sliding-1.1.0] has been added to yield data appropriate for the model, straight from a `StellarGraph` instance containing time series data as node features [\#1564](https://github.com/stellargraph/stellargraph/pull/1564)
   - the hidden graph convolution layers can now have a custom output size [\#1555](https://github.com/stellargraph/stellargraph/pull/1555)
   - the model now supports multivariate input and output, including via the `SlidingFeaturesNodeGenerator` class (with multidimensional node features) [\#1580](https://github.com/stellargraph/stellargraph/pull/1580)
   - unit tests have been added [\#1560](https://github.com/stellargraph/stellargraph/pull/1560)
+
+[sliding-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/api.html#stellargraph.mapper.SlidingFeaturesNodeGenerator
 
 ### Bug fixes and other changes
 
