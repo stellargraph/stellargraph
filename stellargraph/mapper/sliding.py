@@ -47,6 +47,10 @@ class SlidingFeaturesNodeGenerator(Generator):
             "G: expected a graph with a single node type, found a graph with node types: %(found)s"
         )
         self._features = G.node_features(node_type=node_type)
+        if len(self._features.shape) == 3:
+            self.variates = self._features.shape[2]
+        else:
+            self.variates = None
 
         self.window_size = window_size
         self._batch_size = batch_size

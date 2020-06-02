@@ -16,6 +16,7 @@
 
 import numpy as np
 import pandas as pd
+import pytest
 from tensorflow.keras import Model
 from stellargraph import StellarGraph, IndexedArray
 from stellargraph.layer import GraphConvolutionLSTM
@@ -101,11 +102,9 @@ def test_lstm_return_sequences():
         lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
-    n_layers = len(gcn_lstm_model._layers)
-    n_gc_layers = len(gcn_lstm_model.gc_activations)
-    for i in range(n_gc_layers + 1, n_layers - 3):
-        assert gcn_lstm_model._layers[i].return_sequences == True
-    assert gcn_lstm_model._layers[n_layers - 3].return_sequences == False
+    for layer in gcn_lstm_model._lstm_layers[:-1]:
+        assert layer.return_sequences == True
+    assert gcn_lstm_model._lstm_layers[-1].return_sequences == False
 
 
 def test_gcn_lstm_layers():
@@ -119,11 +118,9 @@ def test_gcn_lstm_layers():
         lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
-    # check number of layers should be gc + lstm + 3 (permute, dense and dropout)
-    assert (
-        len(gcn_lstm_model._layers)
-        == len(gcn_lstm_model.gc_layer_sizes) + len(gcn_lstm_model.lstm_layer_sizes) + 3
-    )
+    # check number of layers for gc and lstm
+    assert len(gcn_lstm_model._gc_layers) == len(gcn_lstm_model.gc_layer_sizes)
+    assert len(gcn_lstm_model._lstm_layers) == len(gcn_lstm_model.lstm_layer_sizes)
 
 
 def test_gcn_lstm_model_input_output():
@@ -191,8 +188,13 @@ def test_gcn_lstm_model_prediction():
     assert pred.shape == (1, 5)
 
 
-def test_gcn_lstm_generator():
-    nodes = IndexedArray(np.arange(3 * 7).reshape(3, 7) / 21, index=["a", "b", "c"])
+@pytest.mark.parametrize("multivariate", [False, True])
+def test_gcn_lstm_generator(multivariate):
+    shape = (3, 7, 11) if multivariate else (3, 7)
+    total_elems = np.product(shape)
+    nodes = IndexedArray(
+        np.arange(total_elems).reshape(shape) / total_elems, index=["a", "b", "c"]
+    )
     edges = pd.DataFrame({"source": ["a", "b"], "target": ["b", "c"]})
     graph = StellarGraph(nodes, edges)
 
