@@ -357,9 +357,11 @@ class Neo4jStellarGraph:
     def unique_node_type(self, error_message=None):
         """
         Return the unique node type, for a homogeneous-node graph.
+
         Args:
             error_message (str, optional): a custom message to use for the exception; this can use
                 the ``%(found)s`` placeholder to insert the real sequence of node types.
+
         Returns:
             If this graph has only one node type, this returns that node type, otherwise it raises a
             ``ValueError`` exception.
