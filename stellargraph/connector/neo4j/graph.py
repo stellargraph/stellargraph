@@ -386,5 +386,13 @@ class Neo4jStellarGraph:
 
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
-    def __init__(self, graph_db, node_label=None):
-        super().__init__(graph_db, node_label=node_label, is_directed=True)
+    def __init__(
+        self, graph_db, node_label=None, id_property="ID", features_property="features"
+    ):
+        super().__init__(
+            graph_db,
+            node_label=node_label,
+            id_property=id_property,
+            features_property=features_property,
+            is_directed=True,
+        )
