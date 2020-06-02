@@ -103,7 +103,8 @@ This table lists all node classification demos, including the algorithms trained
      -
      -
      - yes
-   * - :doc:`Node2Vec <node2vec-node-classification>`
+   * - :doc:`Node2Vec (keras) <keras-node2vec-node-classification>`
+       :doc:`Node2Vec (gensim) <node2vec-node-classification>`
      - Node2Vec
      -
      -
