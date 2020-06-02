@@ -1393,10 +1393,7 @@ StellarGraph: Undirected multigraph
     Edge types: B-F->B, B-R->A
 
  Edge types:
-    A-R->B: [3]
-        Weights: all 1 (default)
-        Features: float32 vector, length 56
-    B-R->A: [2]
+    A-R->B: [5]
         Weights: all 1 (default)
         Features: float32 vector, length 56
     B-F->B: [1]
@@ -1422,11 +1419,11 @@ StellarGraph: Undirected multigraph
     Edge types: B-T->A, B-U->A
 
  Edge types:
+    A-U->B: [3]
+        Weights: range=[4, 5], mean=4.66667, std=0.57735
+        Features: none
     A-T->B: [3]
         Weights: all 2
-        Features: none
-    A-U->B: [2]
-        Weights: range=[4, 5], mean=4.5, std=0.707107
         Features: none
     A-U->A: [2]
         Weights: range=[2, 3], mean=2.5, std=0.707107
@@ -1436,9 +1433,6 @@ StellarGraph: Undirected multigraph
         Features: none
     A-R->A: [2]
         Weights: all 1 (default)
-        Features: none
-    B-U->A: [1]
-        Weights: all 5
         Features: none"""
     )
 

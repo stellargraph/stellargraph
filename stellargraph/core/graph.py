@@ -1344,6 +1344,13 @@ class StellarGraph:
                 "weight": self._edges.weights,
             }
         )
+
+        # if graph is undirected, we want to sort the triple
+        if not self.is_directed():
+            sorted_types = df[["src_ty", "tgt_ty"]].to_numpy()
+            sorted_types.sort(axis=1)
+            df[["src_ty", "tgt_ty"]] = sorted_types
+
         return df.groupby(["src_ty", "rel_ty", "tgt_ty"]).agg(metrics)["weight"]
 
     def info(self, show_attributes=None, sample=None, truncate=20):
