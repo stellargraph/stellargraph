@@ -347,7 +347,7 @@ class Neo4jStellarGraph:
                 relationshipQuery: 'MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target'
             }})
             YIELD nodeId, communityId
-            RETURN communityId, collect(gds.util.asNode(nodeId).ID) AS node_ids
+            RETURN communityId, collect(gds.util.asNode(nodeId).{self.cypher_id_property}) AS node_ids
         """
         clusters = [row[1] for row in self.graph_db.run(cluster_query)]
         return clusters
