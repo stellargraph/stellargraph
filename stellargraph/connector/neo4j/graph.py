@@ -22,7 +22,6 @@ import pandas as pd
 import re
 import warnings
 from ... import globalvar
-from collections import defaultdict
 from ...core.experimental import experimental
 from ...core import convert
 from ...core.indexed_array import IndexedArray
@@ -41,15 +40,24 @@ class Neo4jStellarGraph:
     for machine learning.
 
     Args:
-        graph (py2neo.Graph): a py2neo.Graph connected to a Neo4j graph database.
+        graph_db (py2neo.Graph): a py2neo.Graph connected to a Neo4j graph database.
         node_label (str, optional): Common label for all nodes in the graph, if such label exists.
             Providing this is useful if there are any indexes created on this label (e.g. on node IDs),
             as it will improve performance of queries.
+        id_property (str, optional): Name of Neo4j property to use as ID.
+        features_property (str, optional): Name of Neo4j property to use as features.
         is_directed (bool, optional): If True, the data represents a
             directed multigraph, otherwise an undirected multigraph.
     """
 
-    def __init__(self, graph_db, node_label=None, is_directed=False):
+    def __init__(
+        self,
+        graph_db,
+        node_label=None,
+        id_property=globalvar.NEO4J_ID_PROPERTY,
+        features_property=globalvar.NEO4J_FEATURES_PROPERTY,
+        is_directed=False,
+    ):
 
         try:
             import py2neo
@@ -73,7 +81,7 @@ class Neo4jStellarGraph:
                 CALL db.constraints
                 """
             constraint_regex = re.compile(
-                rf"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.ID\) IS UNIQUE$"
+                rf"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.{id_property}\) IS UNIQUE$"
             )
             constraint_exists = False
             for c in graph_db.run(constraint_query).data():
@@ -89,14 +97,23 @@ class Neo4jStellarGraph:
                 )
 
         self.graph_db = graph_db
-        self.raw_node_label = node_label
-        if node_label is not None:
-            self.cypher_node_label = py2neo.cypher_escape(self.raw_node_label)
-        else:
-            self.cypher_node_label = None
+
+        def raw_and_cypher(raw):
+            if raw is not None:
+                return raw, py2neo.cypher_escape(raw)
+            else:
+                return None, None
+
+        self.raw_node_label, self.cypher_node_label = raw_and_cypher(node_label)
         self._is_directed = is_directed
         self._node_feature_size = None
         self._nodes = None
+
+        # names of properties to use when querying the database
+        self.raw_id_property, self.cypher_id_property = raw_and_cypher(id_property)
+        self.raw_features_property, self.cypher_features_property = raw_and_cypher(
+            features_property
+        )
 
         # FIXME: methods in this class currently only support homogeneous graphs with default node type
         self._node_type = globalvar.NODE_TYPE_DEFAULT
@@ -116,7 +133,7 @@ class Neo4jStellarGraph:
         """
         node_ids_query = f"""
             {self._match_node()}
-            RETURN node.ID as node_id
+            RETURN node.{self.cypher_id_property} as node_id
             """
 
         result = self.graph_db.run(node_ids_query)
@@ -143,7 +160,7 @@ class Neo4jStellarGraph:
 
     def _node_features_from_db(self, nodes):
         return_node = f"""
-            WITH {{ID: node.ID, features: node.features}} AS node_data
+            WITH {{ID: node.{self.cypher_id_property}, features: node.{self.cypher_features_property}}} AS node_data
             RETURN node_data
             """
         if nodes is None:
@@ -177,7 +194,7 @@ class Neo4jStellarGraph:
             # fill valid locs with features
             feature_query = f"""
                 UNWIND $node_id_list AS node_id
-                {self._match_node()} WHERE node.ID = node_id
+                {self._match_node()} WHERE node.{self.cypher_id_property} = node_id
                 {return_node}
                 """
             result = self.graph_db.run(
@@ -241,7 +258,7 @@ class Neo4jStellarGraph:
             # if feature size is unknown, take a random node's features
             feature_query = f"""
                 {self._match_node()}
-                RETURN size(node.features) LIMIT 1
+                RETURN size(node.{self.cypher_features_property}) LIMIT 1
                 """
             self._node_feature_size = self.graph_db.evaluate(feature_query)
 
@@ -270,8 +287,8 @@ class Neo4jStellarGraph:
         # not O(E) as it appears
         subgraph_query = f"""
             MATCH (source)-->(target)
-            WHERE source.ID IN $node_id_list AND target.ID IN $node_id_list
-            RETURN collect(source.ID) AS sources, collect(target.ID) as targets
+            WHERE source.{self.cypher_id_property} IN $node_id_list AND target.{self.cypher_id_property} IN $node_id_list
+            RETURN collect(source.{self.cypher_id_property}) AS sources, collect(target.{self.cypher_id_property}) as targets
             """
 
         result = self.graph_db.run(
@@ -330,7 +347,7 @@ class Neo4jStellarGraph:
                 relationshipQuery: 'MATCH (n)-->(m) RETURN id(n) AS source, id(m) AS target'
             }})
             YIELD nodeId, communityId
-            RETURN communityId, collect(gds.util.asNode(nodeId).ID) AS node_ids
+            RETURN communityId, collect(gds.util.asNode(nodeId).{self.cypher_id_property}) AS node_ids
         """
         clusters = [row[1] for row in self.graph_db.run(cluster_query)]
         return clusters
@@ -344,7 +361,7 @@ class Neo4jStellarGraph:
         if expensive_check:
             num_nodes_with_feats_query = f"""
                 MATCH (n)
-                WHERE EXISTS(n.features)
+                WHERE EXISTS(n.{self.cypher_features_property})
                 RETURN n LIMIT 1
             """
             result = list(self.graph_db.run(num_nodes_with_feats_query))
@@ -369,5 +386,17 @@ class Neo4jStellarGraph:
 
 # A convenience class that merely specifies that edges have direction.
 class Neo4jStellarDiGraph(Neo4jStellarGraph):
-    def __init__(self, graph_db, node_label=None):
-        super().__init__(graph_db, node_label=node_label, is_directed=True)
+    def __init__(
+        self,
+        graph_db,
+        node_label=None,
+        id_property=globalvar.NEO4J_ID_PROPERTY,
+        features_property=globalvar.NEO4J_FEATURES_PROPERTY,
+    ):
+        super().__init__(
+            graph_db,
+            node_label=node_label,
+            id_property=id_property,
+            features_property=features_property,
+            is_directed=True,
+        )
