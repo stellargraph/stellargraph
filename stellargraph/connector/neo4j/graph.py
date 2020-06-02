@@ -81,7 +81,7 @@ class Neo4jStellarGraph:
                 CALL db.constraints
                 """
             constraint_regex = re.compile(
-                rf"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.ID\) IS UNIQUE$"
+                rf"^CONSTRAINT ON \( \w+:{node_label} \) ASSERT \(\w+.{id_property}\) IS UNIQUE$"
             )
             constraint_exists = False
             for c in graph_db.run(constraint_query).data():

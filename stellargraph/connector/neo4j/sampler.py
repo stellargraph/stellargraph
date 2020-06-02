@@ -23,12 +23,13 @@ from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph, Neo4jStellarDiGraph
 
 
-def _bfs_neighbor_query(sampling_direction, node_label=None):
+def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
     """
     Generate the Cypher neighbor sampling query for a batch of nodes.
 
     Args:
         sampling_direction (String): indicate type of neighbors needed to sample. Direction must be 'in', 'out' or 'both'.
+        id_property (str): Cypher-escaped property name for node IDs.
         node_label (str, optional): Common label for all nodes in the graph, if such label exists.
             Providing this is useful if there are any indexes created on this label (e.g. on node IDs),
             as it will improve performance of queries.
@@ -47,13 +48,13 @@ def _bfs_neighbor_query(sampling_direction, node_label=None):
         // for each node id in every row, collect the random list of its neighbors.
         CALL apoc.cypher.run(
 
-            '{match_cur_node} WHERE cur_node.ID = $node_id
+            '{match_cur_node} WHERE cur_node.{id_property} = $node_id
 
             // find the neighbors
             MATCH (cur_node){direction_arrow}(neighbors)
 
             // put all ids into a list
-            WITH CASE collect(neighbors.ID) WHEN [] THEN [null] ELSE collect(neighbors.ID) END AS in_neighbors_list
+            WITH CASE collect(neighbors.{id_property}) WHEN [] THEN [null] ELSE collect(neighbors.{id_property}) END AS in_neighbors_list
 
             // pick random nodes with replacement
             WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS in_samples_list
@@ -97,7 +98,9 @@ class Neo4JSampledBreadthFirstWalk:
 
         samples = [[head_node for head_node in nodes for _ in range(n)]]
         neighbor_query = _bfs_neighbor_query(
-            sampling_direction="BOTH", node_label=self.graph.cypher_node_label
+            sampling_direction="BOTH",
+            id_property=self.graph.cypher_id_property,
+            node_label=self.graph.cypher_node_label,
         )
 
         # this sends O(number of hops) queries to the database, because the code is cleanest like that
@@ -151,10 +154,14 @@ class Neo4JDirectedBreadthFirstNeighbors:
         hops = [[head_nodes]]
 
         in_sample_query = _bfs_neighbor_query(
-            sampling_direction="IN", node_label=self.graph.cypher_node_label
+            sampling_direction="IN",
+            id_property=self.graph.cypher_id_property,
+            node_label=self.graph.cypher_node_label,
         )
         out_sample_query = _bfs_neighbor_query(
-            sampling_direction="OUT", node_label=self.graph.cypher_node_label
+            sampling_direction="OUT",
+            id_property=self.graph.cypher_id_property,
+            node_label=self.graph.cypher_node_label,
         )
 
         # this sends O(2^number of hops) queries to the database, because the code is cleanest like that
