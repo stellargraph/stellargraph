@@ -59,7 +59,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 - Tensorflow 2.2 and thus Python 3.8 are now supported [\#1278](https://github.com/stellargraph/stellargraph/pull/1278)
 
 [glossary-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/glossary.html
-[neo4j-sg-1.1.0]: https://stellargraph.readthedocs.io/en/latest/api.html#stellargraph.connector.neo4j.Neo4jStellarGraph
+[neo4j-sg-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/api.html#stellargraph.connector.neo4j.Neo4jStellarGraph
 [edge-features-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/demos/basics/loading-pandas.html#Edge-features
 
 
@@ -86,7 +86,7 @@ Some new algorithms and features are still under active development, and are ava
 - There is now [a notebook][resource-usage-1.1.0] capturing time and memory resource usage on non-synthetic datasets, designed to help StellarGraph contributors understand and optimise the `StellarGraph` class [\#1547](https://github.com/stellargraph/stellargraph/pull/1547)
 - Various documentation, demo and error message fixes and improvements: [\#1516](https://github.com/stellargraph/stellargraph/pull/1516) (thanks @thatlittleboy), [\#1519](https://github.com/stellargraph/stellargraph/pull/1519), [\#1520](https://github.com/stellargraph/stellargraph/pull/1520), [\#1537](https://github.com/stellargraph/stellargraph/pull/1537), [\#1541](https://github.com/stellargraph/stellargraph/pull/1541), [\#1542](https://github.com/stellargraph/stellargraph/pull/1542), [\#1577](https://github.com/stellargraph/stellargraph/pull/1577), [\#1605](https://github.com/stellargraph/stellargraph/pull/1605), [\#1606](https://github.com/stellargraph/stellargraph/pull/1606), [\#1608](https://github.com/stellargraph/stellargraph/pull/1608), [\#1624](https://github.com/stellargraph/stellargraph/pull/1624), [\#1628](https://github.com/stellargraph/stellargraph/pull/1628), [\#1632](https://github.com/stellargraph/stellargraph/pull/1632), [\#1634](https://github.com/stellargraph/stellargraph/pull/1634), [\#1636](https://github.com/stellargraph/stellargraph/pull/1636), [\#1643](https://github.com/stellargraph/stellargraph/pull/1643), [\#1645](https://github.com/stellargraph/stellargraph/pull/1645), [\#1649](https://github.com/stellargraph/stellargraph/pull/1649), [\#1652](https://github.com/stellargraph/stellargraph/pull/1652)
 - DevOps changes:
-  - CI: [\#1518](https://github.com/stellargraph/stellargraph/pull/1518), tests are run regularly on a GPU [\#1249](https://github.com/stellargraph/stellargraph/pull/1249), [\#1647](https://github.com/stellargraph/stellargraph/pull/1647)
+  - CI: [\#1518](https://github.com/stellargraph/stellargraph/pull/1518), tests are run regularly on a GPU [\#1249](https://github.com/stellargraph/stellargraph/pull/1249), [\#1647](https://github.com/stellargraph/stellargraph/pull/1647), [\#1653](https://github.com/stellargraph/stellargraph/pull/1653)
   - Other: [\#1558](https://github.com/stellargraph/stellargraph/pull/1558)
 
 [resource-usage-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/demos/zzz-internal-developers/graph-resource-usage.html
