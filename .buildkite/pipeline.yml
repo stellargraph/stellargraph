@@ -53,6 +53,25 @@ steps:
     agents:
       queue: "t2medium"
 
+  - label: ":docker::python: build 3.8 runner"
+    <<: *timeout
+    key: "runner-3_8"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        build: runner-3_8
+        image-repository: index.docker.io/stellargraph/stellargraph-ci-runner
+        no-cache: ${REFRESH_BUILD-false}
+        cache-from:
+          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-${IMAGE_TAG}
+          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-latest
+
+        push:
+          - runner-3_8:index.docker.io/stellargraph/stellargraph-ci-runner:3_8-${IMAGE_TAG}
+    agents:
+      queue: "t2medium"
+
   - label: ":python: 3.6"
     <<: *timeout
     key: "python_3_6"
@@ -64,7 +83,7 @@ steps:
         <<: *compose-config
         run: runner-3_6
     agents:
-      queue: "t2medium"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
 
   - label: ":python: 3.7"
     <<: *timeout
@@ -77,13 +96,26 @@ steps:
         <<: *compose-config
         run: runner-3_7
     agents:
-      queue: "t2medium"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
+
+  - label: ":python: 3.8"
+    <<: *timeout
+    key: "python_3_8"
+    depends_on: "runner-3_8"
+    command: ".buildkite/steps/script.sh"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_8
+    agents:
+      queue: "${TEST_QUEUE_OVERRIDE:-t2medium}"
 
   - label: ":python::book: test notebooks %n"
     <<: *timeout
     key: "test-notebooks"
     depends_on: "runner-3_6"
-    parallelism: 47
+    parallelism: 55
     command: ".buildkite/steps/test-demo-notebooks.sh"
     plugins:
       <<: *plugins
@@ -91,7 +123,7 @@ steps:
         <<: *compose-config
         run: runner-3_6
     agents:
-      queue: "t2large"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
     soft_fail:
       - exit_status: 2
 
@@ -107,11 +139,13 @@ steps:
         run: runner-3_6
         env:
           - STELLARGRAPH_NEO4J_HOST=neo4j
+        upload-container-logs: always
+
     env:
       RUNNER_DEPENDS_ON: neo4j
       NEO4J_VERSION: "4.0"
     agents:
-      queue: "t2large"
+      queue: "${TEST_QUEUE_OVERRIDE:-t2large}"
 
   - <<: *test-neo4j-notebooks
     label: ":python::book: test neo4j notebooks against neo4j 3.5"
@@ -152,6 +186,18 @@ steps:
 
   - label: ":book: check demo indexing"
     command: "python scripts/demo_indexing.py --action=compare"
+    <<: *timeout
+    depends_on: "runner-3_6"
+    plugins:
+      <<: *plugins
+      docker-compose#v3.2.0:
+        <<: *compose-config
+        run: runner-3_6
+    agents:
+      queue: "t2medium"
+
+  - label: ":book: check documentation"
+    command: ".buildkite/steps/test-documentation.sh"
     <<: *timeout
     depends_on: "runner-3_6"
     plugins:

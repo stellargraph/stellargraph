@@ -24,8 +24,14 @@ import pandas as pd
 
 from ..globalvar import SOURCE, TARGET, WEIGHT, TYPE_ATTR_NAME
 from .element_data import NodeData, EdgeData
+from .indexed_array import IndexedArray
 from .validation import comma_sep, require_dataframe_has_columns
-from .utils import is_real_iterable
+from .utils import (
+    is_real_iterable,
+    zero_sized_array,
+    smart_array_concatenate,
+    smart_array_index,
+)
 
 
 class ColumnarConverter:
@@ -39,7 +45,6 @@ class ColumnarConverter:
         type_column (hashable, optional): the name of the type column, if one is being used
         column_defaults (dict of hashable to any): any default values for columns (using names before renaming!)
         selected_columns (dict of hashable to hashable): renamings for columns, mapping original name to new name
-        allow_features (bool): if True, columns that aren't selected are returned as a numpy feature matrix
         dtype (str or numpy dtype): the data type to use for the feature matrices
         transform_columns (dict of hashable to callable): column transformations, maps column name to transform
     """
@@ -51,26 +56,19 @@ class ColumnarConverter:
         type_column,
         column_defaults,
         selected_columns,
-        allow_features,
         transform_columns,
         dtype=None,
     ):
-        if type_column is not None:
-            if allow_features:
-                raise ValueError(
-                    f"allow_features: expected no features when using a type column ({type_column!r}), found them to be allowed"
-                )
-            if type_column not in selected_columns:
-                raise ValueError(
-                    f"selected_columns: expected type column ({type_column!r}) to be included when using, found only {comma_sep(list(selected_columns.keys()))}"
-                )
+        if type_column is not None and type_column not in selected_columns:
+            raise ValueError(
+                f"selected_columns: expected type column ({type_column!r}) to be included when using, found only {comma_sep(list(selected_columns.keys()))}"
+            )
 
         self._parent_name = name
         self.type_column = type_column
         self.column_defaults = column_defaults
         self.selected_columns = selected_columns
         self.default_type = default_type
-        self.allow_features = allow_features
         self.transform_columns = transform_columns
         self.dtype = dtype
 
@@ -80,106 +78,153 @@ class ColumnarConverter:
         return f"{self._parent_name}[{type_name!r}]"
 
     def _convert_single(self, type_name, data):
-        if not isinstance(data, pd.DataFrame):
+        if isinstance(data, pd.DataFrame):
+            return self._convert_pandas(type_name, data)
+        elif isinstance(data, (IndexedArray, np.ndarray)):
+            return self._convert_rowframe(type_name, data)
+        else:
             raise TypeError(
-                f"{self.name(type_name)}: expected pandas DataFrame, found {type(data).__name__}"
+                f"{self.name(type_name)}: expected IndexedArray or pandas DataFrame, found {type(data).__name__}"
             )
 
+    def _convert_pandas(self, type_name, data):
+        assert isinstance(data, pd.DataFrame)
         existing = set(self.selected_columns).intersection(data.columns)
+
+        ids = data.index
+
         # split the dataframe based on the columns we know about
-        known = data[existing]
-        other = data.drop(columns=existing)
+        missing_columns = []
 
-        # add the defaults to for columns that need one (this will not overwrite any existing ones
-        # of the same name, because they'll be in `other`, not `known`)
-        defaults_required = {
-            name: value
-            for name, value in self.column_defaults.items()
-            if name not in existing
+        def select_column(old_name):
+            if old_name in data.columns:
+                column = data[old_name].to_numpy()
+            elif old_name in self.column_defaults:
+                column = np.broadcast_to(self.column_defaults[old_name], len(ids))
+            else:
+                nonlocal missing_columns
+                missing_columns.append(old_name)
+                return None
+
+            transform = self.transform_columns.get(old_name)
+            if transform is not None:
+                column = transform(column)
+
+            return column
+
+        columns = {
+            new_name: select_column(old_name)
+            for old_name, new_name in self.selected_columns.items()
         }
-        known = known.assign(**defaults_required)
+        if missing_columns:
+            raise ValueError(
+                f"{self.name(type_name)}: expected {comma_sep(self.selected_columns)} columns, found: {comma_sep(data.columns)}"
+            )
 
-        # now verify that all of the columns needed are there (that is, the defaults have filled out appropriately)
-        require_dataframe_has_columns(
-            self.name(type_name), known, self.selected_columns
-        )
+        if len(existing) != len(data.columns):
+            other = data.drop(columns=existing)
 
-        for column, transform in self.transform_columns.items():
-            known[column] = transform(known[column])
-
-        if self.allow_features:
             # to_numpy returns an unspecified order but it's Fortran in practice. Row-level bulk
             # operations are more common (e.g. slicing out a couple of row, when sampling a few
             # nodes) than column-level ones so having rows be contiguous (C order) is much more
             # efficient.
             features = np.ascontiguousarray(other.to_numpy(dtype=self.dtype))
-        elif len(other.columns) == 0:
-            features = None
         else:
+            # if there's no extra columns we can save some effort and some memory usage by entirely
+            # avoiding the Pandas tricks
+            features = zero_sized_array((len(data), 0), self.dtype)
+
+        return ids, columns, features
+
+    def _convert_rowframe(self, type_name, data):
+        assert isinstance(data, (IndexedArray, np.ndarray))
+        if self.selected_columns:
             raise ValueError(
-                f"{self.name(type_name)}: expected zero feature columns, found {comma_sep(other.columns)}"
+                f"{self.name(type_name)}: expected a Pandas DataFrame when selecting columns {comma_sep(self.selected_columns)}, found {type(data).__name__}"
             )
 
-        return known.rename(columns=self.selected_columns), features
+        if isinstance(data, np.ndarray):
+            try:
+                data = IndexedArray(data)
+            except Exception as e:
+                raise ValueError(
+                    f"{self.name(type_name)}: could not convert NumPy array to a IndexedArray, see other error"
+                )
 
-    def _shared_and_starts_from_singles(self, singles):
-        rows_so_far = 0
-        type_starts = []
-        type_dfs = []
+        return data.index, {}, data.values
+
+    def _ids_columns_and_type_info_from_singles(self, singles):
+        type_info = []
+        type_ids = []
+        type_columns = defaultdict(list)
 
         for type_name in sorted(singles.keys()):
-            type_data, _ = singles[type_name]
+            ids, columns, data = singles[type_name]
 
-            type_starts.append((type_name, rows_so_far))
-            type_dfs.append(type_data)
+            type_info.append((type_name, data))
+            type_ids.append(ids)
+            for col_name, col_array in columns.items():
+                type_columns[col_name].append(col_array)
 
-            rows_so_far += len(type_data)
-
-        if type_dfs:
-            shared = pd.concat(type_dfs)
+        if type_ids:
+            ids = smart_array_concatenate(type_ids)
+            columns = {
+                col_name: smart_array_concatenate(col_arrays)
+                for col_name, col_arrays in type_columns.items()
+            }
         else:
-            # there was no input types and thus no input elements, so create a dummy dataframe, that
-            # is maximally flexible by using a "minimal"/highly-promotable type
-            shared = pd.DataFrame(
-                columns=self.selected_columns.values(), dtype=np.uint8
-            )
+            # there was no input types and thus no input elements, so create a dummy set of columns,
+            # that is maximally flexible by using a "minimal"/highly-promotable type
+            ids = []
+            columns = {
+                name: zero_sized_array((0,), dtype=np.uint8)
+                for name in self.selected_columns.values()
+            }
 
-        return shared, type_starts
+        return ids, columns, type_info
 
     def _convert_with_type_column(self, data):
         # we've got a type column, so there's no dictionaries or separate dataframes. We just need
         # to make sure things are arranged right, i.e. nodes of each type are contiguous, and
         # 'range(...)' objects describing each one.
-        known, features = self._convert_single(None, data)
-        assert features is None
+        ids, columns, features = self._convert_single(None, data)
 
         # the column we see in `known` is after being selected/renamed
-        selected_type_column = self.selected_columns[self.type_column]
-
-        known.sort_values(selected_type_column, inplace=True)
+        type_column_name = self.selected_columns[self.type_column]
 
         # the shared data doesn't use the type column; that info is encoded in `type_ranges` below
-        shared = known.drop(columns=selected_type_column)
+        type_column = columns.pop(type_column_name)
+
+        sorting = np.argsort(type_column)
+
+        # arrange everything to be sorted by type
+        ids = ids[sorting]
+        type_column = type_column[sorting]
+
+        # For many graphs these end up with values for which actually indexing would be suboptimal
+        # (require allocating a new array, in particular), e.g. default edge weights in columns, or
+        # features.size == 0.
+        columns = {
+            name: smart_array_index(array, sorting) for name, array in columns.items()
+        }
+        features = smart_array_index(features, sorting)
 
         # deduce the type ranges based on the first index of each of the known values
-        types, first_occurance = np.unique(
-            known[selected_type_column], return_index=True
-        )
+        types, first_occurance = np.unique(type_column, return_index=True)
+        last_occurance = np.append(first_occurance[1:], len(type_column))
 
-        type_starts = [
-            (type_name, start) for type_name, start in zip(types, first_occurance)
+        type_info = [
+            (type_name, features[start:stop, :])
+            for type_name, start, stop in zip(types, first_occurance, last_occurance)
         ]
 
-        # per the assert above, the features are None for every type
-        features = {type_name: None for type_name in types}
-
-        return shared, type_starts, features
+        return ids, columns, type_info
 
     def convert(self, elements):
         if self.type_column is not None:
             return self._convert_with_type_column(elements)
 
-        if isinstance(elements, pd.DataFrame):
+        if isinstance(elements, (pd.DataFrame, IndexedArray, np.ndarray)):
             elements = {self.default_type: elements}
 
         if not isinstance(elements, dict):
@@ -192,9 +237,8 @@ class ColumnarConverter:
             for type_name, data in elements.items()
         }
 
-        shared, type_starts = self._shared_and_starts_from_singles(singles)
-        features = {type_name: features for type_name, (_, features) in singles.items()}
-        return (shared, type_starts, features)
+        ids, columns, type_info = self._ids_columns_and_type_info_from_singles(singles)
+        return (ids, columns, type_info)
 
 
 def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
@@ -204,12 +248,12 @@ def convert_nodes(data, *, name, default_type, dtype) -> NodeData:
         type_column=None,
         column_defaults={},
         selected_columns={},
-        allow_features=True,
         transform_columns={},
         dtype=dtype,
     )
-    nodes, type_starts, node_features = converter.convert(data)
-    return NodeData(nodes, type_starts, node_features)
+    ids, columns, type_info = converter.convert(data)
+    assert len(columns) == 0
+    return NodeData(ids, type_info)
 
 
 DEFAULT_WEIGHT = np.float32(1)
@@ -225,6 +269,7 @@ def convert_edges(
     weight_column,
     type_column,
     nodes,
+    dtype,
 ):
     def _node_ids_to_iloc(node_ids):
         try:
@@ -259,20 +304,19 @@ def convert_edges(
             source_column: _node_ids_to_iloc,
             target_column: _node_ids_to_iloc,
         },
-        allow_features=False,
+        dtype=dtype,
     )
-    edges, type_starts, edge_features = converter.convert(data)
+    ids, columns, type_info = converter.convert(data)
 
-    # validation:
-    assert all(features is None for features in edge_features.values())
-
-    weight_col = edges[WEIGHT]
+    weight_col = columns[WEIGHT]
     if not pd.api.types.is_numeric_dtype(weight_col):
         raise TypeError(
             f"{converter.name()}: expected weight column {weight_column!r} to be numeric, found dtype '{weight_col.dtype}'"
         )
 
-    return EdgeData(edges, type_starts)
+    return EdgeData(
+        ids, columns[SOURCE], columns[TARGET], weight_col, type_info, len(nodes)
+    )
 
 
 SingleTypeNodeIdsAndFeatures = namedtuple(
@@ -292,7 +336,7 @@ def _features_from_attributes(node_type, ids, values, dtype):
 
     if size is None:
         # no features = zero-dimensional features, and skip the loop below
-        return np.empty((num_nodes, 0), dtype)
+        return zero_sized_array((num_nodes, 0), dtype)
 
     default_value = np.zeros(size, dtype)
 
