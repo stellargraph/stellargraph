@@ -18,7 +18,7 @@ import warnings
 from tensorflow.keras.layers import Dense, Lambda, Dropout, Input, Layer, InputLayer
 import tensorflow.keras.backend as K
 
-from ..mapper import FullBatchGenerator
+from ..mapper import FullBatchGenerator, ClusterNodeGenerator
 from .preprocessing_layer import GraphPreProcessingLayer
 from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 
@@ -55,7 +55,7 @@ class APPNPPropagationLayer(Layer):
         teleport_probability=0.1,
         final_layer=None,
         input_dim=None,
-        **kwargs
+        **kwargs,
     ):
         if "input_shape" not in kwargs and input_dim is not None:
             kwargs["input_shape"] = (input_dim,)
@@ -137,19 +137,17 @@ class APPNPPropagationLayer(Layer):
                 "Currently full-batch methods only support a batch dimension of one"
             )
 
-        # Remove singleton batch dimension
-        features = K.squeeze(features, 0)
-        propagated_features = K.squeeze(propagated_features, 0)
-
         # Propagate the node features
         A = As[0]
-        output = (1 - self.teleport_probability) * K.dot(
-            A, propagated_features
-        ) + self.teleport_probability * features
+        if K.is_sparse(A):
+            propagated_features = K.squeeze(propagated_features, 0)
+            propagated_features = K.dot(A, propagated_features)
+            propagated_features = K.expand_dims(propagated_features, 0)
+        else:
+            propagated_features = K.batch_dot(A, propagated_features)
 
-        # Add batch dimension back if we removed it
-        if batch_dim == 1:
-            output = K.expand_dims(output, 0)
+        output = (1 - self.teleport_probability) * propagated_features
+        output += self.teleport_probability * features
 
         return output
 
@@ -221,9 +219,10 @@ class APPNP:
         approx_iter=10,
     ):
 
-        if not isinstance(generator, FullBatchGenerator):
+        if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
             raise TypeError(
-                "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                f"Generator should be a instance of FullBatchNodeGenerator, "
+                f"FullBatchLinkGenerator or ClusterNodeGenerator"
             )
 
         if not len(layer_sizes) == len(activations):
@@ -251,11 +250,13 @@ class APPNP:
         # Copy required information from generator
         self.method = generator.method
         self.multiplicity = generator.multiplicity
-        self.n_nodes = generator.features.shape[0]
         self.n_features = generator.features.shape[1]
-
-        # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
+        if isinstance(generator, FullBatchGenerator):
+            self.n_nodes = generator.features.shape[0]
+        else:
+            self.n_nodes = None
+
         if self.method == "none":
             self.graph_norm_layer = GraphPreProcessingLayer(num_of_nodes=self.n_nodes)
 
@@ -306,7 +307,7 @@ class APPNP:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:

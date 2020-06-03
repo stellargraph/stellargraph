@@ -37,6 +37,7 @@ from ..test_utils.graphs import (
     create_graph_features,
     example_graph_random,
     example_hin_1,
+    example_graph,
 )
 
 
@@ -285,6 +286,15 @@ class Test_FullBatchNodeGenerator:
             ppnp_sparse_failed = True
 
         assert ppnp_sparse_failed
+
+    def test_weighted(self):
+        G = example_graph(feature_size=2, edge_weights=True)
+
+        generator = FullBatchNodeGenerator(G, weighted=True, method=None)
+        np.testing.assert_array_equal(
+            generator.Aadj.todense(),
+            [[0, 0.1, 0, 20.0], [0.1, 0, 1.0, 1.3], [0, 1.0, 0, 0], [20.0, 1.3, 0, 0]],
+        )
 
 
 class Test_FullBatchLinkGenerator:

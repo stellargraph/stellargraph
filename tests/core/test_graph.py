@@ -490,6 +490,19 @@ def test_node_feature_sizes_shapes():
         g.node_feature_sizes(node_types=["B"])
 
 
+def test_edge_feature_sizes_shapes():
+    # edges don't support multidimensional features (yet...)
+    g = example_hin_1(feature_sizes={"F": 4, "R": 6}, edge_features=True)
+
+    assert g.edge_feature_shapes() == {"F": (4,), "R": (6,)}
+
+    assert g.edge_feature_shapes(edge_types=["F"]) == {"F": (4,)}
+    assert g.edge_feature_sizes(edge_types=["F"]) == {"F": 4}
+
+    assert g.edge_feature_shapes(edge_types=["R"]) == {"R": (6,)}
+    assert g.edge_feature_sizes(edge_types=["R"]) == {"R": 6}
+
+
 def test_node_features():
     feature_sizes = {"A": 4, "B": 6}
     sg = example_hin_1(feature_sizes=feature_sizes)
@@ -579,6 +592,98 @@ def test_null_node_feature():
     # Test null-node with no type
     with pytest.raises(ValueError):
         sg.node_features([None, None])
+
+
+def test_edge_features():
+    feature_sizes = {"F": 4, "R": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes, edge_features=True)
+
+    one_zero = np.array([[-1] * 6, [0] * 6])
+
+    # inference
+    np.testing.assert_array_equal(sg.edge_features(edges=[1, 0]), one_zero)
+    # specified
+    np.testing.assert_array_equal(
+        sg.edge_features(edges=[1, 0], edge_type="R"), one_zero
+    )
+
+    # wrong type
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.edge_features(edges=[1, 0], edge_type="F")
+
+    # mixed types, inference
+    with pytest.raises(ValueError, match="all edges must have the same type"):
+        sg.edge_features(edges=[0, 100])
+
+    # mixed types, specified
+    with pytest.raises(ValueError, match="unknown IDs"):
+        sg.edge_features(edges=[0, 100], edge_type="R")
+
+
+def test_edge_features_edge_type():
+    feature_sizes = {"F": 4, "R": 6}
+    sg = example_hin_1(feature_sizes=feature_sizes, edge_features=True)
+
+    np.testing.assert_array_equal(
+        sg.edge_features(edge_type="R"),
+        [[0] * 6, [-1] * 6, [-2] * 6, [-3] * 6, [-4] * 6],
+    )
+    np.testing.assert_array_equal(sg.edge_features(edge_type="F"), [[-100] * 4])
+
+
+def test_edge_features_edge_type_inference():
+    one_type = example_graph(edge_feature_size=4)
+    np.testing.assert_array_equal(
+        one_type.edge_features(), [[0] * 4, [-1] * 4, [-2] * 4, [-3] * 4]
+    )
+
+    # short-cut inference of the edge type for a subset of the edges with a homogenous graph
+    np.testing.assert_array_equal(one_type.edge_features([1]), [[-1] * 4])
+
+    # inference doesn't work for a heterogeneous graph:
+    feature_sizes = {"F": 4, "R": 6}
+    many_types = example_hin_1(feature_sizes=feature_sizes, edge_features=True)
+
+    with pytest.raises(
+        ValueError,
+        match="edge_type: in a non-homogeneous graph, expected a edge type and/or 'edges' to be passed; found neither 'edge_type' nor 'edges', and the graph has edge types: 'F', 'R'",
+    ):
+        many_types.edge_features()
+
+
+def test_edge_features_missing_id():
+    sg = example_graph(edge_feature_size=6)
+    with pytest.raises(KeyError, match=r"\[1000, 2000\]"):
+        sg.edge_features([1, 1000, None, 2000])
+
+
+def test_null_edge_feature():
+    sg = example_graph(edge_feature_size=6)
+    aa = sg.edge_features([1, None, 2, None])
+    assert aa.shape == (4, 6)
+    assert aa[:, 0] == pytest.approx([-1, 0, -2, 0])
+
+    sg = example_hin_1(
+        feature_sizes={"F": 4, "R": 2}, reverse_order=True, edge_features=True
+    )
+
+    # Test feature for null edge, without edge type
+    ab = sg.edge_features([None, 4, None])
+    assert ab.shape == (3, 2)
+    assert ab[:, 0] == pytest.approx([0, -4, 0])
+
+    # Test feature for null edge, edge type
+    ab = sg.edge_features([None, 4, None], "R")
+    assert ab.shape == (3, 2)
+    assert ab[:, 0] == pytest.approx([0, -4, 0])
+
+    # Test feature for null edge, wrong type
+    with pytest.raises(ValueError):
+        sg.edge_features([None, 4, None], "F")
+
+    # Test null-edge with no type
+    with pytest.raises(ValueError):
+        sg.edge_features([None, None])
 
 
 def test_node_types():
@@ -1237,7 +1342,11 @@ def test_isolated_node_neighbor_methods(is_directed, use_ilocs):
 def test_info_homogeneous(is_directed):
 
     g = example_graph(
-        feature_size=12, node_label="ABC", edge_label="xyz", is_directed=is_directed
+        feature_size=12,
+        node_label="ABC",
+        edge_label="xyz",
+        is_directed=is_directed,
+        edge_feature_size=34,
     )
 
     if is_directed:
@@ -1259,12 +1368,15 @@ def test_info_homogeneous(is_directed):
 
  Edge types:
     ABC-xyz->ABC: [4]
-        Weights: all 1 (default)"""
+        Weights: all 1 (default)
+        Features: float32 vector, length 34"""
     )
 
 
 def test_info_heterogeneous():
-    g = example_hin_1({"A": 0, "B": (34, 4)}, reverse_order=True)
+    g = example_hin_1(
+        {"A": 0, "B": (34, 4), "F": 0, "R": 56}, reverse_order=True, edge_features=True
+    )
     # literal match to check the output is good for human consumption
     assert (
         g.info()
@@ -1281,12 +1393,12 @@ StellarGraph: Undirected multigraph
     Edge types: B-F->B, B-R->A
 
  Edge types:
-    A-R->B: [3]
+    A-R->B: [5]
         Weights: all 1 (default)
-    B-R->A: [2]
-        Weights: all 1 (default)
+        Features: float32 vector, length 56
     B-F->B: [1]
-        Weights: all 10"""
+        Weights: all 10
+        Features: none"""
     )
 
 
@@ -1307,18 +1419,21 @@ StellarGraph: Undirected multigraph
     Edge types: B-T->A, B-U->A
 
  Edge types:
+    A-U->B: [3]
+        Weights: range=[4, 5], mean=4.66667, std=0.57735
+        Features: none
     A-T->B: [3]
         Weights: all 2
-    A-U->B: [2]
-        Weights: range=[4, 5], mean=4.5, std=0.707107
+        Features: none
     A-U->A: [2]
         Weights: range=[2, 3], mean=2.5, std=0.707107
+        Features: none
     A-S->A: [2]
         Weights: all 2
+        Features: none
     A-R->A: [2]
         Weights: all 1 (default)
-    B-U->A: [1]
-        Weights: all 5"""
+        Features: none"""
     )
 
 
@@ -1442,44 +1557,64 @@ StellarGraph: Undirected multigraph
  Edge types:
     n_21-e_22->n_21: [45]
         Weights: all 1 (default)
+        Features: none
     n_21-e_21->n_21: [43]
         Weights: all 1 (default)
+        Features: none
     n_21-e_20->n_21: [41]
         Weights: all 1 (default)
+        Features: none
     n_21-e_19->n_21: [39]
         Weights: all 1 (default)
+        Features: none
     n_21-e_18->n_21: [37]
         Weights: all 1 (default)
+        Features: none
     n_21-e_17->n_21: [35]
         Weights: all 1 (default)
+        Features: none
     n_21-e_16->n_21: [33]
         Weights: all 1 (default)
+        Features: none
     n_21-e_15->n_21: [31]
         Weights: all 1 (default)
+        Features: none
     n_21-e_14->n_21: [29]
         Weights: all 1 (default)
+        Features: none
     n_21-e_13->n_21: [27]
         Weights: all 1 (default)
+        Features: none
     n_21-e_12->n_21: [25]
         Weights: all 1 (default)
+        Features: none
     n_21-e_11->n_21: [23]
         Weights: all 1 (default)
+        Features: none
     n_21-e_10->n_21: [21]
         Weights: all 1 (default)
+        Features: none
     n_21-e_9->n_21: [19]
         Weights: all 1 (default)
+        Features: none
     n_21-e_8->n_21: [17]
         Weights: all 1 (default)
+        Features: none
     n_21-e_7->n_21: [15]
         Weights: all 1 (default)
+        Features: none
     n_21-e_6->n_21: [13]
         Weights: all 1 (default)
+        Features: none
     n_21-e_5->n_21: [11]
         Weights: all 1 (default)
+        Features: none
     n_21-e_4->n_21: [9]
         Weights: all 1 (default)
+        Features: none
     n_21-e_3->n_21: [7]
         Weights: all 1 (default)
+        Features: none
     ... (3 more)"""
     )
 
@@ -1501,8 +1636,10 @@ StellarGraph: Undirected multigraph
  Edge types:
     n_21-e_22->n_21: [45]
         Weights: all 1 (default)
+        Features: none
     n_21-e_21->n_21: [43]
         Weights: all 1 (default)
+        Features: none
     ... (21 more)"""
     )
 
@@ -1583,50 +1720,73 @@ StellarGraph: Undirected multigraph
  Edge types:
     n_21-e_22->n_21: [45]
         Weights: all 1 (default)
+        Features: none
     n_21-e_21->n_21: [43]
         Weights: all 1 (default)
+        Features: none
     n_21-e_20->n_21: [41]
         Weights: all 1 (default)
+        Features: none
     n_21-e_19->n_21: [39]
         Weights: all 1 (default)
+        Features: none
     n_21-e_18->n_21: [37]
         Weights: all 1 (default)
+        Features: none
     n_21-e_17->n_21: [35]
         Weights: all 1 (default)
+        Features: none
     n_21-e_16->n_21: [33]
         Weights: all 1 (default)
+        Features: none
     n_21-e_15->n_21: [31]
         Weights: all 1 (default)
+        Features: none
     n_21-e_14->n_21: [29]
         Weights: all 1 (default)
+        Features: none
     n_21-e_13->n_21: [27]
         Weights: all 1 (default)
+        Features: none
     n_21-e_12->n_21: [25]
         Weights: all 1 (default)
+        Features: none
     n_21-e_11->n_21: [23]
         Weights: all 1 (default)
+        Features: none
     n_21-e_10->n_21: [21]
         Weights: all 1 (default)
+        Features: none
     n_21-e_9->n_21: [19]
         Weights: all 1 (default)
+        Features: none
     n_21-e_8->n_21: [17]
         Weights: all 1 (default)
+        Features: none
     n_21-e_7->n_21: [15]
         Weights: all 1 (default)
+        Features: none
     n_21-e_6->n_21: [13]
         Weights: all 1 (default)
+        Features: none
     n_21-e_5->n_21: [11]
         Weights: all 1 (default)
+        Features: none
     n_21-e_4->n_21: [9]
         Weights: all 1 (default)
+        Features: none
     n_21-e_3->n_21: [7]
         Weights: all 1 (default)
+        Features: none
     n_21-e_2->n_21: [5]
         Weights: all 1 (default)
+        Features: none
     n_21-e_1->n_21: [3]
         Weights: all 1 (default)
+        Features: none
     n_21-e_0->n_21: [1]
-        Weights: all 1 (default)"""
+        Weights: all 1 (default)
+        Features: none"""
     )
 
 
@@ -2094,6 +2254,28 @@ def test_unique_node_type():
         ValueError, match="^ABC custom message 'n-0', 'n-1', 'n-2', 'n-3' 123$"
     ):
         many_types.unique_node_type("ABC custom message %(found)s 123")
+
+
+def test_unique_edge_type():
+    one_type = example_graph_random(node_types=10, edge_types=1)
+
+    assert one_type.unique_edge_type() == "e-0"
+
+    many_types = example_graph_random(node_types=1, edge_types=4)
+
+    with pytest.raises(
+        ValueError,
+        match="Expected only one edge type for 'unique_edge_type', found: 'e-0', 'e-1', 'e-2', 'e-3'",
+    ):
+        many_types.unique_edge_type()
+
+    with pytest.raises(ValueError, match="^ABC custom message 123$"):
+        many_types.unique_edge_type("ABC custom message 123")
+
+    with pytest.raises(
+        ValueError, match="^ABC custom message 'e-0', 'e-1', 'e-2', 'e-3' 123$"
+    ):
+        many_types.unique_edge_type("ABC custom message %(found)s 123")
 
 
 def test_bulk_node_types():

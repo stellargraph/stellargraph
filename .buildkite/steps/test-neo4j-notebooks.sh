@@ -18,7 +18,12 @@ notebooks=(
   "load-cora-into-neo4j.ipynb"
   "directed-graphsage-on-cora-neo4j-example.ipynb"
   "undirected-graphsage-on-cora-neo4j-example.ipynb"
+  "cluster-gcn-on-cora-neo4j-example.ipynb"
 )
+
+echo "--- :hourglass::neo4j: waiting for neo4j startup"
+# delay to wait for Neo4j startup with plugins (fix for #1648)
+sleep 10s
 
 for name in "${notebooks[@]}"; do
   .buildkite/steps/test-single-notebook.sh "$directory/$name" " using Neo4j ${NEO4J_VERSION}"

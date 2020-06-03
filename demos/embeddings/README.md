@@ -9,6 +9,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 |---|---|
 | [Node representation learning with attri2vec](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html) | [source](attri2vec-embeddings.ipynb) |
 | [Node representation learning with Deep Graph Infomax](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html) | [source](deep-graph-infomax-embeddings.ipynb) |
+| [Unsupervised graph classification/representation learning via distances](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html) | [source](gcn-unsupervised-graph-embeddings.ipynb) |
 | [Node representation learning with GraphSAGE and UnsupervisedSampler](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html) | [source](graphsage-unsupervised-sampler-embeddings.ipynb) |
 | [Node representations with GraphWave](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphwave-embeddings.html) | [source](graphwave-embeddings.ipynb) |
 | [Node2Vec representation learning with Stellargraph components](https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html) | [source](keras-node2vec-embeddings.ipynb) |

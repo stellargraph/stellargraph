@@ -32,6 +32,85 @@ def is_real_iterable(x):
     return isinstance(x, collections.abc.Iterable) and not isinstance(x, (str, bytes))
 
 
+def zero_sized_array(shape, dtype):
+    """
+    Create an array with no data, without allocation.
+
+    Args:
+        shape (tuple): a shape tuple that contains at least one 0
+
+    Returns:
+        An NumPy array that contains no elements, and has a small allocation.
+    """
+    # FIXME: https://github.com/numpy/numpy/issues/16410
+    if 0 not in shape:
+        raise ValueError("shape: expected at least one zero, found {shape}")
+
+    dtype = np.dtype(dtype)
+    return np.broadcast_to(dtype.type(), shape)
+
+
+def smart_array_index(array, indices):
+    """
+    Index array along its first dimension, smartly handling empty and broadcasted arrays to avoid
+    allocating.
+    """
+    if len(array) > 0 and (array.size == 0 or array.strides[0] == 0):
+        # this handles two cases when NumPy is suboptimal for StellarGraph:
+        #
+        # - 'array' containing no data, because one of its dimensions is zero length: fancy indexing
+        #   allocates unnecessarily (FIXME https://github.com/numpy/numpy/issues/16410)
+        #
+        # - 'array' being a broadcasted array, so every element along the first dimension is the
+        #   same; in some places (edge weights, in particular), it's fine to preserve this
+        #   broadcasting when indexing, rather than allocating a whole new array.
+
+        largest = indices.max(initial=0)
+        smallest = indices.min(initial=0)
+        valid = -len(array) <= smallest and largest < len(array)
+
+        if valid:
+            # if the indexing would work in this case, the elements are indistinguishable, so we can
+            # rebroadcast (to ensure the length matches `indices`). If the indices are invalid, the
+            # error is handled by the fallback below.
+            final_shape = (*indices.shape, *array.shape[1:])
+            return np.broadcast_to(array[:1, ...], final_shape)
+
+    # fallback to normal indexing
+    return array[indices]
+
+
+def smart_array_concatenate(arrays):
+    """
+    Concatenate the arrays in ``arrays``, smartly handling 1D broadcasted arrays that contain all
+    contain an identical value, and when ``arrays`` contains a single array.
+    """
+    if len(arrays) == 1:
+        # concatenate allocates a new array even in this case, so we can avoid a copy
+        return arrays[0]
+
+    arrays = [np.asanyarray(arr) for arr in arrays]
+
+    # check whether all of the arrays contain a single value, broadcasted
+    nonempty = (arr for arr in arrays if len(arr) > 0)
+    first = next(nonempty, None)
+    if first is not None:
+        element = first[0]
+
+        def check(arr):
+            return len(arr.shape) == 1 and arr.strides[0] == 0 and arr[0] == element
+
+        if check(first) and all(check(arr) for arr in nonempty):
+            # concatenate will always allocate a whole new array, which is suboptimal for edge
+            # weights, where they may all be broadcasted 1s
+            total_len = sum(len(arr) for arr in arrays)
+            # rebroadcast the element to the final result shape
+            return np.broadcast_to(element, total_len)
+
+    # fallback to the default behaviour
+    return np.concatenate(arrays)
+
+
 def normalize_adj(adj, symmetric=True, add_self_loops=False):
     """
     Normalize adjacency matrix.

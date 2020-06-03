@@ -25,12 +25,12 @@ Find algorithms for a task
 
 * Representation learning or computing embedding vectors (including unsupervised tasks):
 
-  * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>`
+  * For nodes/vertices/entities, edges/links/connections and graphs: :doc:`embeddings <./embeddings/index>`
 
 * Time series or sequence prediction for nodes within a graph (including spatio-temporal data): :doc:`time series <./time-series/index>`
 * Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
-* Loading data into a ``StellarGraph`` object, with Pandas, Neo4j or NetworkX: :doc:`basics <./basics/index>`
-* Experimental: running GraphSAGE on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
+* Loading data into a ``StellarGraph`` object, with Pandas, NumPy, Neo4j or NetworkX: :doc:`basics <./basics/index>`
+* Experimental: running GraphSAGE or Cluster-GCN on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
 
 Find a demo for an algorithm
 ----------------------------
@@ -56,7 +56,7 @@ Find a demo for an algorithm
      - Graph Convolutional Network (GCN)
      - see RGCN
      -
-     -
+     - yes
      - see T-GCN
      - yes
      - :any:`demo <node-classification/gcn-node-classification>`
@@ -68,7 +68,7 @@ Find a demo for an algorithm
      - Cluster-GCN
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/cluster-gcn-node-classification>`
@@ -80,12 +80,12 @@ Find a demo for an algorithm
      - Relational GCN (RGCN)
      - multiple edges types
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/rgcn-node-classification>`
      - yes
-     -
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *
@@ -104,7 +104,7 @@ Find a demo for an algorithm
      - Graph ATtention Network (GAT)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/gat-node-classification>`
@@ -116,7 +116,7 @@ Find a demo for an algorithm
      - Simplified Graph Convolution (SGC)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/sgc-node-classification>`
@@ -128,7 +128,7 @@ Find a demo for an algorithm
      - Personalized Propagation of Neural Predictions (PPNP)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/ppnp-node-classification>`
@@ -140,7 +140,7 @@ Find a demo for an algorithm
      - Approximate PPNP (APPNP)
      -
      -
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/ppnp-node-classification>`
@@ -170,7 +170,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/attri2vec-node-classification>`
      - :any:`demo <link-prediction/attri2vec-link-prediction>`
      - :any:`demo <embeddings/attri2vec-embeddings>`
-     -
+     - yes
      -
    *
      - GraphSAGE
@@ -203,21 +203,9 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/node2vec-weighted-node-classification>`
      -
      -
-     - :any:`via embedding vectors <node-classification/node2vec-node-classification>`
+     - via embedding vectors, :any:`keras layer <node-classification/keras-node2vec-node-classification>`, :any:`gensim <node-classification/node2vec-node-classification>`
      - :any:`via embedding vectors <link-prediction/node2vec-link-prediction>`
-     - :any:`demo <embeddings/node2vec-embeddings>`
-     -
-     -
-   *
-     - Keras-Node2Vec
-     -
-     -
-     -
-     -
-     -
-     - :any:`via embedding vectors <node-classification/keras-node2vec-node-classification>`
-     -
-     - :any:`demo <embeddings/keras-node2vec-embeddings>`
+     - :any:`keras layer <embeddings/keras-node2vec-embeddings>`, :any:`gensim <embeddings/node2vec-embeddings>`
      -
      -
    *
@@ -228,7 +216,7 @@ Find a demo for an algorithm
      -
      -
      - via embedding vectors
-     - via embedding vectors
+     - :any:`via embedding vectors <link-prediction/metapath2vec-link-prediction>`
      - :any:`demo <embeddings/metapath2vec-embeddings>`
      -
      -
@@ -284,7 +272,7 @@ Find a demo for an algorithm
      - Deep Graph CNN
      -
      -
-     -
+     - yes
      -
      - yes
      -

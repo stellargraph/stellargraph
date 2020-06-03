@@ -193,3 +193,15 @@ class Test_RelationalFullBatchNodeGenerator:
             np.array_equal(A_1.dot(A_1).todense(), A_2.todense())
             for A_1, A_2 in zip(As, generator.As)
         )
+
+    def test_weighted(self):
+        G, _ = create_graph_features(edge_weights=True)
+        generator = RelationalFullBatchNodeGenerator(
+            G, weighted=True, transform=lambda f, A: (f, A)
+        )
+        np.testing.assert_array_equal(
+            generator.As[0].todense(), [[0, 2.0, 0], [2.0, 0, 0.5], [0, 0.5, 0]]
+        )
+        np.testing.assert_array_equal(
+            generator.As[1].todense(), [[0, 0.0, 1.0], [0.0, 0, 0.0], [1.0, 0.0, 0]]
+        )
