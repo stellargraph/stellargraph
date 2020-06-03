@@ -11,7 +11,7 @@ cd "$(dirname "$f")"
 # run the notebook, saving it back to where it was, printing everything
 exitCode=0
 # papermill will replace parameters on some notebooks to make them run faster in CI
-papermill --execution-timeout=600 --parameters_file "${stellargraph_dir}/.buildkite/notebook-parameters.yml" --log-output "$f" "$f" || exitCode=$?
+papermill --execution-timeout=600 --report-mode --parameters_file "${stellargraph_dir}/.buildkite/notebook-parameters.yml" --log-output "$f" "$f" || exitCode=$?
 
 echo "+++ :jupyter: making result viewable"
 filename="$(basename "$f")"
