@@ -244,7 +244,7 @@ class RewriteLinks(docutils.transforms.Transform):
 
             if parsed.netloc == "" and parsed.path.endswith("README.md"):
                 # the notebooks include links to READMEs so that the links work locally and on
-                # Github, but on Read the Docs, the equivalent files are 'index', not 'README'.
+                # GitHub, but on Read the Docs, the equivalent files are 'index', not 'README'.
                 new_path = parsed.path.replace("README.md", "index.rst")
                 new_components = (
                     parsed.scheme,

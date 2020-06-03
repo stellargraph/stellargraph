@@ -28,7 +28,7 @@ import numpy as np
 
 class SymmetricGraphPreProcessingLayer(Layer):
     """
-    This class implements the pre-processing of adjacency matrices in GCN. We implement it in tensorflow so that
+    This class implements the preprocessing of adjacency matrices in GCN. We implement it in tensorflow so that
     while computing the saliency maps, we are able to calculate the gradients in an end-to-end way.
     We currently only support this for tensorflow backend.
 
@@ -45,7 +45,7 @@ class SymmetricGraphPreProcessingLayer(Layer):
 
     def call(self, adj):
         """
-            The adjacency matrix pre-processing in tensorflow.
+            The adjacency matrix preprocessing in tensorflow.
             This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
             GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
 
@@ -78,7 +78,7 @@ class SymmetricGraphPreProcessingLayer(Layer):
 
 class GraphPreProcessingLayer(Layer):
     """
-    This class implements the pre-processing of adjacency matrices in GCN. We implement it in tensorflow so that
+    This class implements the preprocessing of adjacency matrices in GCN. We implement it in tensorflow so that
     while computing the saliency maps, we are able to calculate the gradients in an end-to-end way.
     We currently only support this for tensorflow backend.
 
@@ -95,7 +95,7 @@ class GraphPreProcessingLayer(Layer):
 
     def call(self, adj):
         """
-            The adjacency matrix pre-processing in tensorflow.
+            The adjacency matrix preprocessing in tensorflow.
             This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
             GCN requires that the input adjacency matrix has self-loops and is normalized.
 

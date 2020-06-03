@@ -179,7 +179,7 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        # html needed to add the target="_parent" so that the links work from Github rendered notebooks
+        # html needed to add the target="_parent" so that the links work from GitHub rendered notebooks
         return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
 
     def _colab_badge(self, notebook_path):

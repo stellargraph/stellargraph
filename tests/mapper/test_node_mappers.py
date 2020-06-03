@@ -1007,7 +1007,7 @@ class Test_FullBatchNodeGenerator:
         )
         assert np.allclose(A_dense, Agcn)
 
-        # Check other pre-processing options
+        # Check other preprocessing options
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="sgc", k=2
         )

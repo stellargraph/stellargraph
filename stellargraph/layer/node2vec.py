@@ -144,7 +144,7 @@ class Node2Vec:
             embedding (str): "target" for target_embedding, "context" for context_embedding
 
         Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
+            tuple: ``(x_inp, x_out)`` where ``x_inp`` is a Keras input tensor
             for the Node2Vec model and ``x_out`` is the Keras tensor
             for the Node2Vec model output.
 
@@ -180,9 +180,9 @@ class Node2Vec:
         the model (whether it is a node or link/node pair generator).
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` contains Keras input tensor(s)
-            for the specified Node2Vec model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, self.emb_size)
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` contains Keras input tensor(s)
+                for the specified Node2Vec model (either node or link/node pair model) and ``x_out`` contains
+                model output tensor(s) of shape (batch_size, self.emb_size)
 
         """
         if multiplicity is None:

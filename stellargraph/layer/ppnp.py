@@ -82,7 +82,7 @@ class PPNPPropagationLayer(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -144,13 +144,13 @@ class PPNP:
     Implementation of Personalized Propagation of Neural Predictions (PPNP)
     as in https://arxiv.org/abs/1810.05997.
 
-    The model minimally requires specification of the fully connected layer sizes as a list of ints
+    The model minimally requires specification of the fully connected layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
-    pre-processing the generator object should be instantiated as follows::
+    preprocessing the generator object should be instantiated as follows::
 
         generator = FullBatchNodeGenerator(G, method="ppnp")
 
@@ -160,11 +160,11 @@ class PPNP:
 
       - This assumes that the personalized page rank matrix is provided as input to
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
-        ``method='ppnp'`` argument to do this pre-processing.
+        ``method='ppnp'`` argument to do this preprocessing.
 
-      - ''method='ppnp'`` requires that use_sparse=False and generates a dense personalized page rank matrix
+      - ``method='ppnp'`` requires that ``use_sparse=False`` and generates a dense personalized page rank matrix
 
-      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
@@ -177,7 +177,7 @@ class PPNP:
         generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
         bias (bool): toggles an optional bias in fully connected layers
         dropout (float): dropout rate applied to input features of each layer
-        kernel_regularizer (str): normalization applied to the kernels of fully connetcted layers
+        kernel_regularizer (str): normalization applied to the kernels of fully connected layers
     """
 
     def __init__(
@@ -298,8 +298,8 @@ class PPNP:
         Builds a PPNP model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the model and `x_out` is a tensor of the model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the model and ``x_out`` is a tensor of the model output.
         """
         # Inputs for features
         x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))

@@ -147,7 +147,7 @@ class DeepGraphInfomax:
         """
         A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
 
-        Note that the tf.nn.sigmoid_cross_entropy_with_logits loss must be used with this model.
+        Note that the :func:`tensorflow.nn.sigmoid_cross_entropy_with_logits` loss must be used with this model.
 
         Example::
 

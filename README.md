@@ -28,7 +28,7 @@
    * [Installation](#installation)
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
        * [Install StellarGraph in Anaconda Python](#install-stellargraph-in-anaconda-python)
-       * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
+       * [Install StellarGraph from GitHub source](#install-stellargraph-from-github-source)
    * [Citing](#citing)
    * [References](#references)
 
@@ -60,15 +60,15 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
 
-Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the `curl` command below:
+Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repository, or by using the `curl` command below:
 ```bash
 curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
 ```
 
 The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
 
-- Using pip: `pip install stellargraph[demos]`
-- Using conda: `conda install -c stellargraph stellargraph`
+- Using `pip`: `pip install stellargraph[demos]`
+- Using `conda`: `conda install -c stellargraph stellargraph`
 
 (See [Installation](#installation) section for more details and more options.)
 
@@ -207,7 +207,7 @@ conda install -c stellargraph stellargraph
 ```
 
 
-#### Install StellarGraph from Github source:
+#### Install StellarGraph from GitHub source:
 First, clone the StellarGraph repository using `git`:
 ```
 git clone https://github.com/stellargraph/stellargraph.git
@@ -252,7 +252,7 @@ ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD)
 
 4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, Data Mining and Knowledge Discovery, 2019. ([link](https://link.springer.com/article/10.1007/s10618-019-00650-2))
 
-5. Graph Attention Networks. P. Velickovic et al.
+5. Graph Attention Networks. P. Veličković et al.
 International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
 
 6. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
@@ -274,9 +274,9 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 
 13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 2018, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf))
 
-14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arxiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
+14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arXiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
 
-15. Deep Graph Infomax. P. Velickovic, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arxiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
+15. Deep Graph Infomax. P. Veličković, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arXiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
 
 16. Continuous-Time Dynamic Network Embeddings. Giang Hoang Nguyen, John Boaz Lee, Ryan A. Rossi, Nesreen K. Ahmed, Eunyee Koh, and Sungchul Kim. Proceedings of the 3rd International Workshop on Learning Representations for Big Networks (WWW BigNet) 2018. ([link](https://dl.acm.org/doi/10.1145/3184558.3191526))
 
