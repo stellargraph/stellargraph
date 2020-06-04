@@ -334,6 +334,19 @@ class KGScore(abc.ABC):
         """
         ...
 
+    # this isn't a subclass of Keras Layer, because a model or other combination of individual
+    # layers is okay too, but this model will be applied by calling the instance
+    @abc.abstractmethod
+    def __call__(self, inputs):
+        """
+        Apply this scoring mechanism to the selected values from the embedding layers.
+
+        Args:
+            inputs: a list of tensors selected from each of the embedding layers, concatenated like
+                ``[source, source, ..., edge types, edge_types, ..., object, object, ...]``
+        """
+        ...
+
 
 def _numpy_complex(arrays):
     emb = 1j * arrays[1]
@@ -341,7 +354,7 @@ def _numpy_complex(arrays):
     return emb
 
 
-class ComplExScore(KGScore, Layer):
+class ComplExScore(Layer, KGScore):
     """
     ComplEx scoring Keras layer.
 
@@ -460,7 +473,7 @@ class ComplEx(KGModel):
     build = deprecated_model_function(KGModel.in_out_tensors, "build")
 
 
-class DistMultScore(KGScore, Layer):
+class DistMultScore(Layer, KGScore):
     """
     DistMult scoring Keras layer.
 
@@ -559,7 +572,7 @@ class DistMult(KGModel):
     build = deprecated_model_function(KGModel.in_out_tensors, "build")
 
 
-class RotatEScore(KGScore, Layer):
+class RotatEScore(Layer, KGScore):
     def __init__(self, margin, norm_order, **kwargs):
         super().__init__(**kwargs)
         self._margin = margin

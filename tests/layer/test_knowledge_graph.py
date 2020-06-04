@@ -381,7 +381,7 @@ def test_tie_breaking(tie_breaking):
 
 
 def test_embedding_validation(knowledge_graph):
-    class X(KGScore):
+    class X(layers.Layer, KGScore):
         def __init__(self, emb):
             self.emb = emb
 
