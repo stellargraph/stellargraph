@@ -64,13 +64,44 @@ class KGModel:
             embeddings_regularizer,
         )
 
-        if not all(isinstance(x, Embedding) for x in embeddings):
-            found = comma_sep(embeddings, stringify=lambda x: type(x).__name)
+        self._validate_embeddings(embeddings)
+        self._node_embs, self._edge_type_embs = embeddings
+
+    def _validate_embeddings(self, embeddings):
+        def error(found):
             raise ValueError(
-                f"scoring: expected 'embeddings' method to return two tf.keras.layers.Embedding layers, found {found}"
+                f"scoring: expected 'embeddings' method to return two lists of tf.keras.layers.Embedding layers, found {found}"
             )
 
-        self._node_embs, self._edge_type_embs = embeddings
+        if len(embeddings) != 2:
+            error(f"a sequence of length {len(embeddings)}")
+
+        a, b = embeddings
+
+        if not all(isinstance(x, list) for x in embeddings):
+            error(f"a pair with types ({type(a).__name__}, {type(b).__name__})")
+
+        if not all(isinstance(x, Embedding) for x in a + b):
+            a_types = comma_sep(a, stringify=lambda x: type(x).__name__)
+            b_types = comma_sep(b, stringify=lambda x: type(x).__name__)
+            error(f"a pair of lists containing types ([{a_types}], [{b_types}])")
+
+        # all good!
+        return
+
+    def embedding_arrays(self):
+        """
+        Retrieve the embeddings for nodes/entities and edge types/relations in this model.
+
+        Returns:
+            A tuple of numpy arrays: the first element is the embeddings for nodes/entities (``shape
+            = number of nodes × k``), the second element is the embeddings for edge types/relations
+            (``shape = number of edge types x k``), where ``k`` is some notion of the embedding
+            dimension. The type of the embeddings depends on the specific scoring function chosen.
+        """
+        node = [e.embeddings.numpy() for e in self._node_embs]
+        edge_type = [e.embeddings.numpy() for e in self._edge_type_embs]
+        return self._scoring.embeddings_to_numpy(node, edge_type)
 
     def embeddings(self):
         """
@@ -82,9 +113,13 @@ class KGModel:
             (``shape = number of edge types x k``), where ``k`` is some notion of the embedding
             dimension. The type of the embeddings depends on the specific scoring function chosen.
         """
-        node = self._node_embs.embeddings.numpy()
-        edge_type = self._edge_type_embs.embeddings.numpy()
-        return self._scoring.embeddings_to_numpy(node, edge_type)
+        node, edge_type = self.embedding_arrays()
+        if len(node) != 1 and len(edge_type) != 1:
+            raise ValueError(
+                f"scoring: expected a single embedding array for nodes and for edge types from embedding_arrays, found {len(node)} node and {len(edge_type)} edge type arrays"
+            )
+
+        return node[0], edge_type[0]
 
     def __call__(self, x):
         """
@@ -97,10 +132,16 @@ class KGModel:
         """
         s_iloc, r_iloc, o_iloc = x
 
+        sequenced = [
+            (s_iloc, self._node_embs),
+            (r_iloc, self._edge_type_embs),
+            (o_iloc, self._node_embs),
+        ]
+
         inp = [
-            self._node_embs(s_iloc),
-            self._edge_type_embs(r_iloc),
-            self._node_embs(o_iloc),
+            emb_layer(ilocs)
+            for ilocs, emb_layers in sequenced
+            for emb_layer in emb_layers
         ]
 
         return self._scoring(inp)
@@ -175,7 +216,7 @@ class KGModel:
 
         num_nodes = known_edges_graph.number_of_nodes()
 
-        node_embs, edge_type_embs = self.embeddings()
+        node_embs, edge_type_embs = self.embedding_arrays()
         extra_data = self._scoring.bulk_scoring_data(node_embs, edge_type_embs)
 
         raws = []
@@ -187,9 +228,9 @@ class KGModel:
             num_tested += len(subjects)
 
             # batch_size x k
-            ss = node_embs[subjects, :]
-            rs = edge_type_embs[rels, :]
-            os = node_embs[objects, :]
+            ss = [e[subjects, :] for e in node_embs]
+            rs = [e[rels, :] for e in edge_type_embs]
+            os = [e[objects, :] for e in node_embs]
 
             mod_o_pred, mod_s_pred = self._scoring.bulk_scoring(
                 node_embs, extra_data, ss, rs, os,
@@ -242,8 +283,8 @@ class KGScore(abc.ABC):
             regularizer: the regularizer to use for embeddings, when required.
 
         Returns:
-            A pair of :class:`tensorflow.keras.layers.Embedding` layers, corresponding to nodes and
-            edge types.
+            A pair of lists of :class:`tensorflow.keras.layers.Embedding` layers, corresponding to
+            nodes and edge types.
         """
         ...
 
@@ -294,17 +335,10 @@ class KGScore(abc.ABC):
         ...
 
 
-def _complexify(tensors):
-    """
-    Convert each "interleaved complex" real tensor in ``tensors`` (i.e. last axis represents [a, b,
-    ...] like [a_re, a_im, b_re, b_im, ...]) to the equivalent complex tensor.
-    """
-    return [tf.complex(tensor[..., 0::2], tensor[..., 1::2]) for tensor in tensors]
-
-
-def _numpy_view_complex(array):
-    assert array.dtype == np.float32
-    return array.view(np.complex64)
+def _numpy_complex(arrays):
+    emb = 1j * arrays[1]
+    emb += arrays[0]
+    return emb
 
 
 class ComplExScore(KGScore, Layer):
@@ -325,30 +359,38 @@ class ComplExScore(KGScore, Layer):
     def embeddings(
         self, num_nodes, num_edge_types, dimension, initializer, regularizer
     ):
-        # ComplEx generates embeddings in C, which we model as interleaved real and imaginary
-        # embeddings
         def embed(count):
             return Embedding(
                 count,
-                dimension * 2,
+                dimension,
                 embeddings_initializer=initializer,
                 embeddings_regularizer=regularizer,
             )
 
-        return embed(num_nodes), embed(num_edge_types)
+        # ComplEx generates embeddings in C, which we model as separate real and imaginary
+        # embeddings
+        nodes = [embed(num_nodes), embed(num_nodes)]
+        edge_types = [embed(num_edge_types), embed(num_edge_types)]
+
+        return nodes, edge_types
 
     def embeddings_to_numpy(self, node_embs, edge_type_embs):
         return (
-            _numpy_view_complex(node_embs),
-            _numpy_view_complex(edge_type_embs),
+            [_numpy_complex(node_embs)],
+            [_numpy_complex(edge_type_embs)],
         )
 
     def bulk_scoring_data(self, node_embs, edge_type_embs):
-        return node_embs.conj()
+        return node_embs[0].conj()
 
     def bulk_scoring(
         self, node_embs, node_embs_conj, s_embs, r_embs, o_embs,
     ):
+        node_embs = node_embs[0]
+        s_embs = s_embs[0]
+        r_embs = r_embs[0]
+        o_embs = o_embs[0]
+
         mod_o_pred = np.inner(node_embs_conj, s_embs * r_embs).real
         mod_s_pred = np.inner(node_embs, r_embs * o_embs.conj()).real
         return mod_o_pred, mod_s_pred
@@ -367,8 +409,20 @@ class ComplExScore(KGScore, Layer):
                 relation and object embeddings, respectively, that is, ``inputs == [Re(subject),
                 Im(subject), Re(relation), ...]``
         """
-        s, r, o = _complexify(inputs)
-        return tf.math.real(tf.reduce_sum(r * s * tf.math.conj(o), axis=2))
+        s_re, s_im, r_re, r_im, o_re, o_im = inputs
+
+        def inner(r, s, o):
+            return tf.reduce_sum(r * s * o, axis=2)
+
+        # expansion of Re(<w_r, e_s, conjugate(e_o)>)
+        score = (
+            inner(r_re, s_re, o_re)
+            + inner(r_re, s_im, o_im)
+            + inner(r_im, s_re, o_im)
+            - inner(r_im, s_im, o_re)
+        )
+
+        return score
 
 
 class ComplEx(KGModel):
@@ -423,7 +477,6 @@ class DistMultScore(KGScore, Layer):
     def embeddings(
         self, num_nodes, num_edge_types, dimension, initializer, regularizer
     ):
-        # DistMult generates embeddings in R
         def embed(count):
             # FIXME(#980,https://github.com/tensorflow/tensorflow/issues/33755): embeddings can't
             # use constraints to be normalized: per section 4 in the paper, the embeddings should be
@@ -435,11 +488,19 @@ class DistMultScore(KGScore, Layer):
                 embeddings_regularizer=regularizer,
             )
 
-        return embed(num_nodes), embed(num_edge_types)
+        # DistMult generates embeddings in R
+        nodes = [embed(num_nodes)]
+        edge_types = [embed(num_edge_types)]
+        return nodes, edge_types
 
     def bulk_scoring(
         self, all_n_embs, _extra_data, s_embs, r_embs, o_embs,
     ):
+        all_n_embs = all_n_embs[0]
+        s_embs = s_embs[0]
+        r_embs = r_embs[0]
+        o_embs = o_embs[0]
+
         mod_o_pred = np.inner(all_n_embs, s_embs * r_embs)
         mod_s_pred = np.inner(all_n_embs, r_embs * o_embs)
         return mod_o_pred, mod_s_pred
@@ -507,29 +568,35 @@ class RotatEScore(KGScore, Layer):
     def embeddings(
         self, num_nodes, num_edge_types, dimension, initializer, regularizer
     ):
-        # RotatE generates embeddings in C, which we model as interleaved real and imaginary
+        def embed(count, reg=regularizer):
+            return Embedding(
+                count,
+                dimension,
+                embeddings_initializer=initializer,
+                embeddings_regularizer=reg,
+            )
+
+        # RotatE generates embeddings in C, which we model as separate real and imaginary
         # embeddings for node types, and just the phase for edge types (since they have |x| = 1)
-        nodes = Embedding(
-            num_nodes,
-            dimension * 2,
-            embeddings_initializer=initializer,
-            embeddings_regularizer=regularizer,
-        )
+        nodes = [embed(num_nodes), embed(num_nodes)]
         # it doesn't make sense to regularize the phase, because it's circular
-        edge_types = Embedding(
-            num_edge_types, dimension, embeddings_initializer=initializer,
-        )
+        edge_types = [embed(num_edge_types, reg=None)]
         return nodes, edge_types
 
     def embeddings_to_numpy(self, node_embs, edge_type_embs):
-        nodes = _numpy_view_complex(node_embs)
-        edge_types = 1j * np.sin(edge_type_embs)
-        edge_types += np.cos(edge_type_embs)
-        return nodes, edge_types
+        nodes = _numpy_complex(node_embs)
+        edge_types = 1j * np.sin(edge_type_embs[0])
+        edge_types += np.cos(edge_type_embs[0])
+        return [nodes], [edge_types]
 
     def bulk_scoring(
         self, all_n_embs, _extra_data, s_embs, r_embs, o_embs,
     ):
+        all_n_embs = all_n_embs[0]
+        s_embs = s_embs[0]
+        r_embs = r_embs[0]
+        o_embs = o_embs[0]
+
         # (the margin is a fixed offset that doesn't affect relative ranks)
         mod_o_pred = -np.linalg.norm(
             (s_embs * r_embs)[None, :, :] - all_n_embs[:, None, :],
@@ -551,12 +618,17 @@ class RotatEScore(KGScore, Layer):
         }
 
     def call(self, inputs):
-        s, r_phase, o = inputs
-        s, o = _complexify([s, o])
+        s_re, s_im, r_phase, o_re, o_im = inputs
+        r_re = tf.math.cos(r_phase)
+        r_im = tf.math.sin(r_phase)
 
-        r = tf.complex(tf.math.cos(r_phase), tf.math.sin(r_phase))
-
-        return self._margin - tf.norm(s * r - o, ord=self._norm_order, axis=2)
+        # expansion of s◦r - t
+        re = s_re * r_re - s_im * r_im - o_re
+        im = s_re * r_im + s_im * r_re - o_im
+        # norm the vector: -|| ... ||_p
+        return self._margin - tf.norm(
+            tf.sqrt(re * re + im * im), ord=self._norm_order, axis=2
+        )
 
 
 @experimental(reason="demo and documentation is missing", issues=[1549, 1550])
