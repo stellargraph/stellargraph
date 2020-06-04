@@ -122,7 +122,7 @@ def assert_sequence_shuffle(seq, shuffle, max_iter=5):
         ]
         features, labels = zip(*batches)
         features, labels = np.concatenate(features), np.concatenate(labels)
-        assert all(features == labels)
+        assert np.array_equal(features, labels)
         return features
 
     def consecutive_epochs(seq):
@@ -135,7 +135,7 @@ def assert_sequence_shuffle(seq, shuffle, max_iter=5):
 
     for i in range(max_iter):
         f1, f2 = consecutive_epochs(seq)
-        comparison_results.add(all(f1 == f2))
+        comparison_results.add(np.array_equal(f1, f2))
 
     if not shuffle:
         assert comparison_results == {True}
