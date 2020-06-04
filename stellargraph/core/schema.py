@@ -119,7 +119,7 @@ class GraphSchema:
         Args:
             head_node_types: A list of node types of the head nodes.
             num_samples: A list of integers that are the number of neighbours
-            x             to sample at each hop.
+                         to sample at each hop.
 
         Returns:
             A list containing, for each head node type, a list consisting of
