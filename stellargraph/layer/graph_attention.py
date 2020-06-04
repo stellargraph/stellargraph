@@ -25,7 +25,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, constraints, initializers, regularizers
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
-from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
+from ..mapper import FullBatchNodeGenerator, FullBatchGenerator, ClusterNodeGenerator
 from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 
 
@@ -276,7 +276,7 @@ class GraphAttention(Layer):
                   M is the number of output nodes
         """
         X = inputs[0]  # Node features (1 x N x F)
-        A = inputs[1]  # Adjacency matrix (N x N)
+        A = inputs[1]  # Adjacency matrix (1 X N x N)
         N = K.int_shape(A)[-1]
 
         batch_dim, n_nodes, _ = K.int_shape(X)
@@ -288,6 +288,7 @@ class GraphAttention(Layer):
         else:
             # Remove singleton batch dimension
             X = K.squeeze(X, 0)
+            A = K.squeeze(A, 0)
 
         outputs = []
         for head in range(self.attn_heads):
@@ -739,23 +740,21 @@ class GAT:
             self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
             self.n_nodes = _require_without_generator(num_nodes, "num_nodes")
             self.n_features = _require_without_generator(num_features, "num_features")
-
         else:
-            if not isinstance(generator, FullBatchGenerator):
+            if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
                 raise TypeError(
-                    "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                    f"Generator should be a instance of FullBatchNodeGenerator, "
+                    f"FullBatchLinkGenerator or ClusterNodeGenerator"
                 )
 
             # Copy required information from generator
             self.use_sparse = generator.use_sparse
             self.multiplicity = generator.multiplicity
-            self.n_nodes = generator.features.shape[0]
             self.n_features = generator.features.shape[1]
-
-        if self.n_nodes is None or self.n_features is None:
-            raise RuntimeError(
-                "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
-            )
+            if isinstance(generator, FullBatchGenerator):
+                self.n_nodes = generator.features.shape[0]
+            else:
+                self.n_nodes = None
 
         # Set the normalization layer used in the model
         if normalize == "l2":
@@ -841,7 +840,7 @@ class GAT:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:

@@ -63,6 +63,7 @@ extensions = [
     "sphinx_markdown_tables",
     "nbsphinx",
     "nbsphinx_link",
+    "notfound.extension",
 ]
 
 # Add mappings
@@ -132,6 +133,7 @@ html_static_path = ["_static"]
 #
 # html_sidebars = {}
 
+html_logo = "banner.png"
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

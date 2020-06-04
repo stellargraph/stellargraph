@@ -538,8 +538,6 @@ class EdgeSplitter(object):
                 self.g_train.remove_edge(*edge)
 
                 count += 1
-                if count % 1000 == 0:
-                    print("Removed", count, "edges")
             if count == num_edges_to_remove:
                 return removed_edges
 
@@ -593,8 +591,6 @@ class EdgeSplitter(object):
                 )  # the last entry is the label
                 self.g_train.remove_edge(*edge)
                 count += 1
-                if count % 1000 == 0:
-                    print("Removed", count, "edges")
             if count == num_edges_to_remove:
                 return removed_edges
 
@@ -657,8 +653,6 @@ class EdgeSplitter(object):
                 self.g_train.remove_edge(*edge)
 
                 count += 1
-                if count % 1000 == 0:
-                    print("Removed", count, "edges")
             if count == num_edges_to_remove:
                 return removed_edges
 
@@ -785,8 +779,6 @@ class EdgeSplitter(object):
                                 sampled_edges_set.add((u[0], v))
                                 sampled_edges_set.add((v, u[0]))
                                 count += 1
-                                if count % 1000 == 0:
-                                    print("Sampled {} negatives".format(count))
                                 self.negative_edge_node_distances.append(d)
                             break
                         elif dv < d:
@@ -901,8 +893,6 @@ class EdgeSplitter(object):
                                 sampled_edges_set.add((v, u))
                                 count += 1
                                 self.negative_edge_node_distances.append(d)
-                                if count % 1000 == 0:
-                                    print("Sampled {} negatives".format(count))
                                 break
                         elif dv < d:
                             neighbours = list(nx.neighbors(self.g, v))
@@ -974,8 +964,6 @@ class EdgeSplitter(object):
                     count += 1
                 if count == num_edges_to_sample:
                     return sampled_edges
-                if count % 1000 == 0:
-                    print("Sampled {} negative examples".format(count))
 
         if len(sampled_edges) != num_edges_to_sample:
             raise ValueError(
@@ -1053,8 +1041,6 @@ class EdgeSplitter(object):
                     )  # the last entry is the class label
                     sampled_edges_set.update({(u[0], v[0]), (v[0], u[0])})
                     count += 1
-                    if count % 1000 == 0:
-                        print("Sampled", count, "negative edges")
 
                     if count == num_edges_to_sample:
                         return sampled_edges
