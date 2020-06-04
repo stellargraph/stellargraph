@@ -379,6 +379,7 @@ def test_tie_breaking(tie_breaking):
             assert (raw_or_filtered != top_expected[:, i, :]).any()
             assert (raw_or_filtered != bottom_expected[:, i, :]).any()
 
+
 def test_embedding_validation(knowledge_graph):
     class X(KGScore):
         def __init__(self, emb):
@@ -401,10 +402,15 @@ def test_embedding_validation(knowledge_graph):
     with pytest.raises(ValueError, match="scoring: .* found a sequence of length 3"):
         KGModel(gen, X((1, 2, 3)), 2, **kwargs)
 
-    with pytest.raises(ValueError, match=r"scoring: .* found a pair with types \(Embedding, int\)"):
+    with pytest.raises(
+        ValueError, match=r"scoring: .* found a pair with types \(Embedding, int\)"
+    ):
         KGModel(gen, X((e, 2)), 2, **kwargs)
 
-    with pytest.raises(ValueError, match=r"scoring: .* found a pair of lists containing types \(\[Embedding, Embedding\], \[int\]\)"):
+    with pytest.raises(
+        ValueError,
+        match=r"scoring: .* found a pair of lists containing types \(\[Embedding, Embedding\], \[int\]\)",
+    ):
         KGModel(gen, X(([e, e], [2])), 2, **kwargs)
 
     # all good:
