@@ -32,6 +32,10 @@ Find demos for a format
 
 See :doc:`all demos for machine learning algorithms <../index>`.
 
+badspelling
+
+badlink_
+
 Table of contents
 -----------------
 
