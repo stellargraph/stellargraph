@@ -2,10 +2,12 @@
 
 set -euo pipefail
 
+# need two files for the -w, because it overwrites not appends
 error_file=/tmp/sphinx-errors.txt
+spelling_error_file=/tmp/sphinx-spelling-errors.txt
 
 spelling_file="_build/spelling/output.txt"
-opts="-W --keep-going -w $error_file"
+opts="-W --keep-going"
 
 cd docs
 
@@ -21,17 +23,17 @@ pip freeze
 
 exit_code=0
 echo "+++ building docs"
-make html SPHINXOPTS="$opts" || exit_code="$?"
+make html SPHINXOPTS="$opts -w $error_file" || exit_code="$?"
 
 echo "+++ checking spelling"
-make spelling SPHINXOPTS="$opts" || exit_code="$?"
+make spelling SPHINXOPTS="$opts -w $spelling_error_file" || exit_code="$?"
 
 if [ "$exit_code" -ne 0 ]; then
   echo "--- annotating build with failures"
 
   # strip out the /workdir/ references, so that the filenames are more relevant to the user
   # (relative to the repo root)
-  output="$(sed s@/workdir/@@ "$error_file")"
+  output="$(cat "$error_file" "$spelling_error_file" | sed s@/workdir/@@)"
   if [ -s "$spelling_file" ]; then
     spelling="Mispelled words:
 
