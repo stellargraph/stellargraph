@@ -37,7 +37,9 @@ if [ "$exit_code" -ne 0 ]; then
 
 ~~~terminal
 $(cat "$spelling_file")
-~~~"
+~~~
+
+Any unusual words that are correctly spelled (for example, appropriately-capitalised proper nouns) should be added to \`docs/spelling_wordlist.txt\`."
   else
     spelling=""
   fi
