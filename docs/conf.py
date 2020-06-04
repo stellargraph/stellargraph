@@ -229,6 +229,10 @@ nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# -- Options for spelling extension ------------------------------------------
+
+spelling_show_whole_line = True
+
 # -- StellarGraph customisation ----------------------------------------------
 
 
