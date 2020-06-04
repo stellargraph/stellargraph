@@ -156,7 +156,7 @@ class Ensemble(object):
 
         Args:
             optimizer (Keras optimizer or str): (Keras-specific parameter) The optimizer to use given either as an
-                instance of a keras optimizer or a string naming the optimiser of choice.
+                instance of a Keras optimizer or a string naming the optimiser of choice.
             loss (Keras function or str): (Keras-specific parameter) The loss function or string indicating the
                 type of loss to use.
             metrics (list or dict): (Keras-specific parameter) List of metrics to be evaluated by each model in

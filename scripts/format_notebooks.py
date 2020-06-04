@@ -61,7 +61,7 @@ class ClearWarningsPreprocessor(preprocessors.Preprocessor):
                 # Search for tensorflow warning and remove warnings in outputs
                 if "WARNING:tensorflow" in output.get("text", ""):
                     print(
-                        f"Removing Tensorflow warning in code cell {cell.execution_count}"
+                        f"Removing TensorFlow warning in code cell {cell.execution_count}"
                     )
                     output["text"] = self.sub_warn.sub("", output.get("text", ""))
 
@@ -298,7 +298,7 @@ RESET = "\033[0m"
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Format and clean Jupyter notebooks by removing Tensorflow warnings "
+        description="Format and clean Jupyter notebooks by removing TensorFlow warnings "
         "and stderr outputs, formatting and numbering the code cells, and setting the kernel. "
         "See the options below to select which of these operations is performed."
     )
@@ -311,7 +311,7 @@ if __name__ == "__main__":
         "-w",
         "--clear_warnings",
         action="store_true",
-        help="Clear Tensorflow  warnings and stderr in output",
+        help="Clear TensorFlow  warnings and stderr in output",
     )
     parser.add_argument(
         "-c",

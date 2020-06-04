@@ -107,7 +107,7 @@ class GraphPreProcessingLayer(Layer):
         """
         if K.is_sparse(adj):  # isinstance(adj, tf.SparseTensor):
             raise RuntimeError(
-                "Tensorflow adjacency matrix normalization not implemented for sparse matrices."
+                "TensorFlow adjacency matrix normalization not implemented for sparse matrices."
             )
 
         else:

@@ -42,7 +42,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 - New algorithms:
   - Unsupervised graph representation learning [demo][unsup-graph-rl-1.1.0] ([\#1626](https://github.com/stellargraph/stellargraph/pull/1626))
   - Unsupervised RGCN with Deep Graph Infomax [demo][unsup-rgcn-1.1.0] ([\#1258](https://github.com/stellargraph/stellargraph/pull/1258))
-  - Native Node2Vec using Tensorflow Keras, not the gensim library, [demo of representation learning][keras-n2v-rl-1.1.0], [demo of node classification][keras-n2v-nc-1.1.0] ([\#536](https://github.com/stellargraph/stellargraph/pull/536), [\#1566](https://github.com/stellargraph/stellargraph/pull/1566))
+  - Native Node2Vec using TensorFlow Keras, not the gensim library, [demo of representation learning][keras-n2v-rl-1.1.0], [demo of node classification][keras-n2v-nc-1.1.0] ([\#536](https://github.com/stellargraph/stellargraph/pull/536), [\#1566](https://github.com/stellargraph/stellargraph/pull/1566))
   - The `ClusterNodeGenerator` class can be used to train GCN, GAT, APPNP and PPNP models in addition to the ClusterGCN model [\#1585](https://github.com/stellargraph/stellargraph/pull/1585)
 - The `StellarGraph` class continues to get smaller, faster and more flexible:
   - Node features can now be specified as NumPy arrays or the newly added thin `IndexedArray` wrapper, which does no copies and has minimal runtime overhead [demo][loading-numpy-1.1.0] ([\#1535](https://github.com/stellargraph/stellargraph/pull/1535), [\#1556](https://github.com/stellargraph/stellargraph/pull/1556), [\#1599](https://github.com/stellargraph/stellargraph/pull/1599)). They can also now be multidimensional for each node [\#1561](https://github.com/stellargraph/stellargraph/pull/1561).
@@ -56,7 +56,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
     - construction with node features from NumPy arrays is 6.8× faster, uses 6.5% less memory overall and 85% less new memory (the majority of the memory is shared with the original NumPy arrays), and has a memory peak (above the raw data set) 70% smaller, compared to Pandas DataFrames in 1.0.0.
     - adjacency lists are 4.7-5.0× faster to construct, use 28% less memory and have a memory peak 60% smaller.
   - Various random walkers are faster: `BiasedRandomWalk` is up to 30× faster with weights and 5× faster without weights on MovieLens and up to 100× faster on some synthetic datasets, `UniformRandomMetapathWalk` is up to 17× faster (on MovieLens), `UniformRandomWalk` is up to 1.4× (on MovieLens).
-- Tensorflow 2.2 and thus Python 3.8 are now supported [\#1278](https://github.com/stellargraph/stellargraph/pull/1278)
+- TensorFlow 2.2 and thus Python 3.8 are now supported [\#1278](https://github.com/stellargraph/stellargraph/pull/1278)
 
 [glossary-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/glossary.html
 [neo4j-sg-1.1.0]: https://stellargraph.readthedocs.io/en/v1.1.0/api.html#stellargraph.connector.neo4j.Neo4jStellarGraph
@@ -257,7 +257,7 @@ This bugfix release contains the same code as 0.11.0, and just fixes the metadat
 
 ### Bug fixes and other changes
 
-- The [Conda package for StellarGraph](https://anaconda.org/stellargraph/stellargraph) has been updated to require TensorFlow 2.1, as TensorFlow 2.0 is no longer supported.  As a result, StellarGraph will currently install via Conda on Linux and Windows - Mac support is waiting on the [Tensorflow 2.1 osx-64 release to Conda](https://github.com/ContinuumIO/anaconda-issues/issues/11697). [\#1165](https://github.com/stellargraph/stellargraph/pull/1165)
+- The [Conda package for StellarGraph](https://anaconda.org/stellargraph/stellargraph) has been updated to require TensorFlow 2.1, as TensorFlow 2.0 is no longer supported.  As a result, StellarGraph will currently install via Conda on Linux and Windows - Mac support is waiting on the [TensorFlow 2.1 osx-64 release to Conda](https://github.com/ContinuumIO/anaconda-issues/issues/11697). [\#1165](https://github.com/stellargraph/stellargraph/pull/1165)
 
 ## [0.11.0](https://github.com/stellargraph/stellargraph/tree/v0.11.0)
 
@@ -450,7 +450,7 @@ Some new algorithms and features are still under active development, and are ava
 ## [0.8.2](https://github.com/stellargraph/stellargraph/tree/v0.8.2)
 
 **Fixed bugs:**
-- Updated requirements to Tensorflow>=1.14, as tensorflow with lower versions causes errors with sparse full batch node methods: GCN, APPNP, and GAT. [\#519](https://github.com/stellargraph/stellargraph/issues/519)
+- Updated requirements to TensorFlow>=1.14, as tensorflow with lower versions causes errors with sparse full batch node methods: GCN, APPNP, and GAT. [\#519](https://github.com/stellargraph/stellargraph/issues/519)
 
 ## [0.8.1](https://github.com/stellargraph/stellargraph/tree/v0.8.1)
 
@@ -495,12 +495,12 @@ Some new algorithms and features are still under active development, and are ava
 
 
 ## [0.7.3](https://github.com/stellargraph/stellargraph/tree/v0.7.3)
-Limited NetworkX version to <2.4 and Tensorflow version to <1.15 in requirements, to avoid errors due to API changes
-in the recent versions of NetworkX and Tensorflow.
+Limited NetworkX version to <2.4 and TensorFlow version to <1.15 in requirements, to avoid errors due to API changes
+in the recent versions of NetworkX and TensorFlow.
 
 ## [0.7.2](https://github.com/stellargraph/stellargraph/tree/v0.7.2)
-Limited Keras version to <2.2.5 and Tensorflow version to <2.0 in requirements,
-to avoid errors due to API changes in the recent versions of Keras and Tensorflow.
+Limited Keras version to <2.2.5 and TensorFlow version to <2.0 in requirements,
+to avoid errors due to API changes in the recent versions of Keras and TensorFlow.
 
 
 ## [0.7.1](https://github.com/stellargraph/stellargraph/tree/v0.7.1)

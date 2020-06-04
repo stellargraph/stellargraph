@@ -51,6 +51,7 @@ GAT
 GCN
 Gao
 Gaussier
+Gensim
 Giang
 Glorot
 Graphlet
@@ -72,6 +73,7 @@ Jaccard
 Jagadish
 Jianfeng
 Jie
+Jupyter
 Kaplan
 Keras
 Kipf
@@ -88,6 +90,7 @@ Monti
 Muhan
 Neighbours
 Nesreen
+NetworkX
 Neumann
 Nitesh
 Oksana
