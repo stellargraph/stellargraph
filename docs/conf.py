@@ -231,8 +231,8 @@ todo_include_todos = True
 
 # -- Options for spelling extension ------------------------------------------
 
-spelling_lang='en_AU'
-tokenizer_lang='en_AU'
+spelling_lang = "en_AU"
+tokenizer_lang = "en_AU"
 
 # -- StellarGraph customisation ----------------------------------------------
 
