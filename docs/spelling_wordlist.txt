@@ -187,6 +187,7 @@ ilocs
 implementers
 importances
 initialiser
+initializer
 initialization
 instantiation
 interoperates
