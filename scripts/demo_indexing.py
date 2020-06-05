@@ -368,6 +368,7 @@ ALGORITHMS = [
         T("GCN", details="Graph Convolutional Network (GCN)"),
         heterogeneous="see RGCN",
         features=True,
+        weighted=True,
         temporal="see T-GCN",
         nc=T(link="node-classification/gcn-node-classification"),
         interpretability_nc=T(link="interpretability/gcn-node-link-importance"),
@@ -379,6 +380,7 @@ ALGORITHMS = [
     Algorithm(
         "Cluster-GCN",
         features=True,
+        weighted=True,
         nc=T(link="node-classification/cluster-gcn-node-classification"),
         lp=True,
         inductive=True,
@@ -387,8 +389,10 @@ ALGORITHMS = [
         T("RGCN", details="Relational GCN (RGCN)"),
         heterogeneous=HETEROGENEOUS_EDGE,
         features=True,
+        weighted=True,
         nc=T(link="node-classification/rgcn-node-classification"),
         lp=True,
+        rl=rl_dgi(),
     ),
     Algorithm(
         T("T-GCN", details="Temporal GCN (T-GCN), implemented as GCN-LSTM"),
@@ -399,6 +403,7 @@ ALGORITHMS = [
     Algorithm(
         T("GAT", details="Graph ATtention Network (GAT)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/gat-node-classification"),
         interpretability_nc=T(link="interpretability/gat-node-link-importance"),
         lp=True,
@@ -407,12 +412,14 @@ ALGORITHMS = [
     Algorithm(
         T("SGC", details="Simplified Graph Convolution (SGC)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/sgc-node-classification"),
         lp=True,
     ),
     Algorithm(
         T("PPNP", details="Personalized Propagation of Neural Predictions (PPNP)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi(link=None)],
@@ -420,6 +427,7 @@ ALGORITHMS = [
     Algorithm(
         T("APPNP", details="Approximate PPNP (APPNP)"),
         features=True,
+        weighted=True,
         nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
@@ -436,6 +444,7 @@ ALGORITHMS = [
         nc=T(link="node-classification/attri2vec-node-classification"),
         lp=T(link="link-prediction/attri2vec-link-prediction"),
         rl=T(link="embeddings/attri2vec-embeddings"),
+        inductive=True,
     ),
     Algorithm(
         "GraphSAGE",
@@ -462,20 +471,30 @@ ALGORITHMS = [
     Algorithm(
         "Node2Vec",
         weighted=T(link="node-classification/node2vec-weighted-node-classification"),
-        nc=via_rl(link="node-classification/node2vec-node-classification"),
+        nc=[
+            T(text="via", details="via embedding vectors",),
+            T(
+                text="keras",
+                link="node-classification/keras-node2vec-node-classification",
+                details="keras layer",
+            ),
+            T(text="gensim", link="node-classification/node2vec-node-classification",),
+        ],
         lp=via_rl(link="link-prediction/node2vec-link-prediction"),
-        rl=T(link="embeddings/node2vec-embeddings"),
-    ),
-    Algorithm(
-        "Keras-Node2Vec",
-        nc=via_rl(link="node-classification/keras-node2vec-node-classification"),
-        rl=T(link="embeddings/keras-node2vec-embeddings"),
+        rl=[
+            T(
+                text="keras",
+                link="embeddings/keras-node2vec-embeddings",
+                details="keras layer",
+            ),
+            T(text="gensim", link="embeddings/node2vec-embeddings"),
+        ],
     ),
     Algorithm(
         "Metapath2Vec",
         heterogeneous=True,
         nc=via_rl(),
-        lp=via_rl(),
+        lp=via_rl(link="link-prediction/metapath2vec-link-prediction"),
         rl=T(link="embeddings/metapath2vec-embeddings"),
     ),
     Algorithm(
@@ -510,6 +529,7 @@ ALGORITHMS = [
     Algorithm(
         T("DGCNN", details="Deep Graph CNN"),
         features=True,
+        weighted=True,
         gc=T(link="graph-classification/dgcnn-graph-classification"),
     ),
 ]

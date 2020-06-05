@@ -222,10 +222,10 @@ class TestBiasedWeightedRandomWalk(object):
         biasedrw = BiasedRandomWalk(g)
 
         nodes = np.arange(0, 50)
-        n = 2
+        n = 20
         p = 2
         q = 3
-        length = 5
+        length = 10
 
         benchmark(
             lambda: biasedrw.run(
@@ -486,8 +486,8 @@ class TestBiasedRandomWalk(object):
         seed = None
         length = 4
 
-        always = 1e-100
-        never = 1e100
+        always = 1e-20
+        never = 1e20
 
         # always return to the last visited node
         p = always

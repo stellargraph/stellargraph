@@ -5,6 +5,8 @@ Graph classification
 
 A graph classification task predicts an attribute of each graph in a collection of graphs. For instance, labelling each graph with a categorical class (binary classification or multiclass classification), or predicting a continuous number (regression). It is supervised, where the model is trained using a subset of graphs that have ground-truth labels.
 
+Graph classification can also be done as a downstream task from graph representation learning/embeddings, by training a supervised or semi-supervised classifier against the embedding vectors. StellarGraph provides :doc:`demos of unsupervised algorithms <../embeddings/index>`, some of which include a graph classification downstream task.
+
 Find algorithms and demos for a collection of graphs
 ----------------------------------------------------
 

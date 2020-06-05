@@ -18,6 +18,7 @@ from .fixtures import assert_reproducible
 from stellargraph.layer import DeepGraphInfomax, GCN, APPNP, GAT, PPNP
 from stellargraph.mapper import FullBatchNodeGenerator, CorruptedGenerator
 from ..test_utils.graphs import example_graph_random
+from .. import require_gpu
 import tensorflow as tf
 import pytest
 import numpy as np
@@ -43,6 +44,7 @@ def dgi(generator, gen, model_type):
 
 @pytest.mark.parametrize("model_type", [GCN, APPNP, GAT, PPNP])
 @pytest.mark.parametrize("sparse", [False, True])
+@pytest.mark.skipif(require_gpu, reason="tf on GPU is non-deterministic")
 def test_dgi(model_type, sparse):
 
     if sparse and model_type is PPNP:

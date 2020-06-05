@@ -15,6 +15,8 @@ test_size: 0.01
 val_size: 0.01
 # minimal metapaths for demos/embeddings/stellargraph-metapath2vec.ipynb:
 metapaths: [["group", "group"], ["group", "user", "user", "group"]]
+# minimal metapaths for demos/link-prediction/metapath2vec-link-prediction.ipynb:
+user_metapaths: [["user", "user"], ["user", "group", "user"]]
 # tiny embeddings for demos/link-prediction/knowledge-graphs/complex.ipynb
 embedding_dimension: 5
 # training of fewer models for demos/graph-classification/supervised-graph-classification.ipynb
@@ -23,3 +25,6 @@ num_restarts: 2
 # a small number of random walks for demos/embeddings/stellargraph-keras-node2vec.ipynb
 # and demos/node-classification/node2vec/stellargraph-keras-node2vec-node-classification.ipynb
 walk_number: 2
+
+# the reddit dataset isn't available on CI for graph-resource-usage.ipynb
+reddit_path: null

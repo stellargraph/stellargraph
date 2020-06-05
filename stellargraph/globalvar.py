@@ -26,3 +26,6 @@ EDGE_TYPE_DEFAULT = "default"
 SOURCE = "source"
 TARGET = "target"
 WEIGHT = "weight"
+
+NEO4J_ID_PROPERTY = "ID"
+NEO4J_FEATURES_PROPERTY = "features"

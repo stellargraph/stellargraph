@@ -27,7 +27,8 @@ from ..test_utils.graphs import example_graph_random
 def create_stellargraph():
     nodes = pd.DataFrame([[1, 1], [1, 0], [0, 1], [0.5, 1]], index=["a", "b", "c", "d"])
     edges = pd.DataFrame(
-        [("a", "b"), ("b", "c"), ("a", "c"), ("b", "d")], columns=["source", "target"]
+        [("a", "b", 1.0), ("b", "c", 0.4), ("a", "c", 2.0), ("b", "d", 10.0)],
+        columns=["source", "target", "weight"],
     )
     return StellarGraph(nodes, edges)
 
@@ -195,6 +196,29 @@ def test_ClusterNodeSquence():
         assert batch[1] is None
 
 
+def test_cluster_weighted():
+
+    G = create_stellargraph()
+
+    unweighted = ClusterNodeGenerator(G, clusters=1, q=1, weighted=False).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
+    weighted = ClusterNodeGenerator(G, clusters=1, q=1, weighted=True).flow(
+        node_ids=["a", "b", "c", "d"]
+    )
+
+    assert len(unweighted) == len(weighted) == 1
+    unweighted_features, _ = unweighted[0]
+    weighted_features, _ = weighted[0]
+
+    def canonical(adj):
+        return np.sort(adj.ravel())
+
+    assert not np.allclose(
+        canonical(weighted_features[2]), canonical(unweighted_features[2])
+    )
+
+
 @pytest.mark.benchmark(group="ClusterGCN generator")
 @pytest.mark.parametrize("q", [1, 2, 10])
 def test_benchmark_ClusterGCN_generator(benchmark, q):
@@ -205,3 +229,10 @@ def test_benchmark_ClusterGCN_generator(benchmark, q):
 
     # iterate over all the batches
     benchmark(lambda: list(seq))
+
+
+def test_ClusterNodeSequence_cluster_without_targets():
+    G = create_stellargraph()
+    generator = ClusterNodeGenerator(G, clusters=2, q=1)
+    seq = generator.flow(node_ids=["a"], targets=[0])
+    _ = list(seq)
