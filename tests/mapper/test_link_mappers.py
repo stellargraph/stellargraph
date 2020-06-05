@@ -483,7 +483,7 @@ class Test_HinSAGELinkGenerator(object):
                 head_node_types=["B", "B"],
             ).flow(links, link_labels)
 
-    def test_HinSAGELinkGenerator_homgeneous_inference(self):
+    def test_HinSAGELinkGenerator_homogeneous_inference(self):
         feature_size = 4
         edge_types = 3
         batch_size = 2

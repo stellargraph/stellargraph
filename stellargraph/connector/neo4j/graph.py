@@ -35,12 +35,12 @@ class Neo4jStellarGraph:
     Neo4jStellarGraph class for graph machine learning on graphs stored in
     a Neo4j database.
 
-    This class communicates with Neo4j via a p2neo.Graph connected to the graph
+    This class communicates with Neo4j via a :class:`py2neo.Graph` connected to the graph
     database of interest and contains functions to query the graph data necessary
     for machine learning.
 
     Args:
-        graph_db (py2neo.Graph): a py2neo.Graph connected to a Neo4j graph database.
+        graph_db (py2neo.Graph): a :class:`py2neo.Graph` connected to a Neo4j graph database.
         node_label (str, optional): Common label for all nodes in the graph, if such label exists.
             Providing this is useful if there are any indexes created on this label (e.g. on node IDs),
             as it will improve performance of queries.
@@ -335,7 +335,7 @@ class Neo4jStellarGraph:
 
         Args:
             method (str, optional): specifies the algorithm to use,
-                can be one of: "louvain", "labelPropagation".
+                can be one of: ``louvain``, ``labelPropagation``.
 
         Returns:
              A list of lists, where each inner list corresponds to a cluster and

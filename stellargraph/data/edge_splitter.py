@@ -34,7 +34,7 @@ class EdgeSplitter(object):
     The class requires as input a graph (in networkx format) and a percentage as a function of the total number of edges
     in the given graph of the number of positive and negative edges to sample. For heterogeneous graphs, the caller
     can also specify the type of edge and an edge property to split on. In the latter case, only a date property
-    can be used and it must be in the format dd/mm/yyyy. A date to be used as a threshold value such that only
+    can be used and it must be in the format ``dd/mm/yyyy``. A date to be used as a threshold value such that only
     edges that have date after the threshold must be given. This effects only the sampling of positive edges.
 
     Negative edges are sampled at random by (for 'global' method) selecting two nodes in the graph and
@@ -173,7 +173,7 @@ class EdgeSplitter(object):
     ):
         """
         Splitting edge data based on edge type or edge type and edge property. The edge property must be a date in the
-        format dd/mm/yyyy. If splitting by date, then a threshold value must also be given such that only edges with
+        format ``dd/mm/yyyy``. If splitting by date, then a threshold value must also be given such that only edges with
         date larger than the threshold can be in the set of positive examples. The edge property does not effect the
         sampling of negative examples.
 
@@ -193,7 +193,7 @@ class EdgeSplitter(object):
              examples
 
         Returns:
-            2 numpy arrays, the first Nx2 holding the node ids for the edges and the second Nx1 holding the edge
+            2 numpy arrays, the first N × 2 holding the node ids for the edges and the second N × 1 holding the edge
         labels, 0 for negative and 1 for positive example.
         """
         # minedges are those edges that if removed we might end up with a disconnected graph after the positive edges
@@ -318,8 +318,8 @@ class EdgeSplitter(object):
 
         Returns:
             The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first array of
-            dimensionality Nx2 (where N is the number of edges) holding the node ids for the edges and the second of
-            dimensionality Nx1 holding the edge labels, 0 for negative and 1 for positive examples. The graph
+            dimensionality N × 2 (where N is the number of edges) holding the node ids for the edges and the second of
+            dimensionality N × 1 holding the edge labels, 0 for negative and 1 for positive examples. The graph
             matches the input graph passed to the :class:`EdgeSplitter` constructor: the returned graph is a
             :class:`StellarGraph` instance if the input graph was one, and, similarly, a NetworkX graph if the input
             graph was one.

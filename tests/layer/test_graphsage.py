@@ -364,7 +364,7 @@ def test_attn_agg_apply():
     inp2 = keras.Input(shape=(1, 2, 2))
     out = agg([inp1, inp2])
 
-    # The AttentionalAggregator implmentation is a hack at the moment, it doesn't
+    # The AttentionalAggregator implementation is a hack at the moment, it doesn't
     # assign any dimensions in the output to head-node features.
     assert agg.weight_dims == [0, 2]
 

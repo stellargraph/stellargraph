@@ -97,7 +97,7 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
 
     Args:
         calibration_data (list): The calibration data as a list where each entry in the list is a 2-tuple of type
-            numpy.ndarray. Each entry in the tuple holds the fraction of positives and the mean predicted values
+            :class:`numpy.ndarray`. Each entry in the tuple holds the fraction of positives and the mean predicted values
             for the true and predicted class labels.
         predictions (np.ndarray): The probabilistic predictions of the classifier for each sample in the dataset used
             for diagnosing miscalibration.
@@ -371,7 +371,7 @@ class IsotonicCalibration(object):
 
         Args:
             x_train (numpy array): The training data that should be the classifier's probabilistic outputs. It should
-                have shape NxC where N is the number of training samples and C is the number of classes.
+                have shape N × C where N is the number of training samples and C is the number of classes.
             y_train (numpy array): The training class labels. For binary problems y_train has shape (N,)
                 when N is the number of samples. For multi-class classification, y_train has shape (N,C) where
                 C is the number of classes and y_train is using one-hot encoding.

@@ -207,7 +207,7 @@ class MeanHinAggregator(HinSAGEAggregator):
         Assumes that the layer will be built to match that input shape provided.
 
         Args:
-            input_shape (tuple of ints)
+            input_shape (tuple of int)
                 Shape tuples can include `None` for free dimensions, instead of an integer.
 
         Returns:
@@ -287,7 +287,7 @@ class HinSAGE:
         dropout (float): The dropout supplied to each layer; defaults to no dropout.
         normalize (str): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu', 'linear'].
+            defaults to ``['relu', ..., 'relu', 'linear']``.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
         kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
@@ -575,9 +575,9 @@ class HinSAGE:
         the model (whether it is a node or link/node pair generator).
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1]).
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras input tensors
+                for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` contains
+                model output tensor(s) of shape (batch_size, layer_sizes[-1]).
 
         """
 
