@@ -41,7 +41,7 @@ if [ "$exit_code" -ne 0 ]; then
 $(cat "$spelling_file")
 ~~~
 
-Any unusual words that are correctly spelled (for example, appropriately-capitalised proper nouns) should be added to \`docs/spelling_wordlist.txt\`."
+Any unusual words that are correctly spelled (for example, en-US spelling or appropriately-capitalised proper nouns) should be added to \`docs/spelling_wordlist.txt\`."
   else
     spelling=""
   fi

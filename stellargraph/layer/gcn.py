@@ -256,7 +256,7 @@ class GCN:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`FullBatchNodeGenerator` object.
 
-      - This assumes that the normalized Lapalacian matrix is provided as input to
+      - This assumes that the normalized Laplacian matrix is provided as input to
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
         ``method='gcn'`` argument to do this preprocessing.
 
