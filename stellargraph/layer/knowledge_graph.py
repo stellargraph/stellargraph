@@ -91,13 +91,13 @@ class KGModel:
 
     def embedding_arrays(self):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in this model.
+        Retrieve each separate set of embeddings for nodes/entities and edge types/relations in this model.
 
         Returns:
-            A tuple of numpy arrays: the first element is the embeddings for nodes/entities (``shape
-            = number of nodes × k``), the second element is the embeddings for edge types/relations
+            A tuple of lists of numpy arrays: the first element contains the embeddings for nodes/entities (for each element, ``shape
+            = number of nodes × k``), the second element contains the embeddings for edge types/relations
             (``shape = number of edge types x k``), where ``k`` is some notion of the embedding
-            dimension. The type of the embeddings depends on the specific scoring function chosen.
+            dimension for each layer. The type of the embeddings depends on the specific scoring function chosen.
         """
         node = [e.embeddings.numpy() for e in self._node_embs]
         edge_type = [e.embeddings.numpy() for e in self._edge_type_embs]
@@ -105,7 +105,7 @@ class KGModel:
 
     def embeddings(self):
         """
-        Retrieve the embeddings for nodes/entities and edge types/relations in this model.
+        Retrieve the embeddings for nodes/entities and edge types/relations in this model, if there's only one set of embeddings for each of nodes and edge types.
 
         Returns:
             A tuple of numpy arrays: the first element is the embeddings for nodes/entities (``shape
@@ -116,7 +116,7 @@ class KGModel:
         node, edge_type = self.embedding_arrays()
         if len(node) != 1 and len(edge_type) != 1:
             raise ValueError(
-                f"scoring: expected a single embedding array for nodes and for edge types from embedding_arrays, found {len(node)} node and {len(edge_type)} edge type arrays"
+                f"embeddings: expected a single embedding array for nodes and for edge types from embedding_arrays, found {len(node)} node and {len(edge_type)} edge type arrays; use embedding_arrays to retrieve the lists instead"
             )
 
         return node[0], edge_type[0]
