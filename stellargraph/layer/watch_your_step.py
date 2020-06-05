@@ -36,7 +36,7 @@ class AttentiveWalk(Layer):
         attention_initializer (str or func, optional): The initialiser to use for the attention weights.
         attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
         attention_constraint (str or func, optional): The constraint to use for the attention weights.
-        input_dim (tuple of ints, optional): The shape of the input to the layer.
+        input_dim (tuple of int, optional): The shape of the input to the layer.
     """
 
     def __init__(

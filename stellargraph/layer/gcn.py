@@ -29,7 +29,7 @@ class GraphConvolution(Layer):
 
     """
     Graph Convolution (GCN) Keras layer.
-    The implementation is based on the keras-gcn github repo https://github.com/tkipf/keras-gcn.
+    The implementation is based on https://github.com/tkipf/keras-gcn.
 
     Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
@@ -38,10 +38,10 @@ class GraphConvolution(Layer):
       - The batch axis represents independent graphs to be convolved with this GCN kernel (for
         instance, for full-batch node prediction on a single graph, its dimension should be 1).
 
-      - If the adjancency matrix is dense, both it and the features should have a batch axis, with
+      - If the adjacency matrix is dense, both it and the features should have a batch axis, with
         equal batch dimension.
 
-      - If the adjancency matrix is sparse, it should not have a batch axis, and the batch
+      - If the adjacency matrix is sparse, it should not have a batch axis, and the batch
         dimension of the features must be 1.
 
       - There are two inputs required, the node features,
@@ -101,7 +101,7 @@ class GraphConvolution(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Used by Keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
@@ -128,7 +128,7 @@ class GraphConvolution(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -223,16 +223,16 @@ class GCN:
     A stack of Graph Convolutional layers that implement a graph convolution network model
     as in https://arxiv.org/abs/1609.02907
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
     or the :class:`FullBatchLinkGenerator` class for link inference.
 
-    To have the appropriate pre-processing the generator object should be instanciated
-    with the `method='gcn'` argument.
+    To have the appropriate preprocessing the generator object should be instantiated
+    with the ``method='gcn'`` argument.
 
     Note that currently the GCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
@@ -256,9 +256,9 @@ class GCN:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`FullBatchNodeGenerator` object.
 
-      - This assumes that the normalized Lapalacian matrix is provided as input to
+      - This assumes that the normalized Laplacian matrix is provided as input to
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
-        ``method='gcn'`` argument to do this pre-processing.
+        ``method='gcn'`` argument to do this preprocessing.
 
       - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
@@ -271,7 +271,7 @@ class GCN:
         bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
         dropout (float): Dropout rate applied to input features of each GCN layer.
         activations (list of str or func): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu'].
+            defaults to ``['relu', ..., 'relu']``.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
         kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
@@ -413,8 +413,8 @@ class GCN:
         Builds a GCN model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the GCN model and ``x_out`` is a tensor of the GCN model output.
         """
         # Inputs for features
         x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))

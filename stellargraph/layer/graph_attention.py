@@ -35,7 +35,7 @@ class GraphAttention(Layer):
     https://github.com/danielegrattarola/keras-gat,
     with some modifications added for ease of use.
 
-    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+    Based on the original paper: Graph Attention Networks. P. Veličković et al. ICLR 2018 https://arxiv.org/abs/1710.10903
 
     Notes:
       - The inputs are tensors with a batch dimension of 1:
@@ -51,8 +51,8 @@ class GraphAttention(Layer):
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
-        attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
-            'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+        attn_heads_reduction (str): reduction applied to output features of each attention head, ``concat`` or ``average``.
+            ``average`` should be applied in the final prediction layer of the model (Eq. 6 of the paper).
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
@@ -177,7 +177,7 @@ class GraphAttention(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -372,7 +372,7 @@ class GraphAttentionSparse(GraphAttention):
     Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
     some modifications added for ease of use.
 
-    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+    Based on the original paper: Graph Attention Networks. P. Veličković et al. ICLR 2018 https://arxiv.org/abs/1710.10903
 
     Notes:
       - The inputs are tensors with a batch dimension of 1:
@@ -389,8 +389,8 @@ class GraphAttentionSparse(GraphAttention):
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
-        attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
-            'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+        attn_heads_reduction (str): reduction applied to output features of each attention head, ``concat`` or ``average``.
+            ``average`` should be applied in the final prediction layer of the model (Eq. 6 of the paper).
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
@@ -525,11 +525,11 @@ class GAT:
     A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads,
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
     or the :class:`FullBatchLinkGenerator` class for link inference.
 
-    To have the appropriate pre-processing the generator object should be instanciated
+    To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gat'` argument.
 
     Examples:
@@ -571,14 +571,14 @@ class GAT:
             - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
 
         attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
-            for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
-            If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
-            except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
+            for all layers in the stack. Valid entries in the list are: ``concat``, ``average``.
+            If None is passed, the default reductions are applied: ``concat`` reduction to all layers in the stack
+            except the final layer, ``average`` reduction to the last layer (Eqs. 5-6 of the GAT paper).
         bias (bool): toggles an optional bias in GAT layers
         in_dropout (float): dropout rate applied to input features of each GAT layer
         attn_dropout (float): dropout rate applied to attention maps
         normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
-        activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
+        activations (list of str): list of activations applied to each layer's output; defaults to ``['elu', ..., 'elu']``.
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
         multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
@@ -871,8 +871,8 @@ class GAT:
         Builds a GAT model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the model and `x_out` is a tensor of the model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the model and ``x_out`` is a tensor of the model output.
         """
 
         # Inputs for features

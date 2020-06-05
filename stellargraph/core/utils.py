@@ -218,19 +218,19 @@ def GCN_Aadj_feats_op(features, A, k=1, method="gcn"):
     """
     This function applies the matrix transformations on the adjacency matrix, which are required by GCN.
     GCN requires that the input adjacency matrix should be symmetric, with self-loops, and normalized.
-    The features and adjacency matrix will be manipulated by either 'gcn' (applying localpool filter as a default), or
-    'sgcn' filters.
+    The features and adjacency matrix will be manipulated by either ``gcn`` (applying localpool filter as a default), or
+    ``sgcn`` filters.
 
-    For more information about 'localpool' and 'smoothed' filters, please read details:
+    For more information about "localpool" and "smoothed" filters, please read details:
         [1] https://arxiv.org/abs/1609.02907
         [2] https://arxiv.org/abs/1902.07153
 
     Args:
         features: node features in the graph
         A: adjacency matrix
-        k (int or None): If method is 'sgcn' then it should be an integer indicating the power to raise the
+        k (int or None): If method is ``sgcn`` then it should be an integer indicating the power to raise the
         normalised adjacency matrix with self loops before multiplying the node features matrix.
-        method: to specify the filter to use with gcn. If method=gcn, default filter is localpool, other options are 'sgcn'.
+        method: to specify the filter to use with gcn. If ``method="gcn"``, default filter is localpool, other options are ``sgcn``.
 
     Returns:
         features, transformed adjacency matrix

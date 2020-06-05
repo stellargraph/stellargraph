@@ -64,6 +64,7 @@ extensions = [
     "nbsphinx",
     "nbsphinx_link",
     "notfound.extension",
+    "sphinxcontrib.spelling",
 ]
 
 # Add mappings
@@ -228,6 +229,11 @@ nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# -- Options for spelling extension ------------------------------------------
+
+spelling_lang = "en_AU"
+tokenizer_lang = "en_AU"
+
 # -- StellarGraph customisation ----------------------------------------------
 
 
@@ -243,7 +249,7 @@ class RewriteLinks(docutils.transforms.Transform):
 
             if parsed.netloc == "" and parsed.path.endswith("README.md"):
                 # the notebooks include links to READMEs so that the links work locally and on
-                # Github, but on Read the Docs, the equivalent files are 'index', not 'README'.
+                # GitHub, but on Read the Docs, the equivalent files are 'index', not 'README'.
                 new_path = parsed.path.replace("README.md", "index.rst")
                 new_components = (
                     parsed.scheme,

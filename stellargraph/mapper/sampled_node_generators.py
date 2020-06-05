@@ -237,7 +237,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of ``num_samples``
             for that layer.
         """
         node_samples = self._samplers[batch_num].run(
@@ -345,7 +345,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the total number (cumulative product)
+            where ``num_sampled_at_layer`` is the total number (cumulative product)
             of nodes sampled at the given number of hops from each head node,
             given the sequence of in/out directions.
         """
@@ -465,7 +465,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
             A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of ``num_samples``
             for that layer.
         """
         # Get sampled nodes

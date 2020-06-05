@@ -15,7 +15,7 @@ pip install .[test]
 
 ### Format and clean up demo Jupyter notebooks
 
-The script `format_notebooks.py` uses `nbconvert` to process all code and output cells in the specified locations, optionally remove Tensorflow warnings and stderr outputs, format and number the code cells, and set the kernel to the default of "Python 3".
+The script `format_notebooks.py` uses `nbconvert` to process all code and output cells in the specified locations, optionally remove TensorFlow warnings and stderr outputs, format and number the code cells, and set the kernel to the default of "Python 3".
 
 The usage options are available with the `--help` command line argument:
 ```

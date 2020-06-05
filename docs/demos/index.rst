@@ -297,8 +297,8 @@ You can run download a local copy of the demos using the :code:`curl` command be
 
 The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
 
-- Using pip: :code:`pip install stellargraph[demos]`
-- Using conda: :code:`conda install -c stellargraph stellargraph`
+- Using ``pip``: :code:`pip install stellargraph[demos]`
+- Using ``conda``: :code:`conda install -c stellargraph stellargraph`
 
 Table of contents
 -----------------
