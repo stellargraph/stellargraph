@@ -150,7 +150,7 @@ class FullBatchGenerator(Generator):
     def num_batch_dims(self):
         return 2
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -160,6 +160,8 @@ class FullBatchGenerator(Generator):
                 (e.g., training, validation, or test set nodes)
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
+            use_ilocs (bool): if Ture, node_ids are represented by ilocs, 
+                otherwise node_ids need to be transformed into ilocs
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -179,10 +181,13 @@ class FullBatchGenerator(Generator):
         # find the indices of the nodes, handling both multiplicity 1 [node, node, ...] and 2
         # [(source, target), ...]
         node_ids = np.asarray(node_ids)
-        flat_node_ids = node_ids.reshape(-1)
-        flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
-        # back to the original shape
-        node_indices = flat_node_indices.reshape(node_ids.shape)
+        if use_ilocs:
+            node_indices = node_ids
+        else:
+            flat_node_ids = node_ids.reshape(-1)
+            flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
+            # back to the original shape
+            node_indices = flat_node_indices.reshape(node_ids.shape)
         if self.use_sparse:
             return SparseFullBatchSequence(
                 self.features, self.Aadj, targets, node_indices
@@ -256,7 +261,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
     multiplicity = 1
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -266,6 +271,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
                 (e.g., training, validation, or test set nodes)
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
+            use_ilocs (bool): if Ture, node_ids are represented by ilocs, 
+                otherwise node_ids need to be transformed into ilocs
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -273,7 +280,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
-        return super().flow(node_ids, targets)
+        return super().flow(node_ids, targets, use_ilocs)
 
     def default_corrupt_input_index_groups(self):
         return [[0]]
@@ -344,7 +351,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
     multiplicity = 2
 
-    def flow(self, link_ids, targets=None):
+    def flow(self, link_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -354,6 +361,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
                 or an array of shape (N_links, 2) specifying the links.
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
+            use_ilocs (bool): if Ture, node_ids are represented by ilocs, 
+                otherwise node_ids need to be transformed into ilocs
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -361,7 +370,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
-        return super().flow(link_ids, targets)
+        return super().flow(link_ids, targets, use_ilocs)
 
 
 class RelationalFullBatchNodeGenerator(Generator):
