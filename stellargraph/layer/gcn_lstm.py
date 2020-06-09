@@ -27,7 +27,7 @@ class FixedAdjacencyGraphConvolution(Layer):
 
     """
     Graph Convolution (GCN) Keras layer.
-    The implementation is based on the keras-gcn github repo https://github.com/tkipf/keras-gcn.
+    The implementation is based on https://github.com/tkipf/keras-gcn.
 
     Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
@@ -85,7 +85,7 @@ class FixedAdjacencyGraphConvolution(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Used by Keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
@@ -112,7 +112,7 @@ class FixedAdjacencyGraphConvolution(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -218,8 +218,8 @@ class GCN_LSTM:
        generator (SlidingFeaturesNodeGenerator): A generator instance.
        bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
        dropout (float): Dropout rate applied to input features of each GCN layer.
-       gc_activations (list of str or func): Activations applied to each layer's output; defaults to ['relu', ..., 'relu'].
-       lstm_activations (list of str or func): Activations applied to each layer's output; sdefaults to ['tanh', ..., 'tanh'].
+       gc_activations (list of str or func): Activations applied to each layer's output; defaults to ``['relu', ..., 'relu']``.
+       lstm_activations (list of str or func): Activations applied to each layer's output; defaults to ``['tanh', ..., 'tanh']``.
        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
@@ -382,8 +382,8 @@ class GCN_LSTM:
         Builds a GCN model for node  feature prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the GCN model and ``x_out`` is a tensor of the GCN model output.
         """
         # Inputs for features
         if self.multivariate_input:

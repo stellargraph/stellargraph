@@ -22,11 +22,13 @@ import pandas as pd
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras import Model, initializers, losses
+from tensorflow.keras import Model, initializers, losses, layers
 
 from stellargraph import StellarGraph, StellarDiGraph
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
 from stellargraph.layer.knowledge_graph import (
+    KGModel,
+    KGScore,
     ComplEx,
     DistMult,
     RotatE,
@@ -376,3 +378,40 @@ def test_tie_breaking(tie_breaking):
             raw_or_filtered = all_rankings[:, i, :]
             assert (raw_or_filtered != top_expected[:, i, :]).any()
             assert (raw_or_filtered != bottom_expected[:, i, :]).any()
+
+
+def test_embedding_validation(knowledge_graph):
+    class X(layers.Layer, KGScore):
+        def __init__(self, emb):
+            self.emb = emb
+
+        def embeddings(self, *args, **kwargs):
+            return self.emb
+
+        def bulk_scoring(self, *args, **kwargs):
+            raise NotImplementedError()
+
+    gen = KGTripleGenerator(knowledge_graph, 3)
+
+    e = layers.Embedding(5, 4)
+
+    kwargs = {
+        "embeddings_initializer": None,
+        "embeddings_regularizer": None,
+    }
+    with pytest.raises(ValueError, match="scoring: .* found a sequence of length 3"):
+        KGModel(gen, X((1, 2, 3)), 2, **kwargs)
+
+    with pytest.raises(
+        ValueError, match=r"scoring: .* found a pair with types \(Embedding, int\)"
+    ):
+        KGModel(gen, X((e, 2)), 2, **kwargs)
+
+    with pytest.raises(
+        ValueError,
+        match=r"scoring: .* found a pair of lists containing types \(\[Embedding, Embedding\], \[int\]\)",
+    ):
+        KGModel(gen, X(([e, e], [2])), 2, **kwargs)
+
+    # all good:
+    KGModel(gen, X(([e, e], [e, e, e])), 2, **kwargs)

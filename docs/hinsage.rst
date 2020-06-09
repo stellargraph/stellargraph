@@ -17,11 +17,11 @@ The feature update rule for homogeneous graphs is, for mean aggregator:
 
 2. Forward pass through layer :math:`k`:
 
-   If concat=True:
+   If ``concat=True``:
 
    :math:`{h_{v}}^{k} = \sigma\left( concat\lbrack{W^{k}}_{\text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack,\ {W^{k}}_{\text{neigh}}{{h}^{k}}_{N(v)}\rbrack + b^{k} \right)`
 
-   If concat=False:
+   If ````concat=False````:
 
    :math:`{h_{v}}^{k} = \sigma\left( {W^{k}}_{\text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack + \ {W^{k}}_{\text{neigh}}{h^{k}}_{N(v)} + b^{k} \right)`
 
@@ -29,7 +29,7 @@ Where:
 
 -  :math:`{h_{v}}^{k}` is the output for node :math:`v` at layer :math:`k`
 
--  :math:`{W^{k}}_{\text{self}}` and :math:`{W^{k}}_{\text{neigh}}` (both of size :math:`\frac{d_{k}}{2} \times d_{k - 1}` if concat=True, or of size :math:`d_{k} \times d_{k - 1}` if concat=False) are trainable parameters (shared for all nodes :math:`v`),
+-  :math:`{W^{k}}_{\text{self}}` and :math:`{W^{k}}_{\text{neigh}}` (both of size :math:`\frac{d_{k}}{2} \times d_{k - 1}` if ``concat=True``, or of size :math:`d_{k} \times d_{k - 1}` if ``concat=False``) are trainable parameters (shared for all nodes :math:`v`),
 
 -  :math:`b^{k}` is an optional bias,
 
@@ -44,9 +44,9 @@ Where:
 The number of trainable parameters in layer :math:`k` for the mean
 aggregator is
 
-   :math:`d_{k}d_{k - 1} + d_{k}` if concat=True, or
+   :math:`d_{k}d_{k - 1} + d_{k}` if ``concat=True``, or
 
-   :math:`{2d}_{k}d_{k - 1} + d_{k}` if concat=False.
+   :math:`{2d}_{k}d_{k - 1} + d_{k}` if ``concat=False``.
 
 For the GCN aggregator, the feature update rule is:
 
@@ -67,14 +67,14 @@ other notation is as for the mean aggregator.
 The number of trainable parameters in layer :math:`k` for the GCN
 aggregator is :math:`d_{k}d_{k - 1} + d_{k}`, i.e., this model has the
 same expressive power as the model with the mean aggregator and
-concat=True, or about half the expressive power of the model with the
-mean aggregator with concat=False.
+``concat=True``, or about half the expressive power of the model with the
+mean aggregator with ``concat=False``.
 
 Defining additional weight matrices to account for heterogeneity
 ----------------------------------------------------------------
 
 To support heterogeneity of nodes and edges we propose to extend the
-graphsage model by having separate neighbourhood weight matrices
+GraphSAGE model by having separate neighbourhood weight matrices
 (W\ :sub:`neigh`\ ’s) **for every unique ordered tuple of (N1, E, N2)**
 where N1, N2 are node types, and E is an edge type. In addition the
 heterogeneous model will have separate self-feature matrices :math:`W_{\text{self}}`
@@ -124,15 +124,15 @@ HinSAGE with mean aggregator
 
 2. Forward pass through layer k:
 
-If concat=Partial:
+If ``concat=Partial``:
 
    :math:`{h_{v}}^{k} = \sigma\left( \text{concat}\lbrack{W^{k}}_{t_{v}, \text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack, {W^{k}}_{r, \text{neigh}} {h^{k}}_{N_{r}(v)}\rbrack + b^{k} \right)`
 
-If concat=Full:
+If ``concat=Full``:
 
    :math:`{h_{v}}^{k} = \sigma\left( \text{concat}\lbrack{W^{k}}_{t_{v},\text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack, {W^{k}}_{1,\text{neigh}} {h^{k}}_{N_{1}(v)},\ldots, {W^{k}}_{R_{e},\text{neigh}}{h^{k}}_{N_{R_{e}}(v)}\rbrack + b^{k} \right)`
 
-If concat=False:
+If ``concat=False``:
 
    :math:`{h_{v}}^{k} = \sigma\left( {W^{k}}_{t_{v},\text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack  + {W^{k}}_{r,\text{neigh}}{h^{k}}_{N_{r}(v)} + b^{k} \right)`
 
@@ -140,19 +140,19 @@ Where:
 
 -  :math:`{W^{k}}_{t_{v},\text{self}}` is the weight matrix for self-edges for node type :math:`t_{v}`\ and is of shape
 
-      :math:`(\frac{{d_{k}}}{2}) \times d_{k - 1}` if concat=Partial or
+      :math:`(\frac{{d_{k}}}{2}) \times d_{k - 1}` if ``concat=Partial`` or
 
-      :math:`d_{k} \times d_{k - 1}` if concat=False, or
+      :math:`d_{k} \times d_{k - 1}` if ``concat=False``, or
 
-      :math:`\frac{d_{k}}{R_{e} + 1} \times d_{k - 1}`\ if concat=Full.
+      :math:`\frac{d_{k}}{R_{e} + 1} \times d_{k - 1}`\ if ``concat=Full``.
 
 -  :math:`{W^{k}}_{r,\text{neigh}}` is the weight matrix for edges of type :math:`r` and is of shape
 
-      :math:`\frac{d_{k}}{2} \times d_{k - 1}(r)` if concat=Partial or
+      :math:`\frac{d_{k}}{2} \times d_{k - 1}(r)` if ``concat=Partial`` or
 
-      :math:`\frac{d_{k}}{2} \times d_{k - 1}(r)` if concat=False, or
+      :math:`\frac{d_{k}}{2} \times d_{k - 1}(r)` if ``concat=False``, or
 
-      :math:`\frac{d_{k}}{R_{e} + 1} \times d_{k - 1}(r)` if concat=Full.
+      :math:`\frac{d_{k}}{R_{e} + 1} \times d_{k - 1}(r)` if ``concat=Full``.
 
 -  :math:`r` denotes the edge type from node :math:`v` to node :math:`u` (:math:`r` is defined as unique tuple :math:`(t_{v},t_{e},t_{u})`), where :math:`t_{v}` denotes type of node :math:`v`, and :math:`t_{e}` denotes the relation type.
 
@@ -162,15 +162,15 @@ Where:
 
 The number of trainable parameters per layer :math:`k` for this model is
 
--  If concat=Partial:
+-  If ``concat=Partial``:
 
     :math:`T_{v}(\frac{d_{k}}{2}) d_{k - 1} + R_{e} (\frac{d_{k}}{2})d_{k - 1} + d_{k} = \frac{T_{v} + R_{e}}{2} d_{k}d_{k - 1} + d_{k}`
 
--  If concat=False:
+-  If ``concat=False``:
 
     :math:`T_{v}d_{k} d_{k - 1} + R_{e} d_{k} d_{k - 1} + d_{k} = (T_{v} + R_{e}) d_{k}d_{k - 1} + d_{k}`
 
--  If concat=Full
+-  If ``concat=Full``
 
     :math:`\frac{T_{v}d_{k}}{R_{e} + 1} d_{k - 1} + R_{e} \frac{d_{k}}{R_{e} + 1}d_{k - 1} + d_{k} = d_{k}d_{k - 1}\frac{T_{v} + R_{e}}{R_{e} + 1} + d_{k}`.
 
@@ -312,14 +312,14 @@ Method 4 Use a node and its sampled k-hop neighbours
 Using one of these methods, batch preparation is the same for each
 training loop:
 
--  src - source nodes of batch “true links/context-pairs”, and its sampled neighbours
+-  ``src`` - source nodes of batch “true links/context-pairs”, and its sampled neighbours
 
--  dst - destination nodes of batch “true links/context-pairs”, and its sampled neighbours
+-  ``dst`` - destination nodes of batch “true links/context-pairs”, and its sampled neighbours
 
--  dst_neg - destination nodes of batch “negative examples”, and its sampled neighbours.
+-  ``dst_neg`` - destination nodes of batch “negative examples”, and its sampled neighbours.
 
-Note that the dst_neg nodes are only required for the negative sampling
-loss below. The skip-gram loss only requires positive pairs (src, dst).
+Note that the ``dst_neg`` nodes are only required for the negative sampling
+loss below. The skip-gram loss only requires positive pairs ``(src, dst)``.
 With negative samples, compared to node attribute inference, this input
 would include at least 3 times the number of nodes since every training
 loop requires examples of true and false “links”. The multiplier can be
@@ -330,7 +330,7 @@ neighbours - e.g. if every node had 2 types of neighbours to sample
 from, then it would be :math:`2^{N}` times the number of input nodes on
 top of all that where N = number of neighbour hops…
 
-Also note that src, dst, and dst_neg nodes all need to be of the same
+Also note that ``src``, ``dst``, and ``dst_neg`` nodes all need to be of the same
 node type, or must need to be treated as the same node type with the
 same feature vector space. This is critical since the loss function
 relies on the assumption that neighbouring nodes are “similar”.

@@ -101,7 +101,7 @@ class Ensemble(object):
 
     def layers(self, indx=None):
         """
-        This method returns the layer objects for the model specified by the value of indx.
+        This method returns the layer objects for the model specified by the value of ``indx``.
 
         Args:
             indx (None or int): The index  (starting at 0) of the model to return the layers for.
@@ -156,7 +156,7 @@ class Ensemble(object):
 
         Args:
             optimizer (Keras optimizer or str): (Keras-specific parameter) The optimizer to use given either as an
-                instance of a keras optimizer or a string naming the optimiser of choice.
+                instance of a Keras optimizer or a string naming the optimiser of choice.
             loss (Keras function or str): (Keras-specific parameter) The loss function or string indicating the
                 type of loss to use.
             metrics (list or dict): (Keras-specific parameter) List of metrics to be evaluated by each model in
@@ -221,7 +221,7 @@ class Ensemble(object):
             steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
             epochs (int): (Keras-specific parameter) The number of training epochs.
-            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
+            verbose (int): (Keras-specific parameter) The verbosity mode that should be 0 , 1, or 2 meaning silent,
                 progress bar, and one line per epoch respectively.
             validation_data: A generator for validation data that is optional (None). If not None then, it should
                 be one of type NodeSequence, LinkSequence, SparseFullBatchSequence, or FullBatchSequence.
@@ -336,8 +336,8 @@ class Ensemble(object):
             max_queue_size (int): (Keras-specific parameter) The maximum size for the generator queue.
             workers (int): (Keras-specific parameter) The maximum number of workers to use.
             use_multiprocessing (bool): (Keras-specific parameter) If True then use process based threading.
-            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
-                verbocity off and the latter on.
+            verbose (int): (Keras-specific parameter) The verbosity mode that should be 0 or 1 with the former turning
+                verbosity off and the latter on.
 
         Returns:
             tuple: The mean and standard deviation of the model metrics for the given data.
@@ -445,14 +445,14 @@ class Ensemble(object):
             max_queue_size (int): (Keras-specific parameter) The maximum size for the generator queue.
             workers (int): (Keras-specific parameter) The maximum number of workers to use.
             use_multiprocessing (bool): (Keras-specific parameter) If True then use process based threading.
-            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 or 1 with the former turning
-                verbocity off and the latter on.
+            verbose (int): (Keras-specific parameter) The verbosity mode that should be 0 or 1 with the former turning
+                verbosity off and the latter on.
 
 
         Returns:
-            numpy array: The predictions. It will have shape `MxKxNxF` if **summarise** is set to `False`, or NxF
-            otherwise. `M` is the number of estimators in the ensemble; `K` is the number of predictions per query
-            point; `N` is the number of query points; and `F` is the output dimensionality of the specified layer
+            numpy array: The predictions. It will have shape ``M × K × N × F`` if ``summarise`` is set to ``False``, or ``N × F``
+            otherwise. ``M`` is the number of estimators in the ensemble; ``K`` is the number of predictions per query
+            point; ``N`` is the number of query points; and ``F`` is the output dimensionality of the specified layer
             determined by the shape of the output layer.
 
         """
@@ -611,7 +611,7 @@ class BaggingEnsemble(Ensemble):
             steps_per_epoch (None or int): (Keras-specific parameter) If not None, it specifies the number of steps
                 to yield from the generator before declaring one epoch finished and starting a new epoch.
             epochs (int): (Keras-specific parameter) The number of training epochs.
-            verbose (int): (Keras-specific parameter) The verbocity mode that should be 0 , 1, or 2 meaning silent,
+            verbose (int): (Keras-specific parameter) The verbosity mode that should be 0 , 1, or 2 meaning silent,
                 progress bar, and one line per epoch respectively.
             validation_data: A generator for validation data that is optional (None). If not None then, it should
                 be one of type GraphSAGENodeGenerator, HinSAGENodeGenerator, FullBatchNodeGenerator,

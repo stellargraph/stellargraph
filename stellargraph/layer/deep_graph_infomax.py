@@ -145,9 +145,9 @@ class DeepGraphInfomax:
 
     def in_out_tensors(self):
         """
-        A function to create the the keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
+        A function to create the the Keras inputs and outputs for a Deep Graph Infomax model for unsupervised training.
 
-        Note that the tf.nn.sigmoid_cross_entropy_with_logits loss must be used with this model.
+        Note that the :func:`tensorflow.nn.sigmoid_cross_entropy_with_logits` loss must be used with this model.
 
         Example::
 
@@ -157,7 +157,7 @@ class DeepGraphInfomax:
             model.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, ...)
 
         Returns:
-            input and output layers for use with a keras model
+            input and output layers for use with a Keras model
         """
 
         x_inp, node_feats = self.base_model.in_out_tensors()

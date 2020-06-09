@@ -119,7 +119,7 @@ class StellarGraph:
 
     - it is *homogeneous* if there is only one type of node and one type of edge
 
-    - it is *heterogeneous* if it is not homgeneous (more than one type of node, or more than
+    - it is *heterogeneous* if it is not homogeneous (more than one type of node, or more than
       one type of edge)
 
     - it is *directed* if the direction of an edge starting at its source node and finishing at
@@ -497,7 +497,7 @@ class StellarGraph:
             Gs = StellarGraph.from_networkx(nx_graph, node_features="feature")
 
 
-        where the nx_graph contains nodes that have a "feature" attribute containing
+        where ``nx_graph`` contains nodes that have a ``"feature"`` attribute containing
         the feature vector for the node. All nodes of the same type must have
         the same size feature vectors.
 

@@ -98,16 +98,18 @@ class LinkEmbedding(Layer):
             This is ignored if two tensors are supplied as a list.
         activation (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
+        method (str), optional: Name of the method of combining ``(src,dst)`` node features or embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
-            For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
-            edge embedding to transform to a vector of size `output_dim`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            For all methods except ``ip`` or ``dot`` a dense layer is applied on top of the combined
+            edge embedding to transform to a vector of size ``output_dim``.
 
     """
 
@@ -217,22 +219,24 @@ def link_inference(
         output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
+        edge_embedding_method (str), optional: Name of the method of combining ``(src,dst)`` node features or embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            For all methods except ``ip`` or ``dot`` a dense layer is applied on top of the combined
+            edge embedding to transform to a vector of size ``output_dim``.
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         name (str): optional name of the defined function, used for error logging
-            For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
-            edge embedding to transform to a vector of size `output_dim`.
 
     Returns:
-        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with ``src``, ``dst`` node embeddings (i.e., pairs of ``(node_src, node_dst)`` tensors) and
         returning a vector of output_dim length (e.g., edge class probabilities, edge attribute prediction, etc.).
     """
 
@@ -292,17 +296,18 @@ def link_classification(
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
+        edge_embedding_method (str), optional: Name of the method of combining ``(src,dst)`` node features/embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
-        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with ``src``, ``dst`` node embeddings (i.e., pairs of ``(node_src, node_dst)`` tensors) and
         returning logits of output_dim length (e.g., edge class probabilities).
     """
 
@@ -338,17 +343,18 @@ def link_regression(
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         clip_limits (tuple): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
-        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
+        edge_embedding_method (str), optional: Name of the method of combining ``(src,dst)`` node features/embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
-        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with ``src``, ``dst`` node embeddings (i.e., pairs of ``(node_src, node_dst)`` tensors) and
         returning a numeric value (e.g., edge attribute being predicted) constructed according to edge_embedding_method.
     """
 
