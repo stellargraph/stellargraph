@@ -1092,7 +1092,7 @@ class DirectedGraphSAGE(GraphSAGE):
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
         generator (DirectedGraphSAGENodeGenerator):
-            If specified `n_samples` and `input_dim` will be extracted from thi object.
+            If specified `n_samples` and `input_dim` will be extracted from this object.
         aggregator (class, optional): The GraphSAGE aggregator to use; defaults to the `MeanAggregator`.
         bias (bool, optional): If True (default), a bias vector is learnt for each layer.
         dropout (float, optional): The dropout supplied to each layer; defaults to no dropout.
