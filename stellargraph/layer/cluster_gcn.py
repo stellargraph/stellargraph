@@ -47,7 +47,7 @@ class ClusterGCN:
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and preprocessed adjacency matrix
+    To use thi class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using the :class:`ClusterNodeGenerator` class.
 
     For more details, please see `the Cluster-GCN demo notebook

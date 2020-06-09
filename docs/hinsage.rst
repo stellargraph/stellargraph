@@ -122,7 +122,7 @@ HinSAGE with mean aggregator
 
    :math:`{h^{k}}_{N_{r}(v)} = \frac{1}{|N_{r}(v)|}\sum_{u \in N_r(v)}D_{p}\lbrack{h_{u}}^{k - 1}\rbrack`
 
-2. Forward pass through layer k:
+2. Forward pass througxh layer k:
 
 If ``concat=Partial``:
 
