@@ -4,6 +4,7 @@ Alemi
 Ananthram
 Bai
 Bengio
+Bécigneul
 Bishan
 Bloehdorn
 Bloem
@@ -41,6 +42,7 @@ Frossard
 GAT
 GCN
 Gao
+Ganea
 Gaussier
 Gensim
 Giang
@@ -55,6 +57,7 @@ Haija
 Hallac
 Hjelm
 Hoang
+Hofmann
 Hsiej
 Infomax
 Jaccard
