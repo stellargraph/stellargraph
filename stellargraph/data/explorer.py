@@ -60,7 +60,7 @@ class RandomWalk(ABC):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         self.graph = graph
-        self._random_state, self._np_random_state = random_state(seed)
+        _, self._np_random_state = random_state(seed)
 
     def _get_random_state(self, seed):
         """
@@ -72,10 +72,10 @@ class RandomWalk(ABC):
         """
         if seed is None:
             # Restore the random state
-            return self._random_state
+            return self._np_random_state
         # seed the random number generator
         require_integer_in_range(seed, "seed", min_val=0)
-        rs, _ = random_state(seed)
+        _, rs = random_state(seed)
         return rs
 
     @staticmethod
@@ -107,7 +107,7 @@ class GraphWalk(object):
 
         # Initialize the random state
         self._check_seed(seed)
-        self._random_state, self._np_random_state = random_state(seed)
+        _, self._np_random_state = random_state(seed)
 
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraph):
@@ -154,9 +154,9 @@ class GraphWalk(object):
         """
         if seed is None:
             # Use the class's random state
-            return self._random_state
+            return self._np_random_state
         # seed the random number generator
-        rs, _ = random_state(seed)
+        _, rs = random_state(seed)
         return rs
 
     def neighbors(self, node):
@@ -669,7 +669,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = [-1] * _size
                     else:
                         # sample with replacement
-                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
+                        neighbours = rs.choice(neighbours, size=n_size[cur_depth])
 
                     # add them to the back of the queue
                     q.extend((sampled_node, depth) for sampled_node in neighbours)
@@ -743,7 +743,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             # In case of no neighbours of the current node for et, neigh_et == [None],
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
-                                samples = rs.choices(neigh_et, k=n_size[depth - 1])
+                                samples = rs.choice(neigh_et, size=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 _size = n_size[depth - 1]
                                 samples = [-1] * _size
@@ -886,7 +886,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             # Sampling from empty neighbourhood
             return [-1] * size
         # Sample with replacement
-        return rs.choices(neighbours, k=size)
+        return rs.choice(neighbours, size=size)
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
@@ -1034,7 +1034,7 @@ class TemporalRandomWalk(GraphWalk):
                 f"max_walk_length: maximum walk length should not be less than the context window size, found {max_walk_length}"
             )
 
-        np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
+        np_rs = self._get_random_state(seed)
         walks = []
         num_cw_curr = 0
 
