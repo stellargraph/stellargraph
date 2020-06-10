@@ -32,8 +32,8 @@ from stellargraph.layer.knowledge_graph import (
     ComplEx,
     DistMult,
     RotatE,
-    RotationE,
-    RotationH,
+    RotE,
+    RotH,
     _ranks_from_score_columns,
 )
 
@@ -220,16 +220,16 @@ def test_rotate(knowledge_graph):
     assert np.array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize("model_class", [RotationE, RotationH])
-def test_rotationhe(knowledge_graph, model_class):
+@pytest.mark.parametrize("model_class", [RotE, RotH])
+def test_rote_roth(knowledge_graph, model_class):
     # this test creates a random untrained model and predicts every possible edge in the graph, and
     # compares that to a direct implementation of the scoring method in the paper
     gen = KGTripleGenerator(knowledge_graph, 3)
 
     # use a random initializer with a large range, so that any differences are obvious
     init = initializers.RandomUniform(-1, 1)
-    rotation_model = model_class(gen, 6, embeddings_initializer=init)
-    x_inp, x_out = rotation_model.in_out_tensors()
+    rot_model = model_class(gen, 6, embeddings_initializer=init)
+    x_inp, x_out = rot_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
     model.summary()
@@ -251,9 +251,9 @@ def test_rotationhe(knowledge_graph, model_class):
     # predict every edge using the model
     prediction = model.predict(gen.flow(df))
 
-    (node_emb, node_bias), (et_emb, et_theta) = rotation_model.embedding_arrays()
+    (node_emb, node_bias), (et_emb, et_theta) = rot_model.embedding_arrays()
 
-    if model_class is RotationE:
+    if model_class is RotE:
         # compute the exact values based on the model, for RotationE (the RotationH model is too
         # hard to test directly)
         s_idx = knowledge_graph.node_ids_to_ilocs(df.source)
@@ -280,13 +280,13 @@ def test_rotationhe(knowledge_graph, model_class):
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
-    model2 = Model(*rotation_model.in_out_tensors())
+    model2 = Model(*rot_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
     np.testing.assert_array_equal(prediction, prediction2)
 
 
 @pytest.mark.parametrize(
-    "model_maker", [ComplEx, DistMult, RotatE, RotationH, RotationE]
+    "model_maker", [ComplEx, DistMult, RotatE, RotH, RotE]
 )
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])

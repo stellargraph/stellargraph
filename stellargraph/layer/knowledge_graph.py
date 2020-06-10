@@ -671,7 +671,7 @@ class RotatE(KGModel):
         )
 
 
-class RotationHEScoring(Layer, KGScore):
+class RotHEScoring(Layer, KGScore):
     def __init__(self, hyperbolic):
         self._hyperbolic = hyperbolic
         if self._hyperbolic:
@@ -795,7 +795,24 @@ class RotationHEScoring(Layer, KGScore):
         return mod_o_pred.numpy(), mod_s_pred.numpy()
 
 
-class RotationH(KGModel):
+@experimental(reason="demo is missing", issues=[1664])
+class RotH(KGModel):
+    """
+    Embedding layers and a RotH scoring layer that implement the RotH knowledge graph
+    embedding algorithm as in https://arxiv.org/pdf/2005.00545.pdf
+
+    Args:
+        generator (KGTripleGenerator): A generator of triples to feed into the model.
+
+        embedding_dimension (int): the dimension of the embeddings (that is, a vector in
+            ``R^embedding_dimension`` plus a bias in ``R`` is learnt for each node, along with a pair of
+            vectors in ``R^embedding_dimension`` and ``R^(embedding_dimension / 2)`` for each node
+            type). It must be even.
+
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
+
+        embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
+    """
     def __init__(
         self,
         generator,
@@ -805,14 +822,31 @@ class RotationH(KGModel):
     ):
         super().__init__(
             generator,
-            RotationHEScoring(hyperbolic=True),
+            RotHEScoring(hyperbolic=True),
             embedding_dimension=embedding_dimension,
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
         )
 
 
-class RotationE(KGModel):
+@experimental(reason="demo is missing", issues=[1664])
+class RotE(KGModel):
+    """
+    Embedding layers and a RotE scoring layer that implement the RotE knowledge graph
+    embedding algorithm as in https://arxiv.org/pdf/2005.00545.pdf
+
+    Args:
+        generator (KGTripleGenerator): A generator of triples to feed into the model.
+
+        embedding_dimension (int): the dimension of the embeddings (that is, a vector in
+            ``R^embedding_dimension`` plus a bias in ``R`` is learnt for each node, along with a pair of
+            vectors in ``R^embedding_dimension`` and ``R^(embedding_dimension / 2)`` for each node
+            type). It must be even.
+
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
+
+        embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
+    """
     def __init__(
         self,
         generator,
@@ -822,7 +856,7 @@ class RotationE(KGModel):
     ):
         super().__init__(
             generator,
-            RotationHEScoring(hyperbolic=False),
+            RotHEScoring(hyperbolic=False),
             embedding_dimension=embedding_dimension,
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
