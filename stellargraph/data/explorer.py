@@ -721,7 +721,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
-                walk.append([node])
+                walk.append(np.array([node]))
                 while len(q) > 0:
                     # remove the top element in the queue and pop the item from the front of the list
                     frontier = q.pop(0)
@@ -746,7 +746,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                                 samples = rs.choice(neigh_et, size=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 _size = n_size[depth - 1]
-                                samples = [-1] * _size
+                                samples = np.full(_size, -1)
 
                             walk.append(samples)
                             q.extend(
