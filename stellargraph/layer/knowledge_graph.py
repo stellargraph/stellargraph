@@ -675,7 +675,7 @@ class RotHEScoring(Layer, KGScore):
     def __init__(self, hyperbolic):
         self._hyperbolic = hyperbolic
         if self._hyperbolic:
-            self._convert = poincare_ball_exp_map0
+            self._convert = lambda c, v: poincare_ball_exp(c, None, v)
             self._add = poincare_ball_mobius_add
             self._squared_distance = lambda c, v, w: tf.square(
                 poincare_ball_distance(c, v, w)
@@ -799,7 +799,7 @@ class RotHEScoring(Layer, KGScore):
 class RotH(KGModel):
     """
     Embedding layers and a RotH scoring layer that implement the RotH knowledge graph
-    embedding algorithm as in https://arxiv.org/pdf/2005.00545.pdf
+    embedding algorithm as in https://arxiv.org/abs/2005.00545
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
@@ -813,6 +813,7 @@ class RotH(KGModel):
 
         embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
     """
+
     def __init__(
         self,
         generator,
@@ -847,6 +848,7 @@ class RotE(KGModel):
 
         embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
     """
+
     def __init__(
         self,
         generator,

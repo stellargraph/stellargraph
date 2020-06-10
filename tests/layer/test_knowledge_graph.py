@@ -285,9 +285,7 @@ def test_rote_roth(knowledge_graph, model_class):
     np.testing.assert_array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize(
-    "model_maker", [ComplEx, DistMult, RotatE, RotH, RotE]
-)
+@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE, RotH, RotE])
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]
