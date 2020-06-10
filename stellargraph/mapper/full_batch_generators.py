@@ -160,7 +160,7 @@ class FullBatchGenerator(Generator):
                 (e.g., training, validation, or test set nodes)
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
-            use_ilocs (bool): if Ture, node_ids are represented by ilocs,
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
                 otherwise node_ids need to be transformed into ilocs
 
         Returns:
@@ -271,7 +271,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
                 (e.g., training, validation, or test set nodes)
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
-            use_ilocs (bool): if Ture, node_ids are represented by ilocs,
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
                 otherwise node_ids need to be transformed into ilocs
 
         Returns:
@@ -361,7 +361,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
                 or an array of shape (N_links, 2) specifying the links.
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
-            use_ilocs (bool): if Ture, node_ids are represented by ilocs,
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
                 otherwise node_ids need to be transformed into ilocs
 
         Returns:
