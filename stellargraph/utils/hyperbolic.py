@@ -26,7 +26,7 @@ import tensorflow as tf
 
 def poincare_ball_mobius_add(c, x, y):
     r"""
-    Möbius addition of ``x`` and ``y``, on the Poincaré ball with curvature ``c``: :math:`\mathbf{x} \oplus^c \mathbf{y}`.
+    Möbius addition of ``x`` and ``y``, on the Poincaré ball with curvature ``-c``: :math:`\mathbf{x} \oplus^c \mathbf{y}`.
     """
     x_norm2 = tf.reduce_sum(x * x, axis=-1, keepdims=True)
     y_norm2 = tf.reduce_sum(y * y, axis=-1, keepdims=True)
@@ -49,7 +49,7 @@ def _exp_map_multiply(c, v, denom):
 
 def poincare_ball_exp_map(x, c, v):
     r"""
-    The exponential map of ``v`` at ``x`` on the Poincaré ball with curvature ``c``:
+    The exponential map of ``v`` at ``x`` on the Poincaré ball with curvature ``-c``:
     :math:`\exp_{\mathbf{x}}^c(\mathbf{v})`.
     """
 
@@ -68,7 +68,7 @@ def poincare_ball_exp_map0(c, v):
 
 def poincare_ball_distance(c, x, y):
     """
-    Distance between ``x`` and ``y``, on the Poincaré ball with curvature ``c``: :math:`d_c(\mathbf{x}, \mathbf{y})`.
+    Distance between ``x`` and ``y``, on the Poincaré ball with curvature ``-c``: :math:`d_c(\mathbf{x}, \mathbf{y})`.
     """
     sqrt_c = tf.sqrt(c)
     return (2 / sqrt_c) * tf.atanh(
