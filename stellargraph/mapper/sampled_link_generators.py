@@ -439,11 +439,11 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
                 [
                     (
                         nt,
-                        reduce(
-                            operator.concat,
-                            (samples[ks] for samples in node_samples for ks in indices),
-                            [],
-                        ),
+                        np.concatenate(
+                            [samples[ks] for samples in node_samples for ks in indices]
+                        )
+                        if indices
+                        else np.array([], dtype=np.uint8),
                     )
                     for nt, indices in self._sampling_schema[ii]
                 ]
@@ -451,7 +451,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
         # Interlace the two lists, nodes_by_type[0] (for src head nodes) and nodes_by_type[1] (for dst head nodes)
         nodes_by_type = [
-            tuple((ab[0][0], reduce(operator.concat, (ab[0][1], ab[1][1]))))
+            (ab[0][0], np.concatenate([ab[0][1], ab[1][1]]))
             for ab in zip(nodes_by_type[0], nodes_by_type[1])
         ]
 
