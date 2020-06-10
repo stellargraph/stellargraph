@@ -450,6 +450,7 @@ ALGORITHMS = [
         "GraphSAGE",
         heterogeneous="see HinSAGE",
         directed=T(link="node-classification/directed-graphsage-node-classification"),
+        weighted=True,
         features=True,
         nc=T(link="node-classification/graphsage-node-classification"),
         lp=T(link="link-prediction/graphsage-link-prediction"),

@@ -34,6 +34,7 @@ from ..test_utils.graphs import (
     example_hin_1,
     create_graph_features,
     repeated_features,
+    weighted_tree,
 )
 from .. import test_utils
 
@@ -351,6 +352,15 @@ def test_nodemapper_incorrect_targets():
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
             list(G.nodes()), targets=[]
         )
+
+
+def test_nodemapper_weighted():
+    g, checker = weighted_tree()
+
+    gen = GraphSAGENodeGenerator(g, 7, [10, 6], weighted=True)
+    samples = gen.flow([0] * 10)
+
+    checker(node_id for array in samples[0][0] for node_id in array.ravel())
 
 
 def test_hinnodemapper_constructor():

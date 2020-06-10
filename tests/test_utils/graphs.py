@@ -375,3 +375,35 @@ def weighted_hin():
     )
 
     return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "S": s, "T": t, "U": u})
+
+
+def weighted_tree(is_directed=False):
+    # a binary tree:
+    # 0---1--3
+    # |   |
+    # |   4
+    # 2--5
+    # |
+    # 6
+    nodes = repeated_features(range(7), 3)
+    edges = pd.DataFrame(
+        {
+            "source": [0, 0, 1, 1, 2, 2],
+            "target": [1, 2, 3, 4, 5, 6],
+            "weight": [1.0, 5, 20, 1, 1, 0],
+        }
+    )
+    cls = StellarDiGraph if is_directed else StellarGraph
+
+    def check_occurrence(sequence):
+        from collections import Counter
+
+        occurrence = Counter(sequence)
+        # 0--2 has higher weight than 0--1
+        assert occurrence[2] > occurrence[1]
+        # 1--3 has higher weight than 1--4
+        assert occurrence[3] > occurrence[4]
+        # 2--6 has 0 weight (i.e. should never be taken)
+        assert 6 not in occurrence
+
+    return cls(nodes, edges), check_occurrence

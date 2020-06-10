@@ -200,14 +200,18 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
         seed (int): [Optional] Random seed for the node sampler.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(
+        self, G, batch_size, num_samples, seed=None, name=None, weighted=False
+    ):
         super().__init__(G, batch_size)
 
         self.num_samples = num_samples
         self.head_node_types = self.schema.node_types
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
@@ -241,7 +245,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             for that layer.
         """
         node_samples = self._samplers[batch_num].run(
-            nodes=head_nodes, n=1, n_size=self.num_samples
+            nodes=head_nodes, n=1, n_size=self.num_samples, weighted=self.weighted
         )
 
         # The number of samples for each head node (not including itself)
@@ -304,9 +308,19 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         in_samples (list): The number of in-node samples per layer (hop) to take.
         out_samples (list): The number of out-node samples per layer (hop) to take.
         seed (int): [Optional] Random seed for the node sampler.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        in_samples,
+        out_samples,
+        seed=None,
+        name=None,
+        weighted=False,
+    ):
         super().__init__(G, batch_size)
 
         # TODO Add checks for in- and out-nodes sizes
@@ -314,6 +328,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         self.out_samples = out_samples
         self.head_node_types = self.schema.node_types
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
@@ -350,7 +365,11 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
             given the sequence of in/out directions.
         """
         node_samples = self.sampler.run(
-            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples
+            nodes=head_nodes,
+            n=1,
+            in_size=self.in_samples,
+            out_size=self.out_samples,
+            weighted=self.weighted,
         )
 
         # Reshape node samples to sensible format

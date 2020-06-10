@@ -18,8 +18,13 @@ import pandas as pd
 import pytest
 import numpy as np
 from stellargraph.data.explorer import SampledBreadthFirstWalk
-from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph, tree_graph, example_graph_random
+from stellargraph.core.graph import StellarGraph, StellarDiGraph
+from ..test_utils.graphs import (
+    create_test_graph,
+    tree_graph,
+    example_graph_random,
+    weighted_tree,
+)
 
 
 def expected_bfw_size(n_size):
@@ -539,7 +544,8 @@ class TestBreadthFirstWalk(object):
         assert len(w0) == len(w1)
         assert w0 == w1
 
-    def test_benchmark_bfs_walk(self, benchmark):
+    @pytest.mark.parametrize("weighted", [False, True])
+    def test_benchmark_bfs_walk(self, benchmark, weighted):
         g = example_graph_random(n_nodes=100, n_edges=500)
         bfw = SampledBreadthFirstWalk(g)
 
@@ -547,4 +553,11 @@ class TestBreadthFirstWalk(object):
         n = 5
         n_size = [5, 5]
 
-        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))
+        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size, weighted=weighted))
+
+    def test_weighted(self):
+        g, checker = weighted_tree()
+        bfw = SampledBreadthFirstWalk(g)
+        walks = bfw.run(nodes=[0], n=10, n_size=[20, 20], weighted=True)
+
+        checker(node_id for walk in walks for node_id in walk)
