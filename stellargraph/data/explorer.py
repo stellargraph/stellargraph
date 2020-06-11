@@ -248,17 +248,19 @@ class GraphWalk(object):
         else:
             neighbours = []
 
-        if len(neighbours) == 0:
-            # no neighbours (e.g. isolated node or cur_node == -1), so propagate the -1 sentinel
-            return np.full(size, -1)
-        elif weighted:
-            # sample following the edge weights
-            idx = naive_weighted_choices(py_and_np_rs[1], weights, size=size)
-            return neighbours[idx]
-        else:
-            # uniform sample; for small-to-moderate `size`s (< 100 is typical for GraphSAGE), random
-            # has less overhead than np.random
-            return np.array(py_and_np_rs[0].choices(neighbours, k=size))
+        if len(neighbours) > 0:
+            if weighted:
+                # sample following the edge weights
+                idx = naive_weighted_choices(py_and_np_rs[1], weights, size=size)
+                if idx is not None:
+                    return neighbours[idx]
+            else:
+                # uniform sample; for small-to-moderate `size`s (< 100 is typical for GraphSAGE), random
+                # has less overhead than np.random
+                return np.array(py_and_np_rs[0].choices(neighbours, k=size))
+
+        # no neighbours (e.g. isolated node, cur_node == -1 or all weights 0), so propagate the -1 sentinel
+        return np.full(size, -1)
 
 
 class UniformRandomWalk(RandomWalk):
@@ -331,8 +333,13 @@ def naive_weighted_choices(rs, weights, size=None):
     does a lot of conversions/checks/preprocessing internally.
     """
     probs = np.cumsum(weights)
+    total = probs[-1]
+    if total == 0:
+        # all weights were zero (probably), so we shouldn't choose anything
+        return None
+
     thresholds = rs.random() if size is None else rs.random(size)
-    idx = np.searchsorted(probs, thresholds * probs[-1], side="left")
+    idx = np.searchsorted(probs, thresholds * total, side="left")
 
     return idx
 
@@ -473,6 +480,8 @@ class BiasedRandomWalk(RandomWalk):
                     weights[~mask] *= iq
 
                     choice = naive_weighted_choices(rs, weights)
+                    if choice is None:
+                        break
 
                     previous_node = current_node
                     previous_node_neighbours = neighbours
@@ -1119,6 +1128,8 @@ class TemporalRandomWalk(GraphWalk):
         if len(neighbours) > 0:
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
+            assert chosen_neighbour_index is not None, "biases should never be all zero"
+
             next_node = neighbours[chosen_neighbour_index]
             next_time = times[chosen_neighbour_index]
             return next_node, next_time

@@ -16,6 +16,7 @@
 
 import random
 import pytest
+import pandas as pd
 import numpy as np
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarDiGraph
@@ -259,3 +260,19 @@ class TestDirectedBreadthFirstNeighbours(object):
         )
 
         checker(node_id for walk in walks for hop in walk for node_id in hop)
+
+    def test_weighted_all_zero(self):
+        edges = pd.DataFrame({"source": [0, 0], "target": [1, 2], "weight": [0.0, 0]})
+
+        g = StellarDiGraph(edges=edges)
+        bfw = DirectedBreadthFirstNeighbours(g)
+        walks = bfw.run(
+            nodes=[0], n=10, in_size=[20, 20], out_size=[20, 20], weighted=True
+        )
+
+        assert len(walks) == 10
+        for walk in walks:
+            assert len(walk) == 7
+            assert walk[0] == [0]
+            for hop in walk:
+                np.testing.assert_array_equal(hop[1:], -1)
