@@ -567,9 +567,7 @@ class TestBreadthFirstWalk(object):
 
         g = StellarGraph(edges=edges)
         bfw = SampledBreadthFirstWalk(g)
-        walks = bfw.run(
-            nodes=[0], n=10, n_size=[20, 20], weighted=True
-        )
+        walks = bfw.run(nodes=[0], n=10, n_size=[20, 20], weighted=True)
 
         assert len(walks) == 10
         for walk in walks:
