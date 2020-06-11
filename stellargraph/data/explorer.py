@@ -231,7 +231,9 @@ class GraphWalk(object):
             if type(d) != int or d < 0:
                 self._raise_error(err_msg)
 
-    def _sample_neighbours_untyped(self, neigh_func, py_and_np_rs, cur_node, size, weighted):
+    def _sample_neighbours_untyped(
+        self, neigh_func, py_and_np_rs, cur_node, size, weighted
+    ):
         """
         Sample ``size`` neighbours of ``cur_node`` without checking node types or edge types, optionally
         using edge weights.
