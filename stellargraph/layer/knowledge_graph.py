@@ -718,6 +718,7 @@ class RotHEScoring(Layer, KGScore):
         super().build(input_shapes)
 
     def _curvature(self, expand=1):
+        assert self.built
         if not self._hyperbolic:
             return tf.constant([0.0])
 
