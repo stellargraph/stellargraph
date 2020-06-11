@@ -160,6 +160,12 @@ Knowledge Graph models
 .. autoclass:: RotatEScore
   :members:
 
+.. autoclass:: RotE
+  :members:
+
+.. autoclass:: RotH
+  :members:
+
 GCN Supervised Graph Classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -230,6 +236,9 @@ Utilities
 
 .. automodule:: stellargraph.utils
   :members: plot_history
+
+.. automodule:: stellargraph.utils.hyperbolic
+  :members:
 
 
 Datasets

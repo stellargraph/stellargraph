@@ -32,6 +32,8 @@ from stellargraph.layer.knowledge_graph import (
     ComplEx,
     DistMult,
     RotatE,
+    RotE,
+    RotH,
     _ranks_from_score_columns,
 )
 
@@ -218,7 +220,72 @@ def test_rotate(knowledge_graph):
     assert np.array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE])
+@pytest.mark.parametrize("model_class", [RotE, RotH])
+def test_rote_roth(knowledge_graph, model_class):
+    # this test creates a random untrained model and predicts every possible edge in the graph, and
+    # compares that to a direct implementation of the scoring method in the paper
+    gen = KGTripleGenerator(knowledge_graph, 3)
+
+    # use a random initializer with a large range, so that any differences are obvious
+    init = initializers.RandomUniform(-1, 1)
+    rot_model = model_class(gen, 6, embeddings_initializer=init)
+    x_inp, x_out = rot_model.in_out_tensors()
+
+    model = Model(x_inp, x_out)
+    model.summary()
+    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+
+    every_edge = itertools.product(
+        knowledge_graph.nodes(),
+        knowledge_graph._edges.types.pandas_index,
+        knowledge_graph.nodes(),
+    )
+    df = triple_df(*every_edge)
+
+    # check the model can be trained on a few (uneven) batches
+    model.fit(
+        gen.flow(df.iloc[:7], negative_samples=2),
+        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+    )
+
+    # predict every edge using the model
+    prediction = model.predict(gen.flow(df))
+
+    (node_emb, node_bias), (et_emb, et_theta) = rot_model.embedding_arrays()
+
+    if model_class is RotE:
+        # compute the exact values based on the model, for RotationE (the RotationH model is too
+        # hard to test directly)
+        s_idx = knowledge_graph.node_ids_to_ilocs(df.source)
+        r_idx = knowledge_graph.edge_type_names_to_ilocs(df.label)
+        o_idx = knowledge_graph.node_ids_to_ilocs(df.target)
+
+        # the rows correspond to the embeddings for the given edge, so we can do bulk operations
+        e_s = node_emb[s_idx, :]
+        b_s = node_bias[s_idx, 0]
+
+        r_r = et_emb[r_idx, :]
+        theta_r = et_theta[r_idx, :]
+
+        e_o = node_emb[o_idx, :]
+        b_o = node_bias[o_idx, 0]
+
+        rot_r = np.cos(theta_r) + 1j * np.sin(theta_r)
+
+        assert e_s.dtype == np.float32
+        rotated = (e_s.view(np.complex64) * rot_r).view(np.float32)
+        actual = -np.linalg.norm(rotated + r_r - e_o, axis=-1) ** 2 + b_s + b_o
+
+        np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*rot_model.in_out_tensors())
+    prediction2 = model2.predict(gen.flow(df))
+    np.testing.assert_array_equal(prediction, prediction2)
+
+
+@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE, RotH, RotE])
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]
@@ -252,7 +319,7 @@ def test_model_rankings(model_maker):
     )
 
     gen = KGTripleGenerator(all_edges, 3)
-    sg_model = model_maker(gen, embedding_dimension=5)
+    sg_model = model_maker(gen, embedding_dimension=6)
     x_inp, x_out = sg_model.in_out_tensors()
     model = Model(x_inp, x_out)
 
