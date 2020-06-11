@@ -60,7 +60,7 @@ class RandomWalk(ABC):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph.")
 
         self.graph = graph
-        _, self._np_random_state = random_state(seed)
+        self._random_state, self._np_random_state = random_state(seed)
 
     def _get_random_state(self, seed):
         """
@@ -72,11 +72,10 @@ class RandomWalk(ABC):
         """
         if seed is None:
             # Restore the random state
-            return self._np_random_state
+            return self._random_state, self._np_random_state
         # seed the random number generator
         require_integer_in_range(seed, "seed", min_val=0)
-        _, rs = random_state(seed)
-        return rs
+        return random_state(seed)
 
     @staticmethod
     def _validate_walk_params(nodes, n, length):
@@ -107,7 +106,7 @@ class GraphWalk(object):
 
         # Initialize the random state
         self._check_seed(seed)
-        _, self._np_random_state = random_state(seed)
+        self._random_state, self._np_random_state = random_state(seed)
 
         # We require a StellarGraph for this
         if not isinstance(graph, StellarGraph):
@@ -154,10 +153,9 @@ class GraphWalk(object):
         """
         if seed is None:
             # Use the class's random state
-            return self._np_random_state
-        # seed the random number generator
-        _, rs = random_state(seed)
-        return rs
+            return self._random_state, self._np_random_state
+        # seed the random number generators
+        return random_state(seed)
 
     def neighbors(self, node):
         return self.graph.neighbor_arrays(node, use_ilocs=True)
@@ -269,7 +267,7 @@ class UniformRandomWalk(RandomWalk):
         n = _default_if_none(n, self.n, "n")
         length = _default_if_none(length, self.length, "length")
         self._validate_walk_params(nodes, n, length)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
@@ -392,7 +390,7 @@ class BiasedRandomWalk(RandomWalk):
         weighted = _default_if_none(weighted, self.weighted, "weighted")
         self._validate_walk_params(nodes, n, length)
         self._check_weights(p, q, weighted)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
@@ -521,7 +519,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
         metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
         self._validate_walk_params(nodes, n, length)
         self._check_metapath_values(metapaths)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
@@ -635,7 +633,7 @@ class SampledBreadthFirstWalk(GraphWalk):
         """
         self._check_sizes(n_size)
         self._check_common_parameters(nodes, n, len(n_size), seed)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         walks = []
         max_hops = len(n_size)  # depth of search
@@ -669,7 +667,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                         neighbours = [-1] * _size
                     else:
                         # sample with replacement
-                        neighbours = rs.choice(neighbours, size=n_size[cur_depth])
+                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
 
                     # add them to the back of the queue
                     q.extend((sampled_node, depth) for sampled_node in neighbours)
@@ -704,7 +702,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
         """
         self._check_sizes(n_size)
         self._check_common_parameters(nodes, n, len(n_size), seed)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         adj = self.get_adjacency_types()
 
@@ -721,7 +719,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                 q.extend([(node, node_type, 0)])
 
                 # add the root node to the walks
-                walk.append(np.array([node]))
+                walk.append([node])
                 while len(q) > 0:
                     # remove the top element in the queue and pop the item from the front of the list
                     frontier = q.pop(0)
@@ -743,10 +741,10 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
                             # In case of no neighbours of the current node for et, neigh_et == [None],
                             # and samples automatically becomes [None]*n_size[depth-1]
                             if len(neigh_et) > 0:
-                                samples = rs.choice(neigh_et, size=n_size[depth - 1])
+                                samples = rs.choices(neigh_et, k=n_size[depth - 1])
                             else:  # this doesn't happen anymore, see the comment above
                                 _size = n_size[depth - 1]
-                                samples = np.full(_size, -1)
+                                samples = [-1] * _size
 
                             walk.append(samples)
                             q.extend(
@@ -803,7 +801,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         """
         self._check_neighbourhood_sizes(in_size, out_size)
         self._check_common_parameters(nodes, n, len(in_size), seed)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         max_hops = len(in_size)
         # A binary tree is a graph of nodes; however, we wish to avoid overusing the term 'node'.
@@ -886,7 +884,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             # Sampling from empty neighbourhood
             return [-1] * size
         # Sample with replacement
-        return rs.choice(neighbours, size=size)
+        return rs.choices(neighbours, k=size)
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
@@ -1034,7 +1032,7 @@ class TemporalRandomWalk(GraphWalk):
                 f"max_walk_length: maximum walk length should not be less than the context window size, found {max_walk_length}"
             )
 
-        np_rs = self._get_random_state(seed)
+        _, np_rs = self._get_random_state(seed)
         walks = []
         num_cw_curr = 0
 

@@ -476,11 +476,11 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
         nodes_by_type = [
             (
                 nt,
-                np.concatenate(
-                    [samples[ks] for samples in node_samples for ks in indices]
-                )
-                if indices
-                else np.array([], dtype=np.uint8),
+                reduce(
+                    operator.concat,
+                    (samples[ks] for samples in node_samples for ks in indices),
+                    [],
+                ),
             )
             for nt, indices in self._sampling_schema[0]
         ]

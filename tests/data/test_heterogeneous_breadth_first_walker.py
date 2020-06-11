@@ -199,7 +199,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         assert len(subgraphs) == 1
         assert len(subgraphs[0]) == 9
         for level in subgraphs[0]:
-            assert type(level) == np.ndarray
+            assert type(level) == list
             if len(level) > 0:
                 # All values should be rood_node_id or None
                 for value in level:
@@ -219,7 +219,7 @@ class TestSampledHeterogeneousBreadthFirstWalk(object):
         )
 
         for level in subgraphs2[0]:
-            assert type(level) == np.ndarray
+            assert type(level) == list
             if len(level) > 0:
                 for value in level:
                     assert (value == nodes[0]) or (value == -1)
