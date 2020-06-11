@@ -329,7 +329,8 @@ def naive_weighted_choices(rs, weights, size=None):
     does a lot of conversions/checks/preprocessing internally.
     """
     probs = np.cumsum(weights)
-    idx = np.searchsorted(probs, rs.random(size) * probs[-1], side="left")
+    thresholds = rs.random() if size is None else rs.random(size)
+    idx = np.searchsorted(probs, thresholds * probs[-1], side="left")
 
     return idx
 
