@@ -297,8 +297,9 @@ def test_nodemapper_isolated_nodes():
     n_feat = 4
     n_batch = 2
 
-    # test graph
-    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    # test graph (a lot of edges between the 5 non-isolated nodes, to ensure they're a single
+    # connected component)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=1000)
 
     # Check connectedness
     Gnx = G.to_networkx()
