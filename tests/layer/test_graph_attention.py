@@ -147,7 +147,7 @@ class Test_GraphAttention:
         expected = (X * self.F_in)[..., : self.F_out]
         actual = model.predict([X] + As)
 
-        np.testing.assert_allclose(actual.squeeze(), expected)
+        np.testing.assert_allclose(actual.squeeze(), expected.squeeze())
 
     def test_apply_average_with_neighbours(self):
         gat_saliency = self.layer(

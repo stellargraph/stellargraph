@@ -40,7 +40,7 @@ def test_AttentiveWalk():
 
     output = att_wlk(random_partial_powers).numpy()
 
-    np.testing.assert_allclose(output, random_partial_powers.mean(axis=1))
+    np.testing.assert_allclose(output, random_partial_powers.mean(axis=1), rtol=1e-5, atol=1e-8)
 
 
 def test_WatchYourStep_init(barbell):
