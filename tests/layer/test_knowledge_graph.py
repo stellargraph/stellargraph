@@ -158,6 +158,7 @@ def test_distmult(knowledge_graph):
     assert np.array_equal(prediction, prediction2)
 
 
+@test_utils.flaky_xfail_mark(AssertionError, 1623)
 def test_rotate(knowledge_graph):
     margin = 2.34
     norm_order = 1.234
@@ -285,7 +286,16 @@ def test_rote_roth(knowledge_graph, model_class):
     np.testing.assert_array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE, RotH, RotE])
+@pytest.mark.parametrize(
+    "model_maker",
+    [
+        ComplEx,
+        DistMult,
+        pytest.param(RotatE, marks=test_utils.flaky_xfail_mark(AssertionError, 1623)),
+        pytest.param(RotH, marks=test_utils.flaky_xfail_mark(AssertionError, 1675)),
+        RotE,
+    ],
+)
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]
