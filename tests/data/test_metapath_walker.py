@@ -314,7 +314,8 @@ class TestMetaPathWalk(object):
             nodes=nodes, n=n, length=length, metapaths=metapaths, seed=seed
         )
         assert len(run_1) == len(run_2)
-        assert all(np.array_equal(w1, w2) for w1, w2 in zip(run_1, run_2))
+        for w1, w2 in zip(run_1, run_2):
+            np.testing.assert_array_equal(w1, w2)
 
     def test_benchmark_uniformrandommetapathwalk(self, benchmark):
         g = example_graph_random(n_nodes=50, n_edges=500, node_types=2)

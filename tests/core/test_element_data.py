@@ -36,7 +36,7 @@ def test_external_id_index_to_iloc(count, expected_missing):
     if count <= 256:
         # only do individual lookups when there's a few IDs, and assume that if those work, then large ones will too
         for i, x in enumerate(values):
-            assert np.array_equal(idx.to_iloc([x]), [i])
+            np.testing.assert_array_equal(idx.to_iloc([x]), [i])
 
     # missing value
     assert idx.to_iloc(["A"]) == expected_missing

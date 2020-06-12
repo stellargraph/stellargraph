@@ -123,7 +123,7 @@ def test_dgi_stateful():
         generator.flow(G.nodes())
     )
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_1.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model_1.fit(gen)
@@ -136,7 +136,7 @@ def test_dgi_stateful():
         generator.flow(G.nodes())
     )
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_2.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model_2.fit(gen)
@@ -149,7 +149,7 @@ def test_dgi_stateful():
         generator.flow(G.nodes())
     )
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
 
 def test_dgi_deprecated_no_generator():

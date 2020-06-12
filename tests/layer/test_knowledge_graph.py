@@ -96,13 +96,13 @@ def test_complex(knowledge_graph):
     prediction = model.predict(gen.flow(df))
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
-    assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-6)
+    np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-6)
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
     model2 = Model(*complex_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
-    assert np.array_equal(prediction, prediction2)
+    np.testing.assert_array_equal(prediction, prediction2)
 
 
 def test_distmult(knowledge_graph):
@@ -149,13 +149,13 @@ def test_distmult(knowledge_graph):
     prediction = model.predict(gen.flow(df))
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
-    assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+    np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
     model2 = Model(*distmult_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
-    assert np.array_equal(prediction, prediction2)
+    np.testing.assert_array_equal(prediction, prediction2)
 
 
 def test_rotate(knowledge_graph):
@@ -217,7 +217,7 @@ def test_rotate(knowledge_graph):
     # 'build' should be the same as the original one
     model2 = Model(*rotate_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
-    assert np.array_equal(prediction, prediction2)
+    np.testing.assert_array_equal(prediction, prediction2)
 
 
 @pytest.mark.parametrize("model_class", [RotE, RotH])

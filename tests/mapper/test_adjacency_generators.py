@@ -109,4 +109,4 @@ def test_partial_powers(barbell, num_powers):
         partial_powers = x[1].numpy()
         for j in range(num_powers):
             print(i, j)
-            assert np.allclose(partial_powers[0, j, :], actual_powers[j][i, :])
+            np.testing.assert_allclose(partial_powers[0, j, :], actual_powers[j][i, :])
