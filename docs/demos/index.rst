@@ -176,7 +176,7 @@ Find a demo for an algorithm
      - GraphSAGE
      - see HinSAGE
      - :any:`demo <node-classification/directed-graphsage-node-classification>`
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/graphsage-node-classification>`

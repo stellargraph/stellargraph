@@ -172,7 +172,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>GraphSAGE</td>
     <td>see HinSAGE</td>
     <td><a href='node-classification/directed-graphsage-node-classification.ipynb'>demo</a></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/graphsage-node-classification.ipynb'>demo</a></td>
