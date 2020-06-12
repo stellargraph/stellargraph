@@ -158,6 +158,7 @@ def test_distmult(knowledge_graph):
     assert np.array_equal(prediction, prediction2)
 
 
+@test_utils.flaky_xfail_mark(AssertionError, 1623)
 def test_rotate(knowledge_graph):
     margin = 2.34
     norm_order = 1.234
