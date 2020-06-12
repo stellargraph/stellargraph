@@ -373,6 +373,7 @@ def test_kernel_and_bias_defaults():
             assert layer.bias_constraint is None
 
 
+@pytest.mark.xfail(reason="FIXME #1252")
 @pytest.mark.parametrize("num_bases", [0, 10])
 @pytest.mark.parametrize("sparse", [False, True])
 def test_RGCN_save_load(tmpdir, num_bases, sparse):

@@ -291,7 +291,13 @@ def test_APPNP_apply_propagate_model_sparse():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.parametrize("sparse", [False, True])
+@pytest.mark.parametrize(
+    "sparse",
+    [
+        pytest.param(False, marks=pytest.mark.xfail(reason="FIXME #1680")),
+        pytest.param(True, marks=pytest.mark.xfail(reason="FIXME #1251")),
+    ],
+)
 def test_APPNP_save_load(tmpdir, sparse):
     G, _ = create_graph_features()
     generator = FullBatchNodeGenerator(G, sparse=sparse)

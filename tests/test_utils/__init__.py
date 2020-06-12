@@ -28,7 +28,6 @@ ignore_stellargraph_experimental_mark = pytest.mark.filterwarnings(
 def model_save_load(tmpdir, sg_model):
     model = keras.Model(*sg_model.in_out_tensors())
 
-    model.summary()
     save_model_dir = tmpdir.join("save_model")
     keras.models.save_model(model, str(save_model_dir))
 

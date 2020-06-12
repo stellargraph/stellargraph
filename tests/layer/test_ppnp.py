@@ -83,4 +83,4 @@ def test_PPNP_save_load(tmpdir):
     G, _ = create_graph_features()
     generator = FullBatchNodeGenerator(G, sparse=False)
     ppnp = PPNP([2, 3], generator, ["relu", "relu"])
-    test_utils.model_save_load(tmpdir, appnp)
+    test_utils.model_save_load(tmpdir, ppnp)
