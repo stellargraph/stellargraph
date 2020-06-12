@@ -698,3 +698,8 @@ def test_kernel_and_bias_defaults():
         assert layer.bias_regularizer is None
         assert layer.kernel_constraint is None
         assert layer.bias_constraint is None
+
+
+def test_graphsage_save_load(tmpdir):
+    gs = GraphSAGE(layer_sizes=[4, 4], n_samples=[2, 2], input_dim=2, multiplicity=1)
+    test_utils.model_save_load(tmpdir, gs)

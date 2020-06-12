@@ -22,6 +22,7 @@ from stellargraph import StellarGraph, IndexedArray
 from stellargraph.layer import GCN_LSTM
 from stellargraph.layer import FixedAdjacencyGraphConvolution
 from stellargraph.mapper import SlidingFeaturesNodeGenerator
+from .. import test_utils
 
 
 def get_timeseries_graph_data():
@@ -188,17 +189,19 @@ def test_gcn_lstm_model_prediction():
     assert pred.shape == (1, 5)
 
 
-@pytest.mark.parametrize("multivariate", [False, True])
-def test_gcn_lstm_generator(multivariate):
-    shape = (3, 7, 11) if multivariate else (3, 7)
+@pytest.fixture(params=["univariate", "multivariate"])
+def arange_graph(request):
+    shape = (3, 7, 11) if request.param == "multivariate" else (3, 7)
     total_elems = np.product(shape)
     nodes = IndexedArray(
         np.arange(total_elems).reshape(shape) / total_elems, index=["a", "b", "c"]
     )
     edges = pd.DataFrame({"source": ["a", "b"], "target": ["b", "c"]})
-    graph = StellarGraph(nodes, edges)
+    return StellarGraph(nodes, edges)
 
-    gen = SlidingFeaturesNodeGenerator(graph, 2, batch_size=3)
+
+def test_gcn_lstm_generator(arange_graph):
+    gen = SlidingFeaturesNodeGenerator(arange_graph, 2, batch_size=3)
     gcn_lstm = GCN_LSTM(None, None, [2], [4], generator=gen)
 
     model = Model(*gcn_lstm.in_out_tensors())
@@ -212,3 +215,9 @@ def test_gcn_lstm_generator(multivariate):
     model2 = Model(*gcn_lstm.in_out_tensors())
     predictions2 = model2.predict(gen.flow(slice(5, 7)))
     np.testing.assert_array_equal(predictions, predictions2)
+
+
+def test_gcn_lstm_save_load(tmpdir, arange_graph):
+    gen = SlidingFeaturesNodeGenerator(arange_graph, 2, batch_size=3)
+    gcn_lstm = GCN_LSTM(None, None, [2], [4], generator=gen)
+    test_utils.model_save_load(tmpdir, gcn_lstm)

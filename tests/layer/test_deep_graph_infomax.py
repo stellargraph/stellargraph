@@ -18,7 +18,7 @@ from stellargraph.layer import *
 from stellargraph.mapper import *
 
 from ..test_utils.graphs import example_graph_random
-from .. import require_gpu
+from .. import require_gpu, test_utils
 import tensorflow as tf
 import pytest
 import numpy as np
@@ -162,3 +162,12 @@ def test_dgi_deprecated_no_generator():
         DeepGraphInfomax(
             GCN(generator=generator, activations=["relu"], layer_sizes=[4]),
         )
+
+
+@pytest.mark.parametrize("model_type", [GCN, GraphSAGE, HinSAGE])
+def test_dgi_save_load(tmpdir, model_type):
+    base_generator, base_model, nodes = _model_data(model_type, sparse=False)
+    corrupted_generator = CorruptedGenerator(base_generator)
+    infomax = DeepGraphInfomax(base_model, corrupted_generator)
+
+    test_utils.model_save_load(tmpdir, infomax)

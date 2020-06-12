@@ -25,6 +25,7 @@ import numpy as np
 from tensorflow import keras
 import pytest
 from ..test_utils.graphs import create_graph_features
+from .. import test_utils
 
 
 def test_APPNP_edge_cases():
@@ -288,3 +289,11 @@ def test_APPNP_apply_propagate_model_sparse():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+
+@pytest.mark.parametrize("sparse", [False, True])
+def test_APPNP_save_load(tmpdir, sparse):
+    G, _ = create_graph_features()
+    generator = FullBatchNodeGenerator(G, sparse=sparse)
+    appnp = APPNP([2, 3], generator, ["relu", "relu"])
+    test_utils.model_save_load(tmpdir, appnp)

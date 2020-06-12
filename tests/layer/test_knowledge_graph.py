@@ -49,6 +49,11 @@ pytestmark = [
 ]
 
 
+@pytest.fixture(params=[ComplEx, DistMult, RotatE, RotH, RotE])
+def model_maker(request):
+    return request.param
+
+
 def triple_df(*values):
     return pd.DataFrame(values, columns=["source", "label", "target"])
 
@@ -285,7 +290,6 @@ def test_rote_roth(knowledge_graph, model_class):
     np.testing.assert_array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE, RotH, RotE])
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]
@@ -482,3 +486,9 @@ def test_embedding_validation(knowledge_graph):
 
     # all good:
     KGModel(gen, X(([e, e], [e, e, e])), 2, **kwargs)
+
+
+def test_save_load(tmpdir, knowledge_graph, model_maker):
+    gen = KGTripleGenerator(knowledge_graph, 3)
+    sg_model = model_maker(gen, embedding_dimension=6)
+    test_utils.model_save_load(tmpdir, sg_model)

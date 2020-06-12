@@ -25,6 +25,7 @@ import numpy as np
 from tensorflow import keras
 import pytest
 from ..test_utils.graphs import create_graph_features
+from .. import test_utils
 
 
 def test_PPNP_edge_cases():
@@ -76,3 +77,10 @@ def test_PPNP_apply_dense():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+
+def test_PPNP_save_load(tmpdir):
+    G, _ = create_graph_features()
+    generator = FullBatchNodeGenerator(G, sparse=False)
+    ppnp = PPNP([2, 3], generator, ["relu", "relu"])
+    test_utils.model_save_load(tmpdir, appnp)

@@ -609,6 +609,18 @@ class Test_GAT:
                 assert layer.bias_constraint is None
                 assert layer.attn_kernel_constraint is None
 
+    def test_save_load(self, tmpdir):
+        graph = example_graph(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(graph, sparse=self.sparse, method=self.method)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+        )
+
+        test_utils.model_save_load(tmpdir, gat)
+
 
 def TestGATsparse(Test_GAT):
     sparse = True
