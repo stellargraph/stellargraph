@@ -16,7 +16,7 @@
 
 import pytest
 
-from tensorflow import keras
+import tensorflow as tf
 import stellargraph as sg
 import numpy as np
 
@@ -26,16 +26,27 @@ ignore_stellargraph_experimental_mark = pytest.mark.filterwarnings(
 
 
 def model_save_load(tmpdir, sg_model):
-    model = keras.Model(*sg_model.in_out_tensors())
+    model = tf.keras.Model(*sg_model.in_out_tensors())
 
-    save_model_dir = tmpdir.join("save_model")
-    keras.models.save_model(model, str(save_model_dir))
+    saving_functions = [
+        tf.keras.models.save_model,
+        tf.keras.Model.save,
+        tf.saved_model.save,
+    ]
+    loading_functions = [
+        tf.keras.models.load_model,
+        # tf.saved_model.load doesn't restore the Keras Model object
+    ]
 
-    save_dir = tmpdir.join("save")
-    model.save(str(save_dir))
+    for i, func in enumerate(saving_functions):
+        saved_dir = str(tmpdir.join(str(i)))
+        func(model, str(saved_dir))
 
-    for saved_dir in [save_model_dir, save_dir]:
-        loaded = keras.models.load_model(str(saved_dir), sg.custom_keras_layers)
+        for func in loading_functions:
+            loaded = func(saved_dir, sg.custom_keras_layers)
 
-        for orig, new in zip(model.get_weights(), loaded.get_weights()):
-            np.testing.assert_array_equal(orig, new)
+            orig_weights = model.get_weights()
+            new_weights = loaded.get_weights()
+            assert len(orig_weights) == len(new_weights)
+            for orig, new in zip(orig_weights, new_weights):
+                np.testing.assert_array_equal(orig, new)
