@@ -224,10 +224,8 @@ def test_unsupervised(petersen_graph, shuffle):
     )
 
 
-@pytest.mark.parametrize(
-    "shuffle",
-    [pytest.param(True, marks=flaky_xfail_mark(AssertionError, 1115)), False],
-)
+@pytest.mark.parametrize("shuffle", [True, False])
+@flaky_xfail_mark(AssertionError, 1115)
 @pytest.mark.skipif(require_gpu, reason="tf on GPU is non-deterministic")
 def test_nai(petersen_graph, shuffle):
     target_size = 10

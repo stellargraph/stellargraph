@@ -291,7 +291,7 @@ def test_rote_roth(knowledge_graph, model_class):
     [
         ComplEx,
         DistMult,
-        RotatE,
+        pytest.param(RotatE, marks=test_utils.flaky_xfail_mark(AssertionError, 1623)),
         pytest.param(RotH, marks=test_utils.flaky_xfail_mark(AssertionError, 1675)),
         RotE,
     ],

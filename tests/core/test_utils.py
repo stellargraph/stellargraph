@@ -184,6 +184,7 @@ def test_smart_array_concatenate_broadcast():
         _check_smart_concatenate([a0, c43])
 
 
+@flaky_xfail_mark(AssertionError, 1678)
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
