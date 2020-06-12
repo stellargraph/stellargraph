@@ -221,13 +221,17 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(
+        self, G, batch_size, num_samples, seed=None, name=None, weighted=False
+    ):
         super().__init__(G, batch_size)
 
         self.num_samples = num_samples
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -285,7 +289,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, n_size=self.num_samples
+                nodes=hns, n=1, n_size=self.num_samples, weighted=self.weighted
             )
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
@@ -582,14 +586,25 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         out_samples (list): The number of out-node samples per layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
         name, optional: Name of generator.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        in_samples,
+        out_samples,
+        seed=None,
+        name=None,
+        weighted=False,
+    ):
         super().__init__(G, batch_size)
 
         self.in_samples = in_samples
         self.out_samples = out_samples
         self._name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -631,7 +646,11 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         for hns in zip(*head_links):
 
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, in_size=self.in_samples, out_size=self.out_samples
+                nodes=hns,
+                n=1,
+                in_size=self.in_samples,
+                out_size=self.out_samples,
+                weighted=self.weighted,
             )
 
             # Reshape node samples to sensible format

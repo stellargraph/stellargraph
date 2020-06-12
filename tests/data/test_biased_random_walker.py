@@ -150,6 +150,14 @@ class TestBiasedWeightedRandomWalk(object):
             == 4
         )
 
+        # all zero-weight edges
+        g = weighted(0, 0, 0, 0)
+        biasedrw = BiasedRandomWalk(g)
+        walks = biasedrw.run(nodes=nodes, n=2, p=p, q=q, length=3, weighted=True)
+        assert len(walks) == 8
+        for walk in walks:
+            assert len(walk) == 1
+
         # negative edge
         g = weighted(1, -2, 3, 4)
 

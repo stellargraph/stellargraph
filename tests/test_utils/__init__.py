@@ -50,3 +50,23 @@ def model_save_load(tmpdir, sg_model):
             assert len(orig_weights) == len(new_weights)
             for orig, new in zip(orig_weights, new_weights):
                 np.testing.assert_array_equal(orig, new)
+
+
+def flaky_xfail_mark(exception, issue_numbers):
+    """
+    A mark for a test that occasionally fails with the given exception, associated with one or more
+    issues in issue_numbers.
+    """
+    if isinstance(issue_numbers, int):
+        issue_numbers = [issue_numbers]
+
+    if not issue_numbers:
+        raise ValueError(
+            "at least one issue must be specified when marking a test as flaky"
+        )
+
+    issues = " ".join(
+        f"<https://github.com/stellargraph/stellargraph/issues/{num}>"
+        for num in issue_numbers
+    )
+    return pytest.mark.xfail(raises=exception, reason=f"flaky: {issues}")

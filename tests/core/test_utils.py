@@ -23,6 +23,7 @@ import pytest
 import numpy as np
 
 from stellargraph.core.utils import *
+from ..test_utils import flaky_xfail_mark
 from ..test_utils.graphs import example_graph_random
 
 
@@ -183,6 +184,7 @@ def test_smart_array_concatenate_broadcast():
         _check_smart_concatenate([a0, c43])
 
 
+@flaky_xfail_mark(AssertionError, 1678)
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
@@ -198,6 +200,7 @@ def test_normalize_adj(example_graph):
     assert csr.get_shape() == Aadj.get_shape()
 
 
+@flaky_xfail_mark(AssertionError, 1160)
 def test_normalized_laplacian(example_graph):
     Aadj = example_graph.to_adjacency_matrix()
     laplacian = normalized_laplacian(Aadj).todense()
