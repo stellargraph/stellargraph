@@ -242,29 +242,80 @@ class RewriteLinks(docutils.transforms.Transform):
     # before NBSphinx's link processing
     default_priority = 300
 
+    RTD_PATH_RE = re.compile("^/(?P<lang>[^/]*)/(?P<version>[^/]*)/(?P<rest>.*)$")
 
-    def _rewrite_api_link(self, linktext, fragment):
+    def _rewrite_rtd_link(self, node, refuri, parsed):
+        """
+        Rewrite deep links to the Read the Docs documentation to point to the relevant page in this
+        build.
+
+        Having full URLs is good when viewing the docs without rendering, such as with `help(...)`
+        or `?...`, but internal links make for a more consistent experience (no jumping from
+        .../1.2/ or .../latest/ to .../stable/) as well as allowing checks for validity. The
+        rewriting done here gives the best of both worlds: full URLs without rendering, internal
+        links within Sphinx.
+        """
         env = self.document.settings.env
-        module_prefix = "module-"
-        if fragment.startswith(module_prefix):
-            reftype = "mod"
-            fragment = fragment[len(module_prefix):]
-        else:
-            _, last_path = fragment.rsplit(".", 1)
-            if last_path[0].islower():
-                reftype = "meth"
+        match = self.RTD_PATH_RE.match(parsed.path)
+        if not match:
+            return
+
+        lang = match["lang"]
+        version = match["version"]
+        rest = match["rest"]
+        fragment = parsed.fragment
+
+        # validate that the links all have the same basic structure:
+        if lang != "en" or version != "stable" or not rest.endswith(".html"):
+            self.document.reporter.warning(
+                f"Links to stellargraph.readthedocs.io should always be to the stable english form <https://stellargraph.readthedocs.io/en/stable/...> and have the path end with a .html file extension, found language {lang!r}, version {version!r} and path ending with {rest[-8:]!r} in <{refuri}>"
+            )
+            return
+
+        if rest == "api.html" and fragment:
+            # a link to a Python element in the API: infer which one from the fragment. Examples:
+            # - https://stellargraph.readthedocs.io/en/stable/api.html#module-stellargraph
+            # - https://stellargraph.readthedocs.io/en/stable/api.html#stellargraph.StellarGraph
+            # - https://stellargraph.readthedocs.io/en/stable/api.html#stellargraph.StellarGraph.to_networkx
+            new_domain = "py"
+
+            module_prefix = "module-"
+            if fragment.startswith(module_prefix):
+                new_type = "mod"
+                new_target = fragment[len(module_prefix) :]
             else:
-                reftype = "class"
+                new_type = "any"
+                new_target = fragment
+        else:
+            # a link to a file (e.g. a demo)
+            if fragment:
+                self.document.reporter.warning(
+                    f"Link <{refuri}> to stellargraph.readthedocs.io has a fragment {fragment!r} after #, which isn't yet supported for rewriting; remove the fragment, or search for this message in conf.py and extend it"
+                )
+                return
+
+            html_suffix = ".html"
+            new_domain = "std"
+            new_type = "doc"
+            new_target = "/" + rest[:-len(html_suffix)]
 
         xref = sphinx.addnodes.pending_xref(
-            reftype=reftype, reftarget=fragment,
-            refdomain='py',
-            refwarn=True, refdoc=env.docname)
+            refdomain=new_domain,
+            reftype=new_type,
+            reftarget=new_target,
+            refwarn=True,
+            refexplicit=True,
+            refdoc=env.docname,
+        )
+
+        linktext = node.astext()
         xref += docutils.nodes.Text(linktext, linktext)
-        return xref
+
+        node.replace_self(xref)
 
     def apply(self):
         env = self.document.settings.env
+
         for node in self.document.traverse(docutils.nodes.reference):
             refuri = node.get("refuri")
             parsed = urllib.parse.urlparse(refuri)
@@ -284,16 +335,7 @@ class RewriteLinks(docutils.transforms.Transform):
                 node["refuri"] = urllib.parse.urlunparse(new_components)
 
             elif parsed.netloc == "stellargraph.readthedocs.io":
-                # rewrite deep links to the Read the Docs documentation to
-                path_components = parsed.path.split("/", 3)
-                if len(path_components) == 4:
-                    empty, en, version, rest = path_components
-                    assert empty == ""
-                    assert en == "en"
-
-                    if rest == "api.html":
-                        node.replace_self(self._rewrite_api_link(node.astext(), parsed.fragment))
-
+                self._rewrite_rtd_link(node, refuri, parsed)
 
 
 def setup(app):
