@@ -51,6 +51,9 @@ def model_save_load(tmpdir, sg_model):
             for orig, new in zip(orig_weights, new_weights):
                 np.testing.assert_array_equal(orig, new)
 
+    # clear the tensorflow session to free memory
+    tf.keras.backend.clear_session()
+
 
 def flaky_xfail_mark(exception, issue_numbers):
     """
