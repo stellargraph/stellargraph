@@ -297,7 +297,7 @@ class RewriteLinks(docutils.transforms.Transform):
             html_suffix = ".html"
             new_domain = "std"
             new_type = "doc"
-            new_target = "/" + rest[:-len(html_suffix)]
+            new_target = "/" + rest[: -len(html_suffix)]
 
         xref = sphinx.addnodes.pending_xref(
             refdomain=new_domain,
