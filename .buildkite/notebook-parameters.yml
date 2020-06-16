@@ -2,7 +2,7 @@
 # configure the parameters replaced in jupyter notebooks when running on CI with papermill
 # common parameters used in several notebooks:
 epochs: 2
-batch_size: 5
+batch_size: 4
 # short random walks
 walk_length: 5
 context_window_size: 5
