@@ -1,35 +1,17 @@
 ![StellarGraph Machine Learning library logo](https://raw.githubusercontent.com/stellargraph/stellargraph/develop/stellar-graph-banner.png)
 
 <p align="center">
-  <a href="https://stellargraph.readthedocs.io/" alt="Docs">
-    <img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/>
-  </a>
-  <a href="https://community.stellargraph.io" alt="Discourse Forum">
-    <img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/>
-  </a>
-  <a href="https://pypi.org/project/stellargraph/" alt="PyPI">
-    <img src="https://img.shields.io/pypi/v/stellargraph.svg"/>
-  </a>
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license">
-    <img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/>
-  </a>
+  <a href="https://stellargraph.readthedocs.io/" alt="Docs"><img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/></a>
+  <a href="https://community.stellargraph.io" alt="Discourse Forum"><img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/></a>
+  <a href="https://pypi.org/project/stellargraph/" alt="PyPI"><img src="https://img.shields.io/pypi/v/stellargraph.svg"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license"><img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/></a>
 </p>
 <p align="center">
-  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome">
-    <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/>
-  </a>
-  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master">
-    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/>
-  </a>
-  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop">
-    <img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/>
-  </a>
-  <a href="https://codecov.io/gh/stellargraph/stellargraph">
-    <img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" />
-  </a>
-  <a href="https://pypi.org/project/stellargraph" alt="pypi downloads">
-    <img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph">
-  </a>
+  <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/></a>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master"><img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/></a>
+  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop"><img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/></a>
+  <a href="https://codecov.io/gh/stellargraph/stellargraph"><img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" /></a>
+  <a href="https://pypi.org/project/stellargraph" alt="pypi downloads"><img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph"></a>
 </p>
 
 
@@ -46,7 +28,7 @@
    * [Installation](#installation)
        * [Install StellarGraph using PyPI](#install-stellargraph-using-pypi)
        * [Install StellarGraph in Anaconda Python](#install-stellargraph-in-anaconda-python)
-       * [Install StellarGraph from Github source](#install-stellargraph-from-github-source)
+       * [Install StellarGraph from GitHub source](#install-stellargraph-from-github-source)
    * [Citing](#citing)
    * [References](#references)
 
@@ -78,15 +60,15 @@ StellarGraph is built on [TensorFlow 2](https://tensorflow.org/) and its [Keras 
 
 You can start working with the examples immediately in Google Colab or Binder by clicking the ![](https://colab.research.google.com/assets/colab-badge.svg) and ![](https://mybinder.org/badge_logo.svg) badges within each Jupyter notebook.
 
-Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repo, or by using the `curl` command below:
+Alternatively, you can run download a local copy of the demos and run them using `jupyter`. The demos can be downloaded by cloning the `master` branch of this repository, or by using the `curl` command below:
 ```bash
 curl -L https://github.com/stellargraph/stellargraph/archive/master.zip | tar -xz --strip=1 stellargraph-master/demos
 ```
 
 The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
 
-- Using pip: `pip install stellargraph[demos]`
-- Using conda: `conda install -c stellargraph stellargraph`
+- Using `pip`: `pip install stellargraph[demos]`
+- Using `conda`: `conda install -c stellargraph stellargraph`
 
 (See [Installation](#installation) section for more details and more options.)
 
@@ -181,7 +163,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Cluster Graph Convolutional Network (Cluster-GCN) [10] | An extension of the GCN algorithm supporting representation learning and node classification for homogeneous graphs. Cluster-GCN scales to larger graphs and can be used to train deeper GCN models using Stochastic Gradient Descent. |
 | Simplified Graph Convolutional network (SGC) [7] | The SGC network algorithm supports representation learning and node classification for homogeneous graphs. It is an extension of the GCN algorithm that smooths the graph to bring in more distant neighbours of nodes without using multiple layers. |
 | (Approximate) Personalized Propagation of Neural Predictions (PPNP/APPNP) [9] | The (A)PPNP algorithm supports fast and scalable representation learning and node classification for attributed homogeneous graphs. In a semi-supervised setting, first a multilayer neural network is trained using the node attributes as input. The predictions from the latter network are then diffused across the graph using a method based on Personalized PageRank. |
-| Node2Vec [2] | The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec algorithm from [Gensim](https://radimrehurek.com/gensim/). Learned node representations can be used in downstream machine learning models implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/), [Tensorflow](https://www.tensorflow.org/) or any other Python machine learning library. |
+| Node2Vec [2] | The Node2Vec and Deepwalk algorithms perform unsupervised representation learning for homogeneous networks, taking into account network structure while ignoring node attributes. The node2vec algorithm is implemented by combining StellarGraph's random walk generator with the word2vec algorithm from [Gensim](https://radimrehurek.com/gensim/). Learned node representations can be used in downstream machine learning models implemented using [Scikit-learn](https://scikit-learn.org/stable/), [Keras](https://keras.io/), [TensorFlow](https://www.tensorflow.org/) or any other Python machine learning library. |
 | Metapath2Vec [3] | The metapath2vec algorithm performs unsupervised, metapath-guided representation learning for heterogeneous networks, taking into account network structure while ignoring node attributes. The implementation combines StellarGraph's metapath-guided random walk generator and [Gensim](https://radimrehurek.com/gensim/) word2vec algorithm. As with node2vec, the learned node representations (node embeddings) can be used in downstream machine learning models to solve tasks such as node classification, link prediction, etc, for heterogeneous networks. |
 | Relational Graph Convolutional Network [11] | The RGCN algorithm performs semi-supervised learning for node representation and node classification on knowledge graphs. RGCN extends GCN to directed graphs with multiple edge types and works with both sparse and dense adjacency matrices.|
 | ComplEx[12] | The ComplEx algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
@@ -192,7 +174,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | Continuous-Time Dynamic Network Embeddings (CTDNE) [16] | Supports time-respecting random walks which can be used in a similar way as in Node2Vec for unsupervised representation learning. |
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
-| TGCN [19] | The GraphConvolutionLSTM model in StellarGraph follows the Temporal Graph Convolutional Network architecture proposed in the TGCN paper with a few enhancements in the layers architecture. |
+| TGCN [19] | The GCN_LSTM model in StellarGraph follows the Temporal Graph Convolutional Network architecture proposed in the TGCN paper with a few enhancements in the layers architecture. |
 
 ## Installation
 
@@ -225,7 +207,7 @@ conda install -c stellargraph stellargraph
 ```
 
 
-#### Install StellarGraph from Github source:
+#### Install StellarGraph from GitHub source:
 First, clone the StellarGraph repository using `git`:
 ```
 git clone https://github.com/stellargraph/stellargraph.git
@@ -270,7 +252,7 @@ ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD)
 
 4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, Data Mining and Knowledge Discovery, 2019. ([link](https://link.springer.com/article/10.1007/s10618-019-00650-2))
 
-5. Graph Attention Networks. P. Velickovic et al.
+5. Graph Attention Networks. P. Veličković et al.
 International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
 
 6. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
@@ -292,9 +274,9 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 
 13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 2018, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf))
 
-14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arxiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
+14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arXiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
 
-15. Deep Graph Infomax. P. Velickovic, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arxiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
+15. Deep Graph Infomax. P. Veličković, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arXiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
 
 16. Continuous-Time Dynamic Network Embeddings. Giang Hoang Nguyen, John Boaz Lee, Ryan A. Rossi, Nesreen K. Ahmed, Eunyee Koh, and Sungchul Kim. Proceedings of the 3rd International Workshop on Learning Representations for Big Networks (WWW BigNet) 2018. ([link](https://dl.acm.org/doi/10.1145/3184558.3191526))
 

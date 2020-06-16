@@ -221,13 +221,17 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(
+        self, G, batch_size, num_samples, seed=None, name=None, weighted=False
+    ):
         super().__init__(G, batch_size)
 
         self.num_samples = num_samples
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -261,7 +265,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of `num_samples`
             for that layer.
         """
         node_type = self.head_node_types[0]
@@ -285,7 +289,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, n_size=self.num_samples
+                nodes=hns, n=1, n_size=self.num_samples, weighted=self.weighted
             )
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
@@ -321,7 +325,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    The generator should be given the (src,dst) node types usng
+    The generator should be given the ``(src,dst)`` node types using
 
     * It's possible to do link prediction on a graph where that link type is completely removed from the graph
       (e.g., "same_as" links in ER)
@@ -419,7 +423,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         Returns:
             A list of the same length as `num_samples` of collected features from
             the sampled nodes of shape: ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of `num_samples`
             for that layer.
         """
         nodes_by_type = []
@@ -550,7 +554,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
             head_links: An iterable of edges to perform sampling for.
 
         Returns:
-            A list of feaure arrays, with each element being the ids of
+            A list of feature arrays, with each element being the ids of
             the sampled target and context node.
         """
 
@@ -582,14 +586,25 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         out_samples (list): The number of out-node samples per layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
         name, optional: Name of generator.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        in_samples,
+        out_samples,
+        seed=None,
+        name=None,
+        weighted=False,
+    ):
         super().__init__(G, batch_size)
 
         self.in_samples = in_samples
         self.out_samples = out_samples
         self._name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -622,7 +637,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the total number (cumulative product)
+            where ``num_sampled_at_layer`` is the total number (cumulative product)
             of nodes sampled at the given number of hops from each head node,
             given the sequence of in/out directions.
         """
@@ -631,7 +646,11 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         for hns in zip(*head_links):
 
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, in_size=self.in_samples, out_size=self.out_samples
+                nodes=hns,
+                n=1,
+                in_size=self.in_samples,
+                out_size=self.out_samples,
+                weighted=self.weighted,
             )
 
             # Reshape node samples to sensible format

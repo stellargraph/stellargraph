@@ -1,11 +1,13 @@
 Unsupervised representation learning
 ====================================
 
-`StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing unsupervised node and edge representation learning on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
+`StellarGraph <https://github.com/stellargraph/stellargraph>`_ provides numerous algorithms for doing unsupervised node, edge and graph representation learning on graphs. This folder contains demos of all of them to explain how they work and how to use them as part of a TensorFlow Keras data science workflow.
 
 A node representation learning task computes a representation or embedding vector for each node in a graph. These vectors capture latent/hidden information about the nodes and edges, and can be used for (semi-)supervised downstream tasks like :doc:`node classification <../node-classification/index>` and :doc:`link prediction <../link-prediction/index>`, or unsupervised ones like community detection or similarity searches. Representation learning is typically an unsupervised task, where the model is trained on data that does not have any ground-truth labels.
 
 Node representations can also be computed from (semi-)supervised models, using the output of a hidden layer as the embedding vector for nodes or edges. StellarGraph provides some :doc:`demonstrations of node classification <../node-classification/index>` and :doc:`link prediction <../link-prediction/index>`, some of which include computing and visualising node or edge embeddings.
+
+Similarly, a graph representation learning task computes a representation or embedding vector for a whole graph. These vectors capture latent/hidden information about the whole graph, and can be used for (semi-)supervised downstream tasks like :doc:`graph classification <../graph-classification/index>`, or the same unsupervised ones as above.
 
 Find algorithms and demos for a graph
 -------------------------------------
@@ -21,7 +23,7 @@ This table lists all representation learning demos, including the algorithms tra
      - node features
      - downstream tasks shown
    * - :doc:`Deep Graph Infomax <deep-graph-infomax-embeddings>`
-     - GCN, GAT, PPNP, APPNP, GraphSAGE, HinSAGE
+     - GCN, GAT, PPNP, APPNP, GraphSAGE, HinSAGE, RGCN
      - ``DeepGraphInfomax`` (mutual information)
      - yes
      - visualisation, node classification
@@ -55,6 +57,11 @@ This table lists all representation learning demos, including the algorithms tra
      - natively unsupervised
      -
      - visualisation, node classification
+   * - :doc:`Unsupervised Graph Classification <gcn-unsupervised-graph-embeddings>`
+     - GCN, Graph classification
+     - Pairs of graphs, ground-truth distance
+     - yes
+     - visualisation, graph classification
 
 
 See :doc:`the root README <../../README>` or each algorithm's documentation for the relevant citation(s). See :doc:`the demo index <../index>` for more tasks, and a summary of each algorithm.

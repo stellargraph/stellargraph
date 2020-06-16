@@ -25,6 +25,7 @@ import random
 import datetime
 from datetime import datetime, timedelta
 
+from ..test_utils import flaky_xfail_mark
 from ..test_utils.graphs import example_graph_random
 
 
@@ -283,6 +284,7 @@ class TestEdgeSplitterHomogeneous(object):
 
 
 class TestEdgeSplitterHeterogeneous(object):
+    @flaky_xfail_mark(ValueError, 585)
     def test_split_data_by_edge_type_and_attribute(self, heterogeneous_graph):
         g, es_obj = heterogeneous_graph
         # test global method for negative edge sampling
@@ -444,6 +446,7 @@ class TestEdgeSplitterHeterogeneous(object):
                 edge_attribute_threshold="01/01/2008",
             )
 
+    @flaky_xfail_mark(ValueError, 585)
     def test_split_data_by_edge_type(self, heterogeneous_graph):
         g, es_obj = heterogeneous_graph
         # test global method for negative edge sampling

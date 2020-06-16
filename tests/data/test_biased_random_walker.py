@@ -106,7 +106,7 @@ class TestBiasedWeightedRandomWalk(object):
         run_2 = rw_no_params.run(
             nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
         )
-        assert np.array_equal(run_1, run_2)
+        np.testing.assert_array_equal(run_1, run_2)
 
     def test_identity_unweighted_weighted_1_walks(self):
 
@@ -126,7 +126,7 @@ class TestBiasedWeightedRandomWalk(object):
         run_2 = biasedrw.run(
             nodes=nodes, n=n, p=p, q=q, length=length, seed=seed, weighted=True
         )
-        assert np.array_equal(run_1, run_2)
+        np.testing.assert_array_equal(run_1, run_2)
 
     def test_weighted_walks(self):
 
@@ -149,6 +149,14 @@ class TestBiasedWeightedRandomWalk(object):
             )
             == 4
         )
+
+        # all zero-weight edges
+        g = weighted(0, 0, 0, 0)
+        biasedrw = BiasedRandomWalk(g)
+        walks = biasedrw.run(nodes=nodes, n=2, p=p, q=q, length=3, weighted=True)
+        assert len(walks) == 8
+        for walk in walks:
+            assert len(walk) == 1
 
         # negative edge
         g = weighted(1, -2, 3, 4)

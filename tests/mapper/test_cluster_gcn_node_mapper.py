@@ -229,3 +229,10 @@ def test_benchmark_ClusterGCN_generator(benchmark, q):
 
     # iterate over all the batches
     benchmark(lambda: list(seq))
+
+
+def test_ClusterNodeSequence_cluster_without_targets():
+    G = create_stellargraph()
+    generator = ClusterNodeGenerator(G, clusters=2, q=1)
+    seq = generator.flow(node_ids=["a"], targets=[0])
+    _ = list(seq)

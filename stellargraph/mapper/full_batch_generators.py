@@ -205,8 +205,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
     argument.
 
-    For these algorithms the adjacency matrix requires pre-processing and the
-    'method' option should be specified with the correct pre-processing for
+    For these algorithms the adjacency matrix requires preprocessing and the
+    'method' option should be specified with the correct preprocessing for
     each algorithm. The options are as follows:
 
     *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
@@ -240,12 +240,12 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method. This should be positive
+        method (str): Method to preprocess adjacency matrix. One of ``gcn`` (default),
+            ``sgc``, ``self_loops``, or ``none``.
+        k (None or int): This is the smoothing order for the ``sgc`` method. This should be positive
             integer.
         transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
+            the function takes ``(features, Aadj)`` as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
         teleport_probability (float): teleport probability between 0.0 and 1.0.
@@ -285,7 +285,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     e.g., GCN, GAT, SGC.
     The supplied graph G should be a StellarGraph object with node features.
 
-    Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
+    Use the :meth:`flow` method supplying the links as a list of ``(src, dst)`` tuples
     of node IDs and (optionally) targets.
 
     This generator will supply the features array and the adjacency matrix to a
@@ -293,8 +293,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
     argument.
 
-    For these algorithms the adjacency matrix requires pre-processing and the
-    'method' option should be specified with the correct pre-processing for
+    For these algorithms the adjacency matrix requires preprocessing and the
+    'method' option should be specified with the correct preprocessing for
     each algorithm. The options are as follows:
 
     *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
@@ -328,12 +328,12 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method. This should be positive
+        method (str): Method to preprocess adjacency matrix. One of ``gcn`` (default),
+            ``sgc``, ``self_loops``, or ``none``.
+        k (None or int): This is the smoothing order for the ``sgc`` method. This should be positive
             integer.
         transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
+            the function takes ``(features, Aadj)`` as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
         teleport_probability (float): teleport probability between 0.0 and 1.0. "probability"
@@ -377,7 +377,7 @@ class RelationalFullBatchNodeGenerator(Generator):
     adjacency matrices (the default) or a list of dense adjacency matrices, with the `sparse`
     argument.
 
-    For these algorithms the adjacency matrices require pre-processing and the default option is to
+    For these algorithms the adjacency matrices require preprocessing and the default option is to
     normalize each row of the adjacency matrix so that it sums to 1.
     For customization a transformation (callable) can be passed that
     operates on the node features and adjacency matrix.
@@ -395,7 +395,7 @@ class RelationalFullBatchNodeGenerator(Generator):
         G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
+            the function takes ``(features, Aadj)`` as arguments.
         sparse (bool): If True (default) a list of sparse adjacency matrices is used,
             if False a list of dense adjacency matrices is used.
         weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
@@ -482,3 +482,6 @@ class RelationalFullBatchNodeGenerator(Generator):
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
+
+    def default_corrupt_input_index_groups(self):
+        return [[0]]

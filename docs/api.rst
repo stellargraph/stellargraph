@@ -22,7 +22,7 @@ Generators
 -----------
 
 .. automodule:: stellargraph.mapper
-  :members: Generator, FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, Node2VecNodeGenerator, Node2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, PaddedGraphGenerator, KGTripleGenerator
+  :members: Generator, FullBatchNodeGenerator, FullBatchLinkGenerator, GraphSAGENodeGenerator, DirectedGraphSAGENodeGenerator, DirectedGraphSAGELinkGenerator, ClusterNodeGenerator, GraphSAGELinkGenerator, HinSAGENodeGenerator, HinSAGELinkGenerator, Attri2VecNodeGenerator, Attri2VecLinkGenerator, Node2VecNodeGenerator, Node2VecLinkGenerator, RelationalFullBatchNodeGenerator, AdjacencyPowerGenerator, GraphWaveGenerator, CorruptedGenerator, PaddedGraphGenerator, KGTripleGenerator, SlidingFeaturesNodeGenerator
 
 
 Layers and models
@@ -160,6 +160,12 @@ Knowledge Graph models
 .. autoclass:: RotatEScore
   :members:
 
+.. autoclass:: RotE
+  :members:
+
+.. autoclass:: RotH
+  :members:
+
 GCN Supervised Graph Classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -178,7 +184,7 @@ Deep Graph Convolutional Neural Network
 Graph Convolution LSTM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. autoclass:: GraphConvolutionLSTM
+.. autoclass:: GCN_LSTM
   :members:
 
 .. autoclass:: FixedAdjacencyGraphConvolution
@@ -217,11 +223,22 @@ Calibration
 .. automodule:: stellargraph.calibration
   :members: expected_calibration_error, plot_reliability_diagram, TemperatureCalibration, IsotonicCalibration
 
+
+Neo4j Connector
+----------------
+
+.. automodule:: stellargraph.connector.neo4j
+  :members: Neo4jStellarGraph, Neo4jStellarDiGraph, Neo4jGraphSAGENodeGenerator, Neo4jDirectedGraphSAGENodeGenerator, Neo4jSampledBreadthFirstWalk, Neo4jDirectedBreadthFirstNeighbors
+
+
 Utilities
 ------------------------
 
 .. automodule:: stellargraph.utils
   :members: plot_history
+
+.. automodule:: stellargraph.utils.hyperbolic
+  :members:
 
 
 Datasets

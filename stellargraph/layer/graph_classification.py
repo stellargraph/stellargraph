@@ -29,11 +29,11 @@ class GCNSupervisedGraphClassification:
     that implement a supervised graph classification network using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
-    The model minimally requires specification of the GCN layer sizes as a list of ints
+    The model minimally requires specification of the GCN layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using the :class:`PaddedGraphGenerator` class.
 
     Examples:
@@ -197,9 +197,9 @@ class GCNSupervisedGraphClassification:
         Builds a Graph Classification model.
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two input tensors for the
-            Graph Classification model (containing node features and normalized adjacency matrix),
-            and `x_out` is a tensor for the Graph Classification model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of two input tensors for the
+                Graph Classification model (containing node features and normalized adjacency matrix),
+                and ``x_out`` is a tensor for the Graph Classification model output.
         """
         x_t = Input(shape=(None, self.generator.node_features_size))
         mask = Input(shape=(None,), dtype=tf.bool)
@@ -222,11 +222,11 @@ class DeepGraphCNN(GCNSupervisedGraphClassification):
     The DGCNN model was introduced in the paper, "An End-to-End Deep Learning Architecture for Graph Classification" by
     M. Zhang, Z. Cui, M. Neumann, and Y. Chen, AAAI 2018, https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf
 
-    The model minimally requires specification of the GCN layer sizes as a list of ints corresponding to the feature
+    The model minimally requires specification of the GCN layer sizes as a list of int corresponding to the feature
     dimensions for each hidden layer, activation functions for each hidden layer, a generator object, and the number of
     output nodes for the class:`SortPooling` layer.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix should be supplied using the
+    To use this class as a Keras model, the features and preprocessed adjacency matrix should be supplied using the
     :class:`PaddedGraphGenerator` class.
 
     Examples:

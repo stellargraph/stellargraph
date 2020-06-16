@@ -39,4 +39,4 @@ def test_graph_log_likelihood():
 
     expected_loss = expected_loss.sum()
 
-    assert np.allclose(actual_loss, expected_loss, rtol=0.01)
+    np.testing.assert_allclose(actual_loss, expected_loss, rtol=0.01)

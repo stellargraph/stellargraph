@@ -41,6 +41,7 @@ from ..test_utils.graphs import (
     example_graph_random,
     example_hin_1,
     repeated_features,
+    weighted_tree,
 )
 from .. import test_utils
 
@@ -409,6 +410,13 @@ class Test_GraphSAGELinkGenerator:
         with pytest.raises(IndexError):
             nf, nl = mapper[8]
 
+    def test_weighted(self):
+        g, checker = weighted_tree()
+
+        gen = GraphSAGELinkGenerator(g, 7, [10, 5], weighted=True)
+        samples = gen.flow([(0, 0)] * 10)
+        checker(node_id for array in samples[0][0] for node_id in array.ravel())
+
 
 class Test_HinSAGELinkGenerator(object):
     """
@@ -483,7 +491,7 @@ class Test_HinSAGELinkGenerator(object):
                 head_node_types=["B", "B"],
             ).flow(links, link_labels)
 
-    def test_HinSAGELinkGenerator_homgeneous_inference(self):
+    def test_HinSAGELinkGenerator_homogeneous_inference(self):
         feature_size = 4
         edge_types = 3
         batch_size = 2
@@ -1231,3 +1239,10 @@ class Test_DirectedGraphSAGELinkGenerator:
                     == nf[2 * ii + 1].shape
                     == (min(self.batch_size, mapper.data_size), dim, self.n_feat)
                 )
+
+    def test_weighted(self):
+        g, checker = weighted_tree(is_directed=True)
+
+        gen = DirectedGraphSAGELinkGenerator(g, 7, [5, 3], [5, 3], weighted=True)
+        samples = gen.flow([(0, 0)] * 10)
+        checker(node_id for array in samples[0][0] for node_id in array.ravel())

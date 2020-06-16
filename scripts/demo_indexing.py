@@ -392,6 +392,7 @@ ALGORITHMS = [
         weighted=True,
         nc=T(link="node-classification/rgcn-node-classification"),
         lp=True,
+        rl=rl_dgi(),
     ),
     Algorithm(
         T("T-GCN", details="Temporal GCN (T-GCN), implemented as GCN-LSTM"),
@@ -449,6 +450,7 @@ ALGORITHMS = [
         "GraphSAGE",
         heterogeneous="see HinSAGE",
         directed=T(link="node-classification/directed-graphsage-node-classification"),
+        weighted=True,
         features=True,
         nc=T(link="node-classification/graphsage-node-classification"),
         lp=T(link="link-prediction/graphsage-link-prediction"),
@@ -470,20 +472,30 @@ ALGORITHMS = [
     Algorithm(
         "Node2Vec",
         weighted=T(link="node-classification/node2vec-weighted-node-classification"),
-        nc=via_rl(link="node-classification/node2vec-node-classification"),
+        nc=[
+            T(text="via", details="via embedding vectors",),
+            T(
+                text="keras",
+                link="node-classification/keras-node2vec-node-classification",
+                details="keras layer",
+            ),
+            T(text="gensim", link="node-classification/node2vec-node-classification",),
+        ],
         lp=via_rl(link="link-prediction/node2vec-link-prediction"),
-        rl=T(link="embeddings/node2vec-embeddings"),
-    ),
-    Algorithm(
-        "Keras-Node2Vec",
-        nc=via_rl(link="node-classification/keras-node2vec-node-classification"),
-        rl=T(link="embeddings/keras-node2vec-embeddings"),
+        rl=[
+            T(
+                text="keras",
+                link="embeddings/keras-node2vec-embeddings",
+                details="keras layer",
+            ),
+            T(text="gensim", link="embeddings/node2vec-embeddings"),
+        ],
     ),
     Algorithm(
         "Metapath2Vec",
         heterogeneous=True,
         nc=via_rl(),
-        lp=via_rl(),
+        lp=via_rl(link="link-prediction/metapath2vec-link-prediction"),
         rl=T(link="embeddings/metapath2vec-embeddings"),
     ),
     Algorithm(

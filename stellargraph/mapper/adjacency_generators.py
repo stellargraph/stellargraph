@@ -25,13 +25,13 @@ from .base import Generator
 
 class AdjacencyPowerGenerator(Generator):
     """
-    A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first `num_powers`
+    A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first ``num_powers``
     of the adjacency matrix row by row.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         num_powers (int): the number of adjacency powers to calculate. Defaults
-            to `10` as this value was found to perform well by the authors of the paper.
+            to 10 as this value was found to perform well by the authors of the paper.
         weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
             graph as unweighted.
 
@@ -70,7 +70,7 @@ class AdjacencyPowerGenerator(Generator):
 
         Args:
             batch_size (int): the number of rows of the adjacency powers to include in each batch.
-            num_parallel_calls (int): the number of threads to use for pre-processing of batches.
+            num_parallel_calls (int): the number of threads to use for preprocessing of batches.
 
         Returns:
             A `tensorflow.data.Dataset` object for training node embeddings from powers of the adjacency matrix.

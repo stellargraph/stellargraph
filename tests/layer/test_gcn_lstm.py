@@ -14,15 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import numpy as np
+import pandas as pd
+import pytest
 from tensorflow.keras import Model
-from stellargraph.layer import GraphConvolutionLSTM
+from stellargraph import StellarGraph, IndexedArray
+from stellargraph.layer import GCN_LSTM
 from stellargraph.layer import FixedAdjacencyGraphConvolution
+from stellargraph.mapper import SlidingFeaturesNodeGenerator
+from .. import test_utils
 
 
 def get_timeseries_graph_data():
-    featuresX = np.random.rand(10, 4, 5)
+    featuresX = np.random.rand(10, 5, 4)
     featuresY = np.random.rand(10, 5)
     adj = np.random.randint(0, 5, size=(5, 5))
     return featuresX, featuresY, adj
@@ -49,7 +53,7 @@ def test_GraphConvolution_config():
 def test_gcn_lstm_model_parameters():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[2, 2],
@@ -67,7 +71,7 @@ def test_gcn_lstm_model_parameters():
 def test_gcn_lstm_activations():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[10, 10, 10, 10, 10],
@@ -77,7 +81,7 @@ def test_gcn_lstm_activations():
     assert gcn_lstm_model.gc_activations == ["relu", "relu", "relu", "relu", "relu"]
     assert gcn_lstm_model.lstm_activations == ["tanh", "tanh", "tanh", "tanh"]
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[10],
@@ -91,7 +95,7 @@ def test_gcn_lstm_activations():
 def test_lstm_return_sequences():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[16, 16, 16],
@@ -99,17 +103,15 @@ def test_lstm_return_sequences():
         lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
-    n_layers = len(gcn_lstm_model._layers)
-    n_gc_layers = len(gcn_lstm_model.gc_activations)
-    for i in range(n_gc_layers, n_layers - 3):
-        assert gcn_lstm_model._layers[i].return_sequences == True
-    assert gcn_lstm_model._layers[n_layers - 3].return_sequences == False
+    for layer in gcn_lstm_model._lstm_layers[:-1]:
+        assert layer.return_sequences == True
+    assert gcn_lstm_model._lstm_layers[-1].return_sequences == False
 
 
 def test_gcn_lstm_layers():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
+    gcn_lstm_model = GCN_LSTM(
         seq_len=fx.shape[-2],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
@@ -117,18 +119,16 @@ def test_gcn_lstm_layers():
         lstm_layer_sizes=[8, 16, 32],
         lstm_activations=["tanh"],
     )
-    # check number of layers should be gc + lstm + 2 (dense and dropout)
-    assert (
-        len(gcn_lstm_model._layers)
-        == len(gcn_lstm_model.gc_layer_sizes) + len(gcn_lstm_model.lstm_layer_sizes) + 2
-    )
+    # check number of layers for gc and lstm
+    assert len(gcn_lstm_model._gc_layers) == len(gcn_lstm_model.gc_layer_sizes)
+    assert len(gcn_lstm_model._lstm_layers) == len(gcn_lstm_model.lstm_layer_sizes)
 
 
 def test_gcn_lstm_model_input_output():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
-        seq_len=fx.shape[-2],
+    gcn_lstm_model = GCN_LSTM(
+        seq_len=fx.shape[-1],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
         gc_activations=["relu", "relu", "relu"],
@@ -138,16 +138,16 @@ def test_gcn_lstm_model_input_output():
 
     # check model input and output tensors
     x_input, x_output = gcn_lstm_model.in_out_tensors()
-    assert x_input.shape[1] == fx.shape[-2]
-    assert x_input.shape[2] == fx.shape[-1]
-    assert x_output.shape[1] == fx.shape[-1]
+    assert x_input.shape[1] == fx.shape[1]
+    assert x_input.shape[2] == fx.shape[2]
+    assert x_output.shape[1] == fx.shape[-2]
 
 
 def test_gcn_lstm_model():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
-        seq_len=fx.shape[-2],
+    gcn_lstm_model = GCN_LSTM(
+        seq_len=fx.shape[-1],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
         gc_activations=["relu", "relu", "relu"],
@@ -170,8 +170,8 @@ def test_gcn_lstm_model():
 def test_gcn_lstm_model_prediction():
     fx, fy, a = get_timeseries_graph_data()
 
-    gcn_lstm_model = GraphConvolutionLSTM(
-        seq_len=fx.shape[-2],
+    gcn_lstm_model = GCN_LSTM(
+        seq_len=fx.shape[-1],
         adj=a,
         gc_layer_sizes=[8, 8, 16],
         gc_activations=["relu", "relu", "relu"],
@@ -182,8 +182,43 @@ def test_gcn_lstm_model_prediction():
     x_input, x_output = gcn_lstm_model.in_out_tensors()
     model = Model(inputs=x_input, outputs=x_output)
 
-    test_sample = np.random.rand(1, 4, 5)
+    test_sample = np.random.rand(1, 5, 4)
     pred = model.predict(test_sample)
 
     # check 1 prediction for each node
     assert pred.shape == (1, 5)
+
+
+@pytest.fixture(params=["univariate", "multivariate"])
+def arange_graph(request):
+    shape = (3, 7, 11) if request.param == "multivariate" else (3, 7)
+    total_elems = np.product(shape)
+    nodes = IndexedArray(
+        np.arange(total_elems).reshape(shape) / total_elems, index=["a", "b", "c"]
+    )
+    edges = pd.DataFrame({"source": ["a", "b"], "target": ["b", "c"]})
+    return StellarGraph(nodes, edges)
+
+
+def test_gcn_lstm_generator(arange_graph):
+    gen = SlidingFeaturesNodeGenerator(arange_graph, 2, batch_size=3)
+    gcn_lstm = GCN_LSTM(None, None, [2], [4], generator=gen)
+
+    model = Model(*gcn_lstm.in_out_tensors())
+
+    model.compile("adam", loss="mse")
+
+    history = model.fit(gen.flow(slice(0, 5), target_distance=1))
+
+    predictions = model.predict(gen.flow(slice(5, 7)))
+
+    model2 = Model(*gcn_lstm.in_out_tensors())
+    predictions2 = model2.predict(gen.flow(slice(5, 7)))
+    np.testing.assert_array_equal(predictions, predictions2)
+
+
+@pytest.mark.xfail(reason="FIXME #1681")
+def test_gcn_lstm_save_load(tmpdir, arange_graph):
+    gen = SlidingFeaturesNodeGenerator(arange_graph, 2, batch_size=3)
+    gcn_lstm = GCN_LSTM(None, None, [2], [4], generator=gen)
+    test_utils.model_save_load(tmpdir, gcn_lstm)

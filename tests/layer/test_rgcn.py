@@ -30,6 +30,7 @@ import pandas as pd
 from ..test_utils.graphs import (
     relational_create_graph_features as create_graph_features,
 )
+from .. import test_utils
 
 
 def test_RelationalGraphConvolution_config():
@@ -370,3 +371,13 @@ def test_kernel_and_bias_defaults():
             assert layer.bias_regularizer is None
             assert layer.kernel_constraint is None
             assert layer.bias_constraint is None
+
+
+@pytest.mark.xfail(reason="FIXME #1252")
+@pytest.mark.parametrize("num_bases", [0, 10])
+@pytest.mark.parametrize("sparse", [False, True])
+def test_RGCN_save_load(tmpdir, num_bases, sparse):
+    graph, _ = create_graph_features()
+    generator = RelationalFullBatchNodeGenerator(graph, sparse=sparse)
+    rgcn = RGCN([2, 2], generator, num_bases=num_bases)
+    test_utils.model_save_load(tmpdir, rgcn)

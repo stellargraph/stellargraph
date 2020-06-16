@@ -749,7 +749,7 @@ class FB15k(
         "freebase_mtr100_mte100-valid.txt",
     ],
     description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
-    "extracted from Freebase (http://www.freebase.com). There are 14,951 mids and 1,345 relation types among them. "
+    "extracted from Freebase (http://www.freebase.com). There are 14,951 nodes and 1,345 relation types among them. "
     "The training set contains 483142 triplets, the validation set 50000 and the test set 59071. "
     "Antoine Bordes, Nicolas Usunier, Alberto Garcia-Durán, Jason Weston and Oksana Yakhnenko “Translating Embeddings for Modeling Multi-relational Data” (2013).\n\n"
     "Note: this dataset contains many inverse relations, and so should only be used to compare against published results. Prefer FB15k_237. See: "
@@ -779,7 +779,7 @@ class FB15k_237(
     url_archive_format="zip",
     expected_files=["train.txt", "test.txt", "valid.txt"],
     description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
-    "extracted from Freebase (http://www.freebase.com). There are 14541 mids and 237 relation types among them. "
+    "extracted from Freebase (http://www.freebase.com). There are 14541 nodes and 237 relation types among them. "
     "The training set contains 272115 triplets, the validation set 17535 and the test set 20466."
     "It is a reduced version of FB15k where inverse relations have been removed."
     "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015).",
@@ -865,7 +865,7 @@ class METR_LA(
         self.download()
         los_adj = pd.read_csv(self._resolve_path(self.expected_files[1]), header=None)
         adj = np.mat(los_adj)
-        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0]))
+        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0])).transpose()
         return los_tf, adj
 
     def train_test_split(self, data, train_portion):

@@ -19,7 +19,7 @@ This table lists all representation learning demos, including the algorithms tra
      - algorithm(s)
      - task
    * - :doc:`Graph Convolution + LSTM <gcn-lstm-time-series>`
-     - GraphConvolutionLSTM (T-GCN)
+     - GCN_LSTM (T-GCN)
      - traffic prediction
 
 See :doc:`the root README <../../README>` or each algorithm's documentation for the relevant citation(s). See :doc:`the demo index <../index>` for more tasks, and a summary of each algorithm.

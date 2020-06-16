@@ -48,8 +48,8 @@ from ..mapper import (
 
 from .misc import deprecated_model_function
 from ..connector.neo4j.mapper import (
-    Neo4JGraphSAGENodeGenerator,
-    Neo4JDirectedGraphSAGENodeGenerator,
+    Neo4jGraphSAGENodeGenerator,
+    Neo4jDirectedGraphSAGENodeGenerator,
 )
 
 
@@ -279,7 +279,7 @@ class GraphSAGEAggregator(Layer):
         Assumes that the layer will be built to match that input shape provided.
 
         Args:
-            input_shape (tuple of ints)
+            input_shape (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -297,7 +297,7 @@ class GraphSAGEAggregator(Layer):
             group_idx (int, optional): Group index.
 
         Returns:
-            [tf.Tensor]: A tensor aggregation of the input nodes features.
+            :class:`tensorflow.Tensor`: A tensor aggregation of the input nodes features.
         """
         raise NotImplementedError(
             "The GraphSAGEAggregator base class should not be directly instantiated"
@@ -325,7 +325,7 @@ class MeanAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            tf.Tensor: A tensor aggregation of the input nodes features.
+            :class:`tensorflow.Tensor`: A tensor aggregation of the input nodes features.
         """
         # The first group is assumed to be the self-tensor and we do not aggregate over it
         if group_idx == 0:
@@ -413,7 +413,7 @@ class MaxPoolingAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            tf.Tensor: A tensor aggregation of the input nodes features.
+            :class:`tensorflow.Tensor`: A tensor aggregation of the input nodes features.
         """
         if group_idx == 0:
             # Do not aggregate features for head nodes
@@ -510,7 +510,7 @@ class MeanPoolingAggregator(GraphSAGEAggregator):
             group_idx (int, optional): Group index.
 
         Returns:
-            [tf.Tensor]: A tensor aggregation of the input nodes features.
+            :class:`tensorflow.Tensor`: A tensor aggregation of the input nodes features.
         """
         if group_idx == 0:
             # Do not aggregate features for head nodes
@@ -612,7 +612,7 @@ class AttentionalAggregator(GraphSAGEAggregator):
             * self.weight_sizes: the size of the output from this group.
 
         The AttentionalAggregator is implemented to not use the first (head node) group. This makes
-        the implmentation different from other aggregators.
+        the implementation different from other aggregators.
 
         Args:
             input_shape (list of list of int): Shape of input tensors for self
@@ -728,7 +728,7 @@ class GraphSAGE:
     Implementation of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
     see: http://snap.stanford.edu/graphsage/
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
     Different neighbour node aggregators can also be specified with the ``aggregator``
@@ -769,7 +769,7 @@ class GraphSAGE:
         dropout (float): The dropout supplied to each layer; defaults to no dropout.
         normalize (str or None): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu', 'linear'].
+            defaults to ``['relu', ..., 'relu', 'linear']``.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
         kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
@@ -891,7 +891,7 @@ class GraphSAGE:
             (
                 GraphSAGENodeGenerator,
                 GraphSAGELinkGenerator,
-                Neo4JGraphSAGENodeGenerator,
+                Neo4jGraphSAGENodeGenerator,
             ),
         ):
             errmsg = "Generator should be an instance of GraphSAGENodeGenerator or GraphSAGELinkGenerator"
@@ -1045,9 +1045,9 @@ class GraphSAGE:
         the model (whether it is a node or link/node pair generator).
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1])
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras input tensors
+                for the specified GraphSAGE model (either node or link/node pair model) and ``x_out`` contains
+                model output tensor(s) of shape (batch_size, layer_sizes[-1])
 
         """
         if multiplicity is None:
@@ -1081,7 +1081,7 @@ class DirectedGraphSAGE(GraphSAGE):
     Implementation of a directed version of the GraphSAGE algorithm of Hamilton et al. with Keras layers.
     see: http://snap.stanford.edu/graphsage/
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
     Different neighbour node aggregators can also be specified with the ``aggregator``
@@ -1132,7 +1132,7 @@ class DirectedGraphSAGE(GraphSAGE):
             (
                 DirectedGraphSAGENodeGenerator,
                 DirectedGraphSAGELinkGenerator,
-                Neo4JDirectedGraphSAGENodeGenerator,
+                Neo4jDirectedGraphSAGENodeGenerator,
             ),
         ):
             errmsg = "Generator should be an instance of DirectedGraphSAGENodeGenerator"

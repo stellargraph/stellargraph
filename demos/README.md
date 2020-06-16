@@ -64,7 +64,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>yes</td>
     <td><a href='node-classification/rgcn-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
-    <td></td>
+    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span></td>
     <td></td>
     <td></td>
   </tr>
@@ -172,7 +172,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>GraphSAGE</td>
     <td>see HinSAGE</td>
     <td><a href='node-classification/directed-graphsage-node-classification.ipynb'>demo</a></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/graphsage-node-classification.ipynb'>demo</a></td>
@@ -204,22 +204,16 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><a href='node-classification/node2vec-weighted-node-classification.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='node-classification/node2vec-node-classification.ipynb'>via unsup.</a></span></td>
+    <td>
+      <span title='via embedding vectors'>via</span>
+      <span title='keras layer'><a href='node-classification/keras-node2vec-node-classification.ipynb'>keras</a></span>
+      <a href='node-classification/node2vec-node-classification.ipynb'>gensim</a>
+    </td>
     <td><span title='via embedding vectors'><a href='link-prediction/node2vec-link-prediction.ipynb'>via unsup.</a></span></td>
-    <td><a href='embeddings/node2vec-embeddings.ipynb'>demo</a></td>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Keras-Node2Vec</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td><span title='via embedding vectors'><a href='node-classification/keras-node2vec-node-classification.ipynb'>via unsup.</a></span></td>
-    <td></td>
-    <td><a href='embeddings/keras-node2vec-embeddings.ipynb'>demo</a></td>
+    <td>
+      <span title='keras layer'><a href='embeddings/keras-node2vec-embeddings.ipynb'>keras</a></span>
+      <a href='embeddings/node2vec-embeddings.ipynb'>gensim</a>
+    </td>
     <td></td>
     <td></td>
   </tr>
@@ -231,7 +225,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/metapath2vec-link-prediction.ipynb'>via unsup.</a></span></td>
     <td><a href='embeddings/metapath2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>

@@ -236,7 +236,7 @@ class TestUniformRandomWalk(object):
 
         run_1 = urw.run(nodes=nodes)
         run_2 = urw_no_params.run(nodes=nodes, n=n, length=length, seed=seed)
-        assert np.array_equal(run_1, run_2)
+        np.testing.assert_array_equal(run_1, run_2)
 
     def test_benchmark_uniformrandomwalk(self, benchmark):
         g = example_graph_random(n_nodes=100, n_edges=500)

@@ -25,11 +25,11 @@ Find algorithms for a task
 
 * Representation learning or computing embedding vectors (including unsupervised tasks):
 
-  * For nodes/vertices/entities and edges/links/connections: :doc:`embeddings <./embeddings/index>`
+  * For nodes/vertices/entities, edges/links/connections and graphs: :doc:`embeddings <./embeddings/index>`
 
 * Time series or sequence prediction for nodes within a graph (including spatio-temporal data): :doc:`time series <./time-series/index>`
 * Ensembling models to reduce prediction variance: :doc:`ensembles <./ensembles/index>`
-* Loading data into a ``StellarGraph`` object, with Pandas, Neo4j or NetworkX: :doc:`basics <./basics/index>`
+* Loading data into a ``StellarGraph`` object, with Pandas, NumPy, Neo4j or NetworkX: :doc:`basics <./basics/index>`
 * Experimental: running GraphSAGE or Cluster-GCN on data stored in Neo4j: :doc:`neo4j connector <./connector/neo4j/index>`
 
 Find a demo for an algorithm
@@ -85,7 +85,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/rgcn-node-classification>`
      - yes
-     -
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      -
      -
    *
@@ -176,7 +176,7 @@ Find a demo for an algorithm
      - GraphSAGE
      - see HinSAGE
      - :any:`demo <node-classification/directed-graphsage-node-classification>`
-     -
+     - yes
      -
      - yes
      - :any:`demo <node-classification/graphsage-node-classification>`
@@ -203,21 +203,9 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/node2vec-weighted-node-classification>`
      -
      -
-     - :any:`via embedding vectors <node-classification/node2vec-node-classification>`
+     - via embedding vectors, :any:`keras layer <node-classification/keras-node2vec-node-classification>`, :any:`gensim <node-classification/node2vec-node-classification>`
      - :any:`via embedding vectors <link-prediction/node2vec-link-prediction>`
-     - :any:`demo <embeddings/node2vec-embeddings>`
-     -
-     -
-   *
-     - Keras-Node2Vec
-     -
-     -
-     -
-     -
-     -
-     - :any:`via embedding vectors <node-classification/keras-node2vec-node-classification>`
-     -
-     - :any:`demo <embeddings/keras-node2vec-embeddings>`
+     - :any:`keras layer <embeddings/keras-node2vec-embeddings>`, :any:`gensim <embeddings/node2vec-embeddings>`
      -
      -
    *
@@ -228,7 +216,7 @@ Find a demo for an algorithm
      -
      -
      - via embedding vectors
-     - via embedding vectors
+     - :any:`via embedding vectors <link-prediction/metapath2vec-link-prediction>`
      - :any:`demo <embeddings/metapath2vec-embeddings>`
      -
      -
@@ -309,8 +297,8 @@ You can run download a local copy of the demos using the :code:`curl` command be
 
 The dependencies required to run most of our demo notebooks locally can be installed using one of the following:
 
-- Using pip: :code:`pip install stellargraph[demos]`
-- Using conda: :code:`conda install -c stellargraph stellargraph`
+- Using ``pip``: :code:`pip install stellargraph[demos]`
+- Using ``conda``: :code:`conda install -c stellargraph stellargraph`
 
 Table of contents
 -----------------
