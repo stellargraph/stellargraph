@@ -283,6 +283,19 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
   </tr>
   <tr>
+    <td>RotatE</td>
+    <td><span title='multiple edges types'>yes, edges</span></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><a href='link-prediction/rotate-link-prediction.ipynb'>demo</a></td>
+    <td>yes</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
     <td><span title='Deep Graph CNN'>DGCNN</span></td>
     <td></td>
     <td></td>

@@ -269,6 +269,18 @@ Find a demo for an algorithm
      -
      -
    *
+     - RotatE
+     - multiple edges types
+     - yes
+     -
+     -
+     -
+     - via embedding vectors
+     - :any:`demo <link-prediction/rotate-link-prediction>`
+     - yes
+     -
+     -
+   *
      - Deep Graph CNN
      -
      -

@@ -175,6 +175,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 | DistMult [17] | The DistMult algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 | DGCNN [18] | The Deep Graph Convolutional Neural Network (DGCNN) algorithm for supervised graph classification. |
 | TGCN [19] | The GCN_LSTM model in StellarGraph follows the Temporal Graph Convolutional Network architecture proposed in the TGCN paper with a few enhancements in the layers architecture. |
+| RotatE [20] | The RotatE algorithm computes embeddings for nodes (entities) and edge types (relations) in knowledge graphs, and can use these for link prediction |
 
 ## Installation
 
@@ -285,3 +286,5 @@ International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv
 18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf))
 
 19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. Ling Zhao, Yujiao Song, Chao Zhang, Yu Liu, Pu Wang, Tao Lin, Min Deng, and Haifeng Li.IEEE Transactions on Intelligent Transportation Systems, 2019. ([link](https://ieeexplore.ieee.org/document/8809901))
+
+20. RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space. Z. Sun, Z.-H. Deng, J.-Y. Nie, and J. Tang, ICLR, 2019, arXiv:1902.10197 ([link](http://arxiv.org/abs/1902.10197))
