@@ -774,12 +774,12 @@ def test_feature_conversion_from_iterator():
 
     A = gs.to_adjacency_matrix()
     assert A.dtype == "float32"
-    assert np.allclose(A.toarray(), adj_expected)
+    np.testing.assert_allclose(A.toarray(), adj_expected)
 
     # Test adjacency matrix with node arguement
     A = gs.to_adjacency_matrix(nodes=[3, 2])
     assert A.dtype == "float32"
-    assert np.allclose(A.toarray(), adj_expected[[2, 1]][:, [2, 1]])
+    np.testing.assert_allclose(A.toarray(), adj_expected[[2, 1]][:, [2, 1]])
 
     g = example_hin_1_nx()
     nf = {
@@ -1883,10 +1883,10 @@ def test_to_adjacency_matrix_weighted_undirected():
     actual[0, 5] = actual[5, 0] = 1
     actual[6, 5] = actual[5, 6] = 10
     actual[5, 5] = 1 + 11 + 12
-    assert np.array_equal(matrix, actual)
+    np.testing.assert_array_equal(matrix, actual)
 
     # just to confirm, it should be symmetric
-    assert np.array_equal(matrix, matrix.T)
+    np.testing.assert_array_equal(matrix, matrix.T)
 
     # use a funny order to verify order
     subgraph = g.to_adjacency_matrix([1, 6, 5], weighted=True).todense()
@@ -1895,7 +1895,7 @@ def test_to_adjacency_matrix_weighted_undirected():
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = actual[five, one] = 1
     actual[five, five] = 1 + 11 + 12
-    assert np.array_equal(subgraph, actual)
+    np.testing.assert_array_equal(subgraph, actual)
 
 
 def test_to_adjacency_matrix_weighted_directed():
@@ -1911,7 +1911,7 @@ def test_to_adjacency_matrix_weighted_directed():
     actual[6, 5] = 10
     actual[5, 5] = 1 + 11 + 12
 
-    assert np.array_equal(matrix, actual)
+    np.testing.assert_array_equal(matrix, actual)
 
     # use a funny order to verify order
     subgraph = g.to_adjacency_matrix([1, 6, 5], weighted=True).todense()
@@ -1920,7 +1920,7 @@ def test_to_adjacency_matrix_weighted_directed():
     actual = np.zeros((3, 3), dtype=subgraph.dtype)
     actual[one, five] = 1
     actual[five, five] = 1 + 11 + 12
-    assert np.array_equal(subgraph, actual)
+    np.testing.assert_array_equal(subgraph, actual)
 
 
 def test_to_adjacency_matrix():
@@ -1935,7 +1935,7 @@ def test_to_adjacency_matrix():
     actual[0, 5] = actual[5, 0] = 1
     actual[6, 5] = actual[5, 6] = 1
     actual[5, 5] = 3
-    assert np.array_equal(matrix, actual)
+    np.testing.assert_array_equal(matrix, actual)
 
 
 def test_to_adjacency_matrix_edge_type():
@@ -2102,7 +2102,7 @@ def test_from_networkx_smoke():
 
     def both(f, numpy=False):
         if numpy:
-            assert np.array_equal(f(from_nx), f(raw))
+            np.testing.assert_array_equal(f(from_nx), f(raw))
         else:
             assert f(from_nx) == f(raw)
 

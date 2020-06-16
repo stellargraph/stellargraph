@@ -231,7 +231,7 @@ def test_GCN_Aadj_feats_op(example_graph):
     features = example_graph.node_features(node_list)
 
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="gcn")
-    assert np.array_equal(features, features_)
+    np.testing.assert_array_equal(features, features_)
     assert 6 == pytest.approx(Aadj_.todense().sum(), 0.1)
 
     # k must be positive integer
@@ -250,7 +250,7 @@ def test_GCN_Aadj_feats_op(example_graph):
     features_, Aadj_ = GCN_Aadj_feats_op(features=features, A=Aadj, method="sgc", k=2)
 
     assert len(features_) == 6
-    assert np.array_equal(features, features_)
+    np.testing.assert_array_equal(features, features_)
     assert Aadj.get_shape() == Aadj_.get_shape()
 
     # Check if the power of the normalised adjacency matrix is calculated correctly.

@@ -118,7 +118,7 @@ class Test_GraphAttention:
         expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
         actual = model.predict([X] + As)
 
-        assert np.allclose(actual.squeeze(), expected)
+        np.testing.assert_allclose(actual.squeeze(), expected)
 
     def test_apply_average(self):
         gat = self.layer(
@@ -147,7 +147,7 @@ class Test_GraphAttention:
         expected = (X * self.F_in)[..., : self.F_out]
         actual = model.predict([X] + As)
 
-        assert np.allclose(actual.squeeze(), expected)
+        np.testing.assert_allclose(actual.squeeze(), expected.squeeze())
 
     def test_apply_average_with_neighbours(self):
         gat_saliency = self.layer(
@@ -193,8 +193,8 @@ class Test_GraphAttention:
         expected[:, :2] = self.F_in / 2
         actual_origin = model_origin.predict([X] + As)
         actual_saliency = model_saliency.predict([X] + As)
-        assert np.allclose(expected, actual_origin)
-        assert np.allclose(expected, actual_saliency)
+        np.testing.assert_allclose(expected, actual_origin)
+        np.testing.assert_allclose(expected, actual_saliency)
 
     def test_layer_config(self):
         layer = self.layer(
@@ -500,7 +500,7 @@ class Test_GAT:
             1.0 / G.number_of_nodes()
         )
 
-        assert np.allclose(expected, actual[0])
+        np.testing.assert_allclose(expected, actual[0])
 
     def test_gat_build_no_norm(self):
         G = example_graph(feature_size=self.F_in)
@@ -529,7 +529,7 @@ class Test_GAT:
             * self.attn_heads
             * np.max(G.node_features(G.nodes()))
         )
-        assert np.allclose(expected, actual[0])
+        np.testing.assert_allclose(expected, actual[0])
 
     def test_gat_build_wrong_norm(self):
         G = example_graph(feature_size=self.F_in)
@@ -582,7 +582,7 @@ class Test_GAT:
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             1.0 / G.number_of_nodes()
         )
-        assert np.allclose(expected, actual[0])
+        np.testing.assert_allclose(expected, actual[0])
 
     def test_kernel_and_bias_defaults(self):
         graph = example_graph(feature_size=self.F_in)

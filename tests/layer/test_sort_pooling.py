@@ -30,7 +30,7 @@ def test_sorting_padding():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
     # for mini-batch of size > 1
     data = np.array([[3, 1], [1, 2], [5, 0], [0, -4]], dtype=int).reshape((2, 2, 2))
@@ -43,7 +43,7 @@ def test_sorting_padding():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
 
 def test_sorting_truncation():
@@ -56,7 +56,7 @@ def test_sorting_truncation():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
     # for mini-batch of size > 1
     data = np.array([[3, 1], [1, 2], [5, 0], [0, -4]], dtype=int).reshape((2, 2, 2))
@@ -68,7 +68,7 @@ def test_sorting_truncation():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
 
 def test_sorting_negative_values():
@@ -84,7 +84,7 @@ def test_sorting_negative_values():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
 
 def test_mask():
@@ -97,7 +97,7 @@ def test_mask():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
     mask = np.array([[True, True, False]])
     data_sorted = np.array(
@@ -108,7 +108,7 @@ def test_mask():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
 
 def test_flatten_output():
@@ -121,7 +121,7 @@ def test_flatten_output():
 
     data_out = layer(data, mask=mask)
 
-    assert np.array_equal(data_out, data_sorted)
+    np.testing.assert_array_equal(data_out, data_sorted)
 
 
 def test_invalid_k():

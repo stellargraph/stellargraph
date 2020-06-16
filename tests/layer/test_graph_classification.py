@@ -114,7 +114,7 @@ def test_stateful():
     embeddings_1 = model_1.predict(train_gen)
     embeddings_2 = model_2.predict(train_gen)
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_1.compile(loss=tf.nn.softmax_cross_entropy_with_logits, optimizer="Adam")
     model_1.fit(train_gen)
@@ -123,7 +123,7 @@ def test_stateful():
     embeddings_1 = model_1.predict(train_gen)
     embeddings_2 = model_2.predict(train_gen)
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_2.compile(loss=tf.nn.softmax_cross_entropy_with_logits, optimizer="Adam")
     model_2.fit(train_gen)
@@ -132,7 +132,7 @@ def test_stateful():
     embeddings_1 = model_1.predict(train_gen)
     embeddings_2 = model_2.predict(train_gen)
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
 
 @pytest.mark.parametrize("pooling", ["default", "custom"])

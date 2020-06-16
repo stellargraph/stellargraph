@@ -34,7 +34,9 @@ def _epoch_as_matrix(dataset):
 def test_init(barbell):
     generator = GraphWaveGenerator(barbell, scales=(0.1, 2, 3, 4), degree=10)
 
-    assert np.array_equal(generator.scales, np.array((0.1, 2, 3, 4)).astype(np.float32))
+    np.testing.assert_array_equal(
+        generator.scales, np.array((0.1, 2, 3, 4)).astype(np.float32)
+    )
     assert generator.coeffs.shape == (4, 10 + 1)
     assert generator.laplacian.shape == (
         barbell.number_of_nodes(),
@@ -100,7 +102,8 @@ def test_flow_shuffle(barbell, shuffle):
     if shuffle:
         assert not any(np.array_equal(first, r) for r in rest)
     else:
-        assert all(np.array_equal(first, r) for r in rest)
+        for r in rest:
+            np.testing.assert_array_equal(first, r)
 
 
 def test_determinism(barbell):
@@ -130,7 +133,7 @@ def test_determinism(barbell):
 
     second_epcoh = _epoch_as_matrix(embeddings_dataset)
 
-    assert np.array_equal(first_epoch, second_epcoh)
+    np.testing.assert_array_equal(first_epoch, second_epcoh)
 
 
 @pytest.mark.parametrize("repeat", [False, True])
@@ -266,4 +269,4 @@ def test_chebyshev(barbell):
     actual_embeddings = _epoch_as_matrix(actual_dataset)
 
     # compare exactly calculated wavelets to chebyshev
-    assert np.allclose(actual_embeddings, expected_embeddings, rtol=1e-2)
+    np.testing.assert_allclose(actual_embeddings, expected_embeddings, rtol=1e-2)

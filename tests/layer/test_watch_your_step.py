@@ -41,7 +41,9 @@ def test_AttentiveWalk():
 
     output = att_wlk(random_partial_powers).numpy()
 
-    assert np.allclose(output, random_partial_powers.mean(axis=1))
+    np.testing.assert_allclose(
+        output, random_partial_powers.mean(axis=1), rtol=1e-5, atol=1e-8
+    )
 
 
 def test_WatchYourStep_init(barbell):
@@ -90,7 +92,7 @@ def test_WatchYourStep(barbell):
     # same predictions
     preds1 = model.predict(gen, steps=8)
     preds2 = Model(*wys.in_out_tensors()).predict(gen, steps=8)
-    assert np.array_equal(preds1, preds2)
+    np.testing.assert_array_equal(preds1, preds2)
 
 
 def test_WatchYourStep_embeddings(barbell):
