@@ -44,20 +44,20 @@ class AdjacencyPowerGenerator(Generator):
 
         require_integer_in_range(num_powers, "num_powers", min_val=1)
 
-        Aadj = G.to_adjacency_matrix(weighted=weighted).tocoo()
-        indices = np.column_stack((Aadj.col, Aadj.row))
+        Aadj = G.to_adjacency_matrix(weighted=weighted)
 
-        self.Aadj_T = tf.sparse.SparseTensor(
-            indices=indices,
-            values=Aadj.data.astype(np.float32),
-            dense_shape=Aadj.shape,
-        )
+        def tfify(matrix):
+            matrix = matrix.tocoo(copy=False)
+            return tf.sparse.SparseTensor(
+                # construct the transpose
+                indices=np.column_stack([matrix.col, matrix.row]),
+                values=matrix.data.astype(np.float32),
+                dense_shape=matrix.shape
+            )
 
-        self.transition_matrix_T = tf.sparse.SparseTensor(
-            indices=indices,
-            values=normalize_adj(Aadj, symmetric=False).data.astype(np.float32),
-            dense_shape=Aadj.shape,
-        )
+        self.Aadj_T = tfify(Aadj)
+
+        self.transition_matrix_T = tfify(normalize_adj(Aadj, symmetric=False))
 
         self.num_powers = num_powers
 
