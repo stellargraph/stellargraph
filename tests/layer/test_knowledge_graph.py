@@ -492,3 +492,10 @@ def test_embedding_validation(knowledge_graph):
 
     # all good:
     KGModel(gen, X(([e, e], [e, e, e])), 2, **kwargs)
+
+
+@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE, RotH, RotE])
+def test_save_load(tmpdir, knowledge_graph, model_maker):
+    gen = KGTripleGenerator(knowledge_graph, 3)
+    sg_model = model_maker(gen, embedding_dimension=6)
+    test_utils.model_save_load(tmpdir, sg_model)

@@ -21,6 +21,7 @@ from stellargraph.mapper import AdjacencyPowerGenerator
 from stellargraph.losses import graph_log_likelihood
 import pytest
 from tensorflow.keras import Model
+from .. import test_utils
 
 
 def test_AttentiveWalk_config():
@@ -102,3 +103,9 @@ def test_WatchYourStep_embeddings(barbell):
     embs = wys.embeddings()
 
     assert (embs == 1).all()
+
+
+def test_WatchYourStep_save_load(tmpdir, barbell):
+    generator = AdjacencyPowerGenerator(barbell, num_powers=5)
+    wys = WatchYourStep(generator)
+    test_utils.model_save_load(tmpdir, wys)

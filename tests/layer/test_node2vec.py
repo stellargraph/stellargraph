@@ -27,6 +27,7 @@ from tensorflow import keras
 import numpy as np
 import pytest
 from ..test_utils.graphs import example_graph
+from .. import test_utils
 
 
 def test_node2vec_constructor():
@@ -105,3 +106,8 @@ def test_node2vec_serialize():
 
     actual = model2.predict(x)
     assert expected == pytest.approx(actual)
+
+
+def test_node2vec_save_load(tmpdir):
+    node2vec = Node2Vec(emb_size=4, node_num=4, multiplicity=2)
+    test_utils.model_save_load(tmpdir, node2vec)

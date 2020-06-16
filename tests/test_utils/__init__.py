@@ -16,10 +16,43 @@
 
 import pytest
 
+import tensorflow as tf
+import stellargraph as sg
+import numpy as np
 
 ignore_stellargraph_experimental_mark = pytest.mark.filterwarnings(
     r"ignore:StellarGraph\(nodes=..., edges=...\):stellargraph.core.experimental.ExperimentalWarning"
 )
+
+
+def model_save_load(tmpdir, sg_model):
+    model = tf.keras.Model(*sg_model.in_out_tensors())
+
+    saving_functions = [
+        tf.keras.models.save_model,
+        tf.keras.Model.save,
+        tf.saved_model.save,
+    ]
+    loading_functions = [
+        tf.keras.models.load_model,
+        # tf.saved_model.load doesn't restore the Keras Model object
+    ]
+
+    for i, func in enumerate(saving_functions):
+        saved_dir = str(tmpdir.join(str(i)))
+        func(model, str(saved_dir))
+
+        for func in loading_functions:
+            loaded = func(saved_dir, sg.custom_keras_layers)
+
+            orig_weights = model.get_weights()
+            new_weights = loaded.get_weights()
+            assert len(orig_weights) == len(new_weights)
+            for orig, new in zip(orig_weights, new_weights):
+                np.testing.assert_array_equal(orig, new)
+
+    # clear the tensorflow session to free memory
+    tf.keras.backend.clear_session()
 
 
 def flaky_xfail_mark(exception, issue_numbers):

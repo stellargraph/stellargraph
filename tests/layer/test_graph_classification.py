@@ -21,6 +21,7 @@ from stellargraph.layer import SortPooling
 from stellargraph.mapper import PaddedGraphGenerator, FullBatchNodeGenerator
 import pytest
 from ..test_utils.graphs import example_graph_random
+from .. import test_utils
 
 
 graphs = [
@@ -217,3 +218,13 @@ def test_dgcnn_smoke():
 
     preds = model.predict(generator.flow([0, 1, 2]))
     assert preds.shape == (3, (2 + 3 + 4) * 5, 1)
+
+
+def test_save_load(tmpdir):
+    layer_sizes = [16, 8]
+    activations = ["relu", "relu"]
+
+    model = GCNSupervisedGraphClassification(
+        layer_sizes=layer_sizes, activations=activations, generator=generator
+    )
+    test_utils.model_save_load(tmpdir, model)
