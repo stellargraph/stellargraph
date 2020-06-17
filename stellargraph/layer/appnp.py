@@ -80,7 +80,6 @@ class APPNPPropagationLayer(Layer):
 
         config = {
             "units": self.units,
-            "final_layer": self.final_layer,
             "teleport_probability": self.teleport_probability,
         }
 
