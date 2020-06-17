@@ -237,6 +237,7 @@ class RelationalGraphConvolution(Layer):
             self.relational_kernels = [
                 self.add_weight(
                     shape=(input_dim, self.units),
+                    name="relational_kernels",
                     initializer=self.kernel_initializer,
                     regularizer=self.kernel_regularizer,
                     constraint=self.kernel_constraint,
@@ -246,6 +247,7 @@ class RelationalGraphConvolution(Layer):
 
         self.self_kernel = self.add_weight(
             shape=(input_dim, self.units),
+            name="self_kernel",
             initializer=self.kernel_initializer,
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
