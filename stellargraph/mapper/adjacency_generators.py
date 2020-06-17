@@ -52,7 +52,7 @@ class AdjacencyPowerGenerator(Generator):
                 # construct the transpose
                 indices=np.column_stack([matrix.col, matrix.row]),
                 values=matrix.data.astype(np.float32),
-                dense_shape=matrix.shape
+                dense_shape=matrix.shape,
             )
 
         self.Aadj_T = tfify(Aadj)
