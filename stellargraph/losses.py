@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+__all__ = [
+    "graph_log_likelihood",
+    "SelfAdversarialNegativeSampling",
+]
+
 import tensorflow as tf
 
 from .core.experimental import experimental
@@ -49,3 +54,57 @@ def graph_log_likelihood(batch_adj, wys_output):
     loss = tf.math.reduce_sum(tf.abs(matrix))
 
     return tf.expand_dims(loss, 0)
+
+
+class SelfAdversarialNegativeSampling(tf.keras.losses.Loss):
+    """
+    Computes the self-adversarial binary cross entropy for negative sampling, from [1].
+
+    [1] Z. Sun, Z.-H. Deng, J.-Y. Nie, and J. Tang, “RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space,” `arXiv:1902.10197 <http://arxiv.org/abs/1902.10197>`_
+
+    Args:
+        temperature (float, optional): a scaling factor for the weighting of negative samples
+        from_logits (bool, optional): if ``True``, the scores passed to ``__call__`` are in logits; if ``False``, those scores have already mapped to ``[0, 1]``.
+    """
+
+    def __init__(
+        self,
+        temperature=1.0,
+        from_logits=True,
+        name="self_adversarial_negative_sampling",
+    ):
+        self._temperature = temperature
+        self._from_logits = from_logits
+
+        super().__init__(name="self_adversarial_negative_sampling")
+
+    def call(self, labels, scores):
+        """
+        Args:
+            labels: tensor of integer labels for each row, either 1 for a true sample, or any value <= 0 for negative samples. Negative samples with identical labels are combined for the softmax normalisation.
+            scores: tensor of scores for each row (in logits if ``from_logits=True`` was specified)
+        """
+        if self._from_logits:
+            scores = tf.math.sigmoid(scores)
+
+        if labels.dtype != tf.int32:
+            labels = tf.cast(labels, tf.int64)
+
+        flipped_labels = -labels
+
+        exp_scores = tf.math.exp(self._temperature * scores)
+        sums = tf.math.unsorted_segment_sum(
+            exp_scores, flipped_labels, tf.reduce_max(flipped_labels) + 1
+        )
+
+        positive = labels > 0
+
+        denoms = tf.gather(sums, tf.maximum(flipped_labels, 0))
+
+        loss_elems = tf.where(
+            positive,
+            -tf.math.log(scores),
+            -tf.math.log1p(-scores) * exp_scores / denoms,
+        )
+
+        return tf.reduce_mean(loss_elems, axis=-1)

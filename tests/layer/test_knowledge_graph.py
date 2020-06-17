@@ -22,9 +22,9 @@ import pandas as pd
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras import Model, initializers, losses, layers
+from tensorflow.keras import Model, initializers, losses as tf_losses, layers
 
-from stellargraph import StellarGraph, StellarDiGraph
+from stellargraph import StellarGraph, StellarDiGraph, losses as sg_losses
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
 from stellargraph.layer.knowledge_graph import (
     KGModel,
@@ -53,7 +53,8 @@ def triple_df(*values):
     return pd.DataFrame(values, columns=["source", "label", "target"])
 
 
-def test_complex(knowledge_graph):
+@pytest.mark.parametrize("sample_strategy", ["uniform", "self-adversarial"])
+def test_complex(knowledge_graph, sample_strategy):
     # this test creates a random untrained model and predicts every possible edge in the graph, and
     # compares that to a direct implementation of the scoring method in the paper
     gen = KGTripleGenerator(knowledge_graph, 3)
@@ -64,7 +65,12 @@ def test_complex(knowledge_graph):
     x_inp, x_out = complex_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
-    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+    if sample_strategy == "uniform":
+        loss = tf_losses.BinaryCrossentropy(from_logits=True)
+    else:
+        loss = sg_losses.SelfAdversarialNegativeSampling()
+
+    model.compile(loss=loss)
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
@@ -75,8 +81,8 @@ def test_complex(knowledge_graph):
 
     # check the model can be trained on a few (uneven) batches
     model.fit(
-        gen.flow(df.iloc[:7], negative_samples=2),
-        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+        gen.flow(df.iloc[:7], negative_samples=2, sample_strategy=sample_strategy),
+        validation_data=gen.flow(df.iloc[7:14], negative_samples=3, sample_strategy=sample_strategy),
     )
 
     # compute the exact values based on the model by extracting the embeddings for each element and
@@ -117,7 +123,7 @@ def test_distmult(knowledge_graph):
 
     model = Model(x_inp, x_out)
 
-    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+    model.compile(loss=tf_losses.BinaryCrossentropy(from_logits=True))
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
@@ -176,7 +182,7 @@ def test_rotate(knowledge_graph):
 
     model = Model(x_inp, x_out)
 
-    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+    model.compile(loss=tf_losses.BinaryCrossentropy(from_logits=True))
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
@@ -234,7 +240,7 @@ def test_rote_roth(knowledge_graph, model_class):
 
     model = Model(x_inp, x_out)
     model.summary()
-    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+    model.compile(loss=tf_losses.BinaryCrossentropy(from_logits=True))
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
