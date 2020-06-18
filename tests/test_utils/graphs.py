@@ -336,7 +336,7 @@ def tree_graph() -> StellarGraph:
 
 import itertools as it
 values = list(it.product(range(2, 10 + 1), range(1, 11 + 1)))
-values = [(2, 3)]
+#values = [(2, 3)]
 @pytest.fixture(params=values, ids=[f"{m1},{m2},{2*m1+m2}" for m1, m2 in values])
 def barbell(request):
     m1, m2 = request.param
