@@ -233,8 +233,8 @@ def test_chebyshev(barbell, weighted):
     This test checks that the Chebyshev approximation accurately calculates the wavelets. It calculates
     the wavelets exactly using eigenvalues and compares this to the Chebyshev approximation.
     """
-    scales = (1, 5, 10)
-    sample_points = np.linspace(0, 100, 50).astype(np.float32)
+    scales = (5,)
+    sample_points = np.linspace(0, 100, 2).astype(np.float32)
     generator = GraphWaveGenerator(barbell, scales=scales, degree=50, weighted=weighted)
 
     # calculate wavelets exactly using eigenvalues
@@ -245,7 +245,7 @@ def test_chebyshev(barbell, weighted):
     degree_mat = sps.diags(np.asarray(adj.sum(1)).ravel())
     laplacian = degree_mat - adj
 
-    eigenvals, eigenvecs = np.linalg.eig(laplacian)
+    eigenvals, eigenvecs = np.linalg.eigh(laplacian)
     eigenvecs = np.asarray(eigenvecs)
 
     psis = [
