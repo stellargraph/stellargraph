@@ -43,14 +43,14 @@ jobs:
           # just runs them once (as a test)
           py.test -ra tests/ --doctest-modules \
               --cov=stellargraph --cov-report=xml \
-              -p no:cacheprovider --junitxml="junit-${{ matrix.python-version }}.xml" \
+              -p no:cacheprovider --junitxml="pytest-results-${{ matrix.python-version }}.xml" \
               --benchmark-disable
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@v1
         with:
           name: pytest-results-${{ matrix.python-version }}
-          path: junit-${{ matrix.python-version }}.xml
+          path: pytest-results-${{ matrix.python-version }}.xml
         if: ${{ always() }}
 
       - name: Upload coverage to Codecov
