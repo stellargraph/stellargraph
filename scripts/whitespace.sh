@@ -4,6 +4,8 @@ set -euo pipefail
 
 usage="$(basename "$0") [-h | --help] [--ci] -- script to normalise whitespace, or validate that it is normalised on CI"
 
+unused=foo
+
 on_ci=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
