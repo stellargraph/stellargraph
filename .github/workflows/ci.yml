@@ -77,4 +77,5 @@ jobs:
           filter_mode: file
       - uses: reviewdog/action-yamllint@v1
         with:
+          github_token: ${{ github.token }}
           filter_mode: file
