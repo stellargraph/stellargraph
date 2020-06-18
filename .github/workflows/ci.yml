@@ -1,8 +1,7 @@
 ---
-
 name: Continuous Integration
 
-on:
+"on":
   push:
     # only build each push to develop and master, other branches are built through pull requests
     branches: [develop, master]
@@ -39,8 +38,13 @@ jobs:
 
       - name: Run pytest tests
         run: |
-          # benchmarks on shared infrastructure like the CI machines are usually unreliable (high variance), so there's no point spending too much time, hence --benchmark-disable which just runs them once (as a test)
-          py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="junit-${{ matrix.python-version }}.xml" --benchmark-disable || exitCode=$?
+          # benchmarks on shared infrastructure like the CI machines are usually unreliable (high
+          # variance), so there's no point spending too much time, hence --benchmark-disable which
+          # just runs them once (as a test)
+          py.test -ra tests/ --doctest-modules \
+              --cov=stellargraph --cov-report=xml \
+              -p no:cacheprovider --junitxml="junit-${{ matrix.python-version }}.xml" \
+              --benchmark-disable
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@v1
