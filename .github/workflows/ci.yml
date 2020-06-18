@@ -57,3 +57,28 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           env_vars: OS,PYTHON
+
+  black:
+    name: "Format Python"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: .github/actions/black
+
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-shellcheck@v1
+
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-hadolint@v1
+
+  yamllint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-yamllint@v1
