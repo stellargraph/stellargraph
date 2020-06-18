@@ -58,13 +58,6 @@ jobs:
         with:
           env_vars: OS,PYTHON
 
-  black:
-    name: "Format Python"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: ./.github/actions/black
-
   check-linters:
     runs-on: ubuntu-latest
     steps:
@@ -78,4 +71,7 @@ jobs:
       - uses: reviewdog/action-yamllint@v1
         with:
           github_token: ${{ github.token }}
+          filter_mode: file
+      - uses: ./.github/actions/black
+        with:
           filter_mode: file
