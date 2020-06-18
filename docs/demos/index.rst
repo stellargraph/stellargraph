@@ -236,7 +236,7 @@ Find a demo for an algorithm
      - Watch Your Step
      -
      -
-     -
+     - yes
      -
      -
      - :any:`via embedding vectors <embeddings/watch-your-step-embeddings>`

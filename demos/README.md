@@ -247,7 +247,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>Watch Your Step</td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-embeddings.ipynb'>via unsup.</a></span></td>
