@@ -2,7 +2,7 @@ FROM python:3.8-slim
 
 ENV REVIEWDOG_VERSION=v0.10.0
 
-SHELL ["/bin/ash", "-eo", "pipefail", "-c"]
+SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 # hadolint ignore=DL3006
 RUN apk --no-cache add git
