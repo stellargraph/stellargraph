@@ -65,20 +65,16 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/black
 
-  shellcheck:
+  check-linters:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: reviewdog/action-shellcheck@v1
-
-  hadolint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+        with:
+          filter_mode: file
       - uses: reviewdog/action-hadolint@v1
-
-  yamllint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+        with:
+          filter_mode: file
       - uses: reviewdog/action-yamllint@v1
+        with:
+          filter_mode: file
