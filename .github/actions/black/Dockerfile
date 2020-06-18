@@ -5,7 +5,7 @@ ENV REVIEWDOG_VERSION=v0.10.0
 SHELL ["/bin/bash", "-euo", "pipefail", "-c"]
 
 # hadolint ignore=DL3006
-RUN apt update && apt install git
+RUN apt-get update -y && apt-get install -y git
 
 RUN wget -O - -q https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b /usr/local/bin/ ${REVIEWDOG_VERSION}
 
