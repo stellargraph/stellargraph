@@ -1,0 +1,43 @@
+---
+
+name: Continuous Integration
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,demos]
+
+      - name: Run pytest tests
+        run: |
+          # benchmarks on shared infrastructure like the CI machines are usually unreliable (high variance), so there's no point spending too much time, hence --benchmark-disable which just runs them once (as a test)
+          py.test -ra --cov=stellargraph tests/ --doctest-modules --cov-report=xml -p no:cacheprovider --junitxml="junit-${{ matrix.python-version }}.xml" --benchmark-disable || exitCode=$?
+
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v1
+        with:
+          name: pytest-results-${{ matrix.python-version }}
+          path: junit-${{ matrix.python-version }}.xml
+        if: ${{ always() }}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          env_vars: OS,PYTHON
