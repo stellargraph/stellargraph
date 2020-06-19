@@ -62,6 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: checking files have copyright headers
         run: |
           temp="$(mktemp)"
@@ -85,6 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+
       - name: check whitespace
         run: scripts/whitespace.sh --github-ci
 
@@ -93,7 +95,20 @@ jobs:
     steps:
         - uses: actions/checkout@v2
         - uses: s-weigand/setup-conda@v1
+
         - name: install conda build
           run: conda install conda-build
+
         - name: conda build StellarGraph
           run: conda build . --no-anaconda-upload
+
+        - name: get conda package name
+          run: echo '::set-env name=conda_package::$(conda build . --output)'
+
+        - name: Upload package
+          uses: actions/upload-artifact@v2
+          with:
+            name: ${{ env.conda_package }}
+            path: ${{ env.conda_package }}
+
+      buildkite-agent artifact upload "${conda_package}"
