@@ -54,7 +54,14 @@ class KGTripleGenerator(Generator):
     def num_batch_dims(self):
         return 1
 
-    def flow(self, edges, negative_samples=None, sample_strategy="uniform", shuffle=False, seed=None):
+    def flow(
+        self,
+        edges,
+        negative_samples=None,
+        sample_strategy="uniform",
+        shuffle=False,
+        seed=None,
+    ):
         """
         Create a Keras Sequence yielding the edges/triples in ``edges``, potentially with some negative
         edges.
@@ -102,8 +109,9 @@ class KGTripleGenerator(Generator):
 
         supported_strategies = ["uniform", "self-adversarial"]
         if sample_strategy not in supported_strategies:
-            raise ValueError(f"sample_strategy: expected one of {comma_sep(supported_strategies)}, found {sample_strategy!r}")
-
+            raise ValueError(
+                f"sample_strategy: expected one of {comma_sep(supported_strategies)}, found {sample_strategy!r}"
+            )
 
         source_ilocs = self.G.node_ids_to_ilocs(sources)
         rel_ilocs = self.G.edge_type_names_to_ilocs(rels)
@@ -199,7 +207,9 @@ class KGTripleSequence(Sequence):
             elif self.sample_strategy == "self-adversarial":
                 # the negative samples are labelled with an arbitrary within-batch integer <= 0, based on
                 # which positive edge they came from.
-                targets = np.tile(np.arange(0, -positive_count, -1), 1 + self.negative_samples)
+                targets = np.tile(
+                    np.arange(0, -positive_count, -1), 1 + self.negative_samples
+                )
                 # the positive examples are labelled with 1
                 targets[:positive_count] = 1
             else:

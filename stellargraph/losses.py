@@ -64,28 +64,22 @@ class SelfAdversarialNegativeSampling(tf.keras.losses.Loss):
 
     Args:
         temperature (float, optional): a scaling factor for the weighting of negative samples
-        from_logits (bool, optional): if ``True``, the scores passed to ``__call__`` are in logits; if ``False``, those scores have already mapped to ``[0, 1]``.
     """
 
     def __init__(
-        self,
-        temperature=1.0,
-        from_logits=True,
-        name="self_adversarial_negative_sampling",
+        self, temperature=1.0, name="self_adversarial_negative_sampling",
     ):
         self._temperature = temperature
-        self._from_logits = from_logits
+        super().__init__(name=name)
 
-        super().__init__(name="self_adversarial_negative_sampling")
-
-    def call(self, labels, scores):
+    def call(self, labels, logit_scores):
         """
         Args:
             labels: tensor of integer labels for each row, either 1 for a true sample, or any value <= 0 for negative samples. Negative samples with identical labels are combined for the softmax normalisation.
-            scores: tensor of scores for each row (in logits if ``from_logits=True`` was specified)
+            logit_scores: tensor of scores for each row in logits
         """
-        if self._from_logits:
-            scores = tf.math.sigmoid(scores)
+
+        scores = tf.math.sigmoid(logit_scores)
 
         if labels.dtype != tf.int32:
             labels = tf.cast(labels, tf.int64)
@@ -97,14 +91,12 @@ class SelfAdversarialNegativeSampling(tf.keras.losses.Loss):
             exp_scores, flipped_labels, tf.reduce_max(flipped_labels) + 1
         )
 
-        positive = labels > 0
-
         denoms = tf.gather(sums, tf.maximum(flipped_labels, 0))
 
         loss_elems = tf.where(
-            positive,
-            -tf.math.log(scores),
-            -tf.math.log1p(-scores) * exp_scores / denoms,
+            labels > 0,
+            -tf.math.log_sigmoid(logit_scores),
+            -tf.math.log_sigmoid(-logit_scores) * exp_scores / denoms,
         )
 
         return tf.reduce_mean(loss_elems, axis=-1)

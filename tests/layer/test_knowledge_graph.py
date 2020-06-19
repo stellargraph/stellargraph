@@ -82,7 +82,9 @@ def test_complex(knowledge_graph, sample_strategy):
     # check the model can be trained on a few (uneven) batches
     model.fit(
         gen.flow(df.iloc[:7], negative_samples=2, sample_strategy=sample_strategy),
-        validation_data=gen.flow(df.iloc[7:14], negative_samples=3, sample_strategy=sample_strategy),
+        validation_data=gen.flow(
+            df.iloc[7:14], negative_samples=3, sample_strategy=sample_strategy
+        ),
     )
 
     # compute the exact values based on the model by extracting the embeddings for each element and

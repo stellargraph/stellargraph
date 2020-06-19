@@ -132,6 +132,7 @@ def test_kg_triple_sequence_batches(negative_samples):
         batch_size=3,
         shuffle=False,
         negative_samples=negative_samples,
+        sample_strategy="uniform",
         seed=None,
     )
     assert len(seq) == 2
@@ -153,6 +154,7 @@ def test_kg_triple_sequence_shuffle(shuffle):
         batch_size=5,
         shuffle=shuffle,
         negative_samples=None,
+        sample_strategy="uniform",
         seed=None,
     )
     assert len(seq) == 1
@@ -212,6 +214,7 @@ def test_kg_triple_sequence_seed_shuffle_negative_samples():
             batch_size=1,
             shuffle=True,
             negative_samples=5,
+            sample_strategy="uniform",
             seed=seed,
         )
 
