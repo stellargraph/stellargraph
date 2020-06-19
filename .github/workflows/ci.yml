@@ -63,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: checking files have copyright headers
+      - name: Checking that files have copyright headers
         run: |
           temp="$(mktemp)"
           copyrightRegex="# Copyright [0-9-]*2020 Data61, CSIRO"
@@ -87,7 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: check whitespace
+      - name: Check whitespace
         run: scripts/whitespace.sh --github-ci
 
   conda:
@@ -96,15 +96,15 @@ jobs:
       - uses: actions/checkout@v2
       - uses: s-weigand/setup-conda@v1
 
-      - name: install conda build tools
+      - name: Install conda build tools
         run: |
           conda install conda-build
           conda install conda-verify
 
-      - name: conda build StellarGraph
+      - name: Conda build StellarGraph
         run: conda build . --no-anaconda-upload
 
-      - name: get conda package name
+      - name: Get conda package name
         run: |
           package_path=$(conda build . --output)
           package_name=$(basename $package_path)
