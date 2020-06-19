@@ -188,7 +188,7 @@ jobs:
 
     strategy:
       matrix:
-        neo4j_version: [3.5, 4.0]
+        neo4j_version: ["3.5", "4.0"]
 
     env:
       STELLARGRAPH_NEO4J_HOST: localhost
