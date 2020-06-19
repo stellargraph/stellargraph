@@ -76,8 +76,8 @@ jobs:
       # run black and annotate incorrect files with reviewdog
       - name: Install reviewdog
         run: |
-          mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $HOME/bin
-          echo ::add-path::$HOME/bin
+          mkdir -p $HOME/.local/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $HOME/.local/bin
+          echo ::add-path::$HOME/.local/bin
       - name: Install black
         run: |
           python3 -m pip install --upgrade pip
