@@ -198,7 +198,8 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Start Neo4j
-        run: docker-compose --file scripts/ci/docker-compose.yml up --detach neo4j
+        run: |
+          docker-compose -f scripts/ci/docker-compose.yml --project-directory . up --detach neo4j
         env:
           NEO4J_VERSION: ${{ matrix.neo4j_version }}
 
@@ -229,7 +230,7 @@ jobs:
           scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
 
       - name: Stop Neo4j
-        run: docker-compose --file scripts/ci/docker-compose.yml down
+        run: docker-compose -f scripts/ci/docker-compose.yml --project-directory . down
         if: always()
 
       - name: Upload artifact
