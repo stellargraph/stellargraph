@@ -95,6 +95,8 @@ jobs:
     steps:
         - uses: actions/checkout@v2
         - uses: s-weigand/setup-conda@v1
+          - with:
+              update-conda: true
 
         - name: install conda build
           run: conda install conda-build
