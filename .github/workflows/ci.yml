@@ -86,8 +86,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: check whitespace
-        run: |
-          scripts/whitespace.sh --github-ci
+        run: scripts/whitespace.sh --github-ci
   conda:
     runs-on: ubuntu-latest
     steps:
