@@ -78,3 +78,6 @@ jobs:
               msg="Found files without a copyright header (no matches for \`$copyrightRegex\`)"
               echo "$msg"
               exit 1
+            else
+              echo "all files have a copyright header (have a match for \`$copyrightRegex\`)"
+            fi
