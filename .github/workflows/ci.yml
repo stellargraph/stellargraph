@@ -97,6 +97,7 @@ jobs:
       - uses: s-weigand/setup-conda@v1
         with:
           update-conda: true
+          python-version: 3.7
 
       - name: install conda build
         run: conda install conda-build
