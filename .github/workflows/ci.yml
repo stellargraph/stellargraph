@@ -186,11 +186,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Install dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install PyYAML
-
       - name: Run check
         run: |
           python3 scripts/ci_workflow_notebook_list.py

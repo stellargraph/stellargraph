@@ -14,7 +14,7 @@ def main():
     with open(WORKFLOW) as f:
         contents = f.read()
 
-    workflow = yaml.full_load(contents)
+    workflow = yaml.safe_load(contents)
     try:
         marker_position = contents.index(MARKER)
     except:
