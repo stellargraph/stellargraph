@@ -232,26 +232,33 @@ jobs:
         run: docker-compose --file scripts/ci/docker-compose.yml down
         if: always()
 
-      - &upload-neo4j
-        name: Upload artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: loading-saving-neo4j.ipynb
           path: demos/basics/loading-saving-neo4j.ipynb
-        if: ${{ always() }}
-      - <<: *upload-neo4j
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: load-cora-into-neo4j.ipynb
           path: demos/connector/neo4j/load-cora-into-neo4j.ipynb
-      - <<: *upload-neo4j
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: directed-graphsage-on-cora-neo4j-example.ipynb
           path: demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
-      - <<: *upload-neo4j
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: undirected-graphsage-on-cora-neo4j-example.ipynb
           path: demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
-      - <<: *upload-neo4j
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        if: always()
         with:
           name: cluster-gcn-on-cora-neo4j-example.ipynb
           path: demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
