@@ -57,3 +57,51 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           env_vars: OS,PYTHON
+
+  notebooks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        notebook:
+          - "demos/basics/loading-networkx.ipynb"
+          - "demos/basics/loading-numpy.ipynb"
+          - "demos/basics/loading-pandas.ipynb"
+        python-version: [3.6]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,demos]
+
+      - name: Run notebook
+        id: run_notebook
+        run: |
+          # papermill will replace parameters on some notebooks to make them run faster in CI
+          papermill --execution-timeout=600 \
+            --parameters_file "./.buildkite/notebook-parameters.yml" --log-output \
+            "${{ matrix.notebook }}" "${{ matrix.notebook }}"
+          echo "::set-output name=notebook_name::$(basename ${{ matrix.notebook }}")"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.run_notebook.outputs.notebook_name }}
+          path: ${{ matrix.notebook }}
+        if: ${{ always() }}
