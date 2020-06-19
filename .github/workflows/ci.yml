@@ -80,8 +80,8 @@ jobs:
           echo ::add-path::$HOME/bin
       - name: Install black
         run: |
-          python -m pip install --upgrade pip
-          pip install black==19.10b0
+          python3 -m pip install --upgrade pip
+          python3 -m pip install black==19.10b0
       - name: Check formatting
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
