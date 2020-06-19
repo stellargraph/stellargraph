@@ -103,6 +103,8 @@ jobs:
 
       - name: conda build StellarGraph
         run: conda build . --no-anaconda-upload
+        env:
+          PYTHONWARNINGS: "error:Constructing a StellarGraph:DeprecationWarning"
 
       - name: get conda package name
         run: echo '::set-env name=conda_package::$(conda build . --output)'
