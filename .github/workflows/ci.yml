@@ -93,7 +93,7 @@ jobs:
     steps:
         - uses: actions/checkout@v2
         - uses: s-weigand/setup-conda@v1
-        - name: conda build
-          run: |
-            conda install conda-build
-            conda build . --no-anaconda-upload
+        - name: install conda build
+          run: conda install conda-build
+        - name: conda build StellarGraph
+          run: conda build . --no-anaconda-upload
