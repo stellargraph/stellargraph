@@ -67,7 +67,9 @@ jobs:
           - "demos/basics/loading-networkx.ipynb"
           - "demos/basics/loading-numpy.ipynb"
           - "demos/basics/loading-pandas.ipynb"
-        python-version: [3.6]
+
+    env:
+      PYTHON_VERSION: 3.6
 
     steps:
       - uses: actions/checkout@v2
@@ -75,15 +77,15 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Restore cache
         uses: actions/cache@v2
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('setup.py') }}
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-${{ hashFiles('setup.py') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-
 
       - name: Install dependencies
         run: |
@@ -97,7 +99,8 @@ jobs:
           papermill --execution-timeout=600 \
             --parameters_file "./.buildkite/notebook-parameters.yml" --log-output \
             "${{ matrix.notebook }}" "${{ matrix.notebook }}"
-          echo "::set-output name=notebook_name::$(basename ${{ matrix.notebook }}")"
+          notebook_name="$(basename "${{ matrix.notebook }}")"
+          echo "::set-output name=notebook_name::$notebook_name"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v1
