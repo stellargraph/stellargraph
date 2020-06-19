@@ -106,11 +106,13 @@ jobs:
 
       - name: get conda package name
         run: |
-          package=$(conda build . --output)
-          echo "::set-env name=conda_package::${package}"
+          package_path=$(conda build . --output)
+          package_name=$(basename $package_path)
+          echo "::set-env name=package_path::${package_path}"
+          echo "::set-env name=package_name::${package_name}"
 
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.conda_package }}
-          path: ${{ env.conda_package }}
+          name: ${{ env.package_name }}
+          path: ${{ env.package_path }}
