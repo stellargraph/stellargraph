@@ -59,25 +59,32 @@ jobs:
           env_vars: OS,PYTHON
 
   copyright:
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - name: checking files have copyright headers
-          run: |
-            temp="$(mktemp)"
-            copyrightRegex="# Copyright [0-9-]*2020 Data61, CSIRO"
-            find . \( \
-              -name "*.py" \
-              -a ! -path "./demos/link-prediction/random-walks/utils/node2vec/node2vec.py" \
-              -a ! -path "./demos/link-prediction/random-walks/utils/node2vec/main.py" \
-              -a ! -path "./docs/conf.py" \
-              \) \
-              -exec grep -L "$copyrightRegex" {} + | tee "$temp"
-            if [ -s "$temp" ]; then
-              echo "^^^ +++"
-              msg="Found files without a copyright header (no matches for \`$copyrightRegex\`)"
-              echo "$msg"
-              exit 1
-            else
-              echo "all files have a copyright header (have a match for \`$copyrightRegex\`)"
-            fi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: checking files have copyright headers
+        run: |
+          temp="$(mktemp)"
+          copyrightRegex="# Copyright [0-9-]*2020 Data61, CSIRO"
+          find . \( \
+            -name "*.py" \
+            -a ! -path "./demos/link-prediction/random-walks/utils/node2vec/node2vec.py" \
+            -a ! -path "./demos/link-prediction/random-walks/utils/node2vec/main.py" \
+            -a ! -path "./docs/conf.py" \
+            \) \
+            -exec grep -L "$copyrightRegex" {} + | tee "$temp"
+          if [ -s "$temp" ]; then
+            echo "^^^ +++"
+            msg="Found files without a copyright header (no matches for \`$copyrightRegex\`)"
+            echo "$msg"
+            exit 1
+          else
+            echo "all files have a copyright header (have a match for \`$copyrightRegex\`)"
+          fi
+  whitespace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: checking files have copyright headers
+        run: |
+          scripts/whitespace.sh --github-ci
