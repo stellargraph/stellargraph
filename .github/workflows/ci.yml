@@ -72,6 +72,23 @@ jobs:
         with:
           github_token: ${{ github.token }}
           filter_mode: file
-      - uses: ./.github/actions/black
-        with:
-          filter_mode: file
+
+      # run black and annotate incorrect files with reviewdog
+      - name: Install reviewdog
+        run: |
+          mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $HOME/bin
+          echo ::add-path::$HOME/bin
+      - name: Install black
+        run: |
+          python -m pip install --upgrade pip
+          pip install black==19.10b
+      - name: Check formatting
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          if ! black --check --diff . ; then
+              version="$(black --version)"
+              black --check . \
+                | sed "s/would reformat \(.*\)/\1: invalid formatting according to $version/" \
+                | reviewdog -efm="%f: %m" -name="black" -reporter="github-pr-check" -filter-mode="file"
+          fi
