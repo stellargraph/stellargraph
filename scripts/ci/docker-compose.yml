@@ -1,0 +1,13 @@
+---
+version: "3.4"
+services:
+  neo4j:
+    build:
+      context: docker/stellargraph-neo4j
+      args:
+        - NEO4J_VERSION
+    ports:
+      - 7687:7687
+    environment:
+      # this is running entirely locally on a CI machine, so authentication is unnecessary
+      NEO4J_AUTH: "none"

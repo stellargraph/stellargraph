@@ -182,3 +182,76 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run check
         run: python3 scripts/ci/ci_workflow_notebook_list.py
+
+  neo4j-notebooks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        neo4j_version: [3.5, 4.0]
+
+    env:
+      STELLARGRAPH_NEO4J_HOST: localhost
+      PYTHON_VERSION: 3.6
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Start Neo4j
+        run: docker-compose --file scripts/ci/docker-compose.yml up --detach neo4j
+        env:
+          NEO4J_VERSION: ${{ matrix.neo4j_version }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[neo4j]
+
+      - name: Run notebooks
+        run: |
+          scripts/ci/run_notebook.sh demos/basics/loading-saving-neo4j.ipynb
+          scripts/ci/run_notebook.sh demos/connector/neo4j/load-cora-into-neo4j.ipynb
+          scripts/ci/run_notebook.sh demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
+          scripts/ci/run_notebook.sh demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
+          scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
+
+      - name: Stop Neo4j
+        run: docker-compose --file scripts/ci/docker-compose.yml down
+        if: always()
+
+      - &upload-neo4j
+        name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: loading-saving-neo4j.ipynb
+          path: demos/basics/loading-saving-neo4j.ipynb
+        if: ${{ always() }}
+      - <<: *upload-neo4j
+        with:
+          name: load-cora-into-neo4j.ipynb
+          path: demos/connector/neo4j/load-cora-into-neo4j.ipynb
+      - <<: *upload-neo4j
+        with:
+          name: directed-graphsage-on-cora-neo4j-example.ipynb
+          path: demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
+      - <<: *upload-neo4j
+        with:
+          name: undirected-graphsage-on-cora-neo4j-example.ipynb
+          path: demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
+      - <<: *upload-neo4j
+        with:
+          name: cluster-gcn-on-cora-neo4j-example.ipynb
+          path: demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
