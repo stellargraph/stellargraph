@@ -221,45 +221,55 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[test,neo4j]
 
-      - name: Run notebooks
-        run: |
-          scripts/ci/run_notebook.sh demos/basics/loading-saving-neo4j.ipynb
-          scripts/ci/run_notebook.sh demos/connector/neo4j/load-cora-into-neo4j.ipynb
-          scripts/ci/run_notebook.sh demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
-          scripts/ci/run_notebook.sh demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
-          scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
+      # Run each Neo4j notebook, and upload it as an artifact
 
-      - name: Stop Neo4j
-        run: docker-compose -f scripts/ci/docker-compose.yml --project-directory . down
-        if: always()
-
-      - name: Upload artifact
+      - name: Run loading-saving-neo4j.ipynb
+        run: "scripts/ci/run_notebook.sh demos/basics/loading-saving-neo4j.ipynb"
+      - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: loading-saving-neo4j.ipynb
-          path: demos/basics/loading-saving-neo4j.ipynb
-      - name: Upload artifact
+          path: "demos/basics/loading-saving-neo4j.ipynb"
+
+      - name: Run load-cora-into-neo4j.ipynb
+        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+      - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: load-cora-into-neo4j.ipynb
-          path: demos/connector/neo4j/load-cora-into-neo4j.ipynb
-      - name: Upload artifact
+          path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+
+      - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
+        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+      - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: directed-graphsage-on-cora-neo4j-example.ipynb
-          path: demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
-      - name: Upload artifact
+          path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+
+      - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
+        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+      - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: undirected-graphsage-on-cora-neo4j-example.ipynb
-          path: demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
-      - name: Upload artifact
+          path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+
+      - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
+        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+      - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: cluster-gcn-on-cora-neo4j-example.ipynb
-          path: demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+
+      # Clean up
+
+      - name: Stop Neo4j
+        run: "docker-compose -f scripts/ci/docker-compose.yml --project-directory . down"
+        if: always()
