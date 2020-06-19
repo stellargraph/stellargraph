@@ -104,15 +104,16 @@ jobs:
       - name: Conda build StellarGraph
         run: conda build . --no-anaconda-upload
 
-      - name: Get conda package name
+      - name: Get conda package details
+        id: get_package
         run: |
           package_path=$(conda build . --output)
           package_name=$(basename $package_path)
-          echo "::set-env name=package_path::${package_path}"
-          echo "::set-env name=package_name::${package_name}"
+          echo "::set-output name=package_path::${package_path}"
+          echo "::set-output name=package_name::${package_name}"
 
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.package_name }}
-          path: ${{ env.package_path }}
+          name: ${{ steps.get_package.package_name }}
+          path: ${{ steps.get_package.package_path }}
