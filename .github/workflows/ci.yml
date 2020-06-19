@@ -95,12 +95,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: s-weigand/setup-conda@v1
-        with:
-          update-conda: true
-          python-version: 3.7
 
-      - name: install conda build
-        run: conda install conda-build
+      - name: install conda build tools
+        run: |
+          conda install conda-build
+          conda install conda-verify
 
       - name: conda build StellarGraph
         run: conda build . --no-anaconda-upload
