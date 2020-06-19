@@ -1,6 +1,0 @@
-name: "Black"
-description: "Check code is formatted correctly, according to black"
-
-runs:
-  using: "docker"
-  image: "Dockerfile"
