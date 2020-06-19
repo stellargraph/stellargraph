@@ -110,5 +110,3 @@ jobs:
           with:
             name: ${{ env.conda_package }}
             path: ${{ env.conda_package }}
-
-      buildkite-agent artifact upload "${conda_package}"
