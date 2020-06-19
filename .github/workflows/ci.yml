@@ -166,13 +166,7 @@ jobs:
 
       - name: Run notebook
         id: run_notebook
-        run: |
-          # papermill will replace parameters on some notebooks to make them run faster in CI
-          papermill --execution-timeout=600 \
-            --parameters_file "./.buildkite/notebook-parameters.yml" --log-output \
-            "${{ matrix.notebook }}" "${{ matrix.notebook }}"
-          notebook_name="$(basename "${{ matrix.notebook }}")"
-          echo "::set-output name=notebook_name::$notebook_name"
+        run: scripts/ci/run_notebook.sh ${{ matrix.notebook }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v1
@@ -187,5 +181,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run check
-        run: |
-          python3 scripts/ci_workflow_notebook_list.py
+        run: python3 scripts/ci/ci_workflow_notebook_list.py
