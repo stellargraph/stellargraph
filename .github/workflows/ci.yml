@@ -115,5 +115,5 @@ jobs:
       - name: Upload package
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ steps.get_package.package_name }}
-          path: ${{ steps.get_package.package_path }}
+          name: ${{ steps.get_package.outputs.package_name }}
+          path: ${{ steps.get_package.outputs.package_path }}
