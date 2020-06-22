@@ -213,7 +213,7 @@ jobs:
         run: |
           if ! black --check --diff . ; then
               version="$(black --version)"
-              black --check . \
+              black --check . 2>&1 \
                 | sed "s/would reformat \(.*\)/\1: invalid formatting according to $version/" \
                 | reviewdog -efm="%f: %m" -name="black" -reporter="github-pr-check" -filter-mode="file"
           fi
