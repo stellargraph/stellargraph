@@ -60,6 +60,22 @@ jobs:
           path: ${{ env.JUNIT_NAME }}.xml
         if: ${{ always() }}
 
+      # prepare for non-natively-supported reviewdog checks
+      - name: Install reviewdog
+        run: |
+          mkdir -p $HOME/.local/bin
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh \
+            | sh -s -- -b $HOME/.local/bin
+
+          echo ::add-path::$HOME/.local/bin
+
+      - name: Annotate test results
+        if: always()
+        run: |
+          python scripts/ci/junit_to_checkstyle_xml.py ${{ env.JUNIT_NAME }}.xml \
+            | reviewdog -f=checkstyle -name="Pytest (Python ${{ matrix.python-version }})" \
+                -reporter="github-pr-check" -filter-mode="nofilter"
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
