@@ -91,7 +91,6 @@ def test_GraphConvolution_dense():
         np.testing.assert_array_equal(preds[i, ...], preds[0, ...])
 
 
-@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GraphConvolution_sparse():
     G, features = create_graph_features()
     n_nodes = features.shape[0]
@@ -109,6 +108,7 @@ def test_GraphConvolution_sparse():
     # Note we add a batch dimension of 1 to model inputs
     adj = G.to_adjacency_matrix().tocoo()
     A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
+    print(A_indices.dtype)
     A_values = np.expand_dims(adj.data, 0)
     out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
