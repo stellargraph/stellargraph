@@ -388,14 +388,9 @@ if __name__ == "__main__":
         help="Check that no changes happened, instead of writing the file",
     )
     group.add_argument(
-        "--buildkite_ci",
+        "--ci",
         action="store_true",
         help="Same as `--check`, but with an annotation for buildkite CI",
-    )
-    group.add_argument(
-        "--github_ci",
-        action="store_true",
-        help="Same as `--check`, but with an annotation for GitHub Actions CI",
     )
     parser.add_argument(
         "--html", action="store_true", help="Save HTML as well as notebook output"
@@ -411,9 +406,7 @@ if __name__ == "__main__":
     write_html = args.html
     overwrite_notebook = args.overwrite
     check_notebook = args.check or args.ci
-    on_buildkite_ci = args.buildkite_ci
-    on_github_ci = args.github_ci
-    on_ci = on_buildkite_ci or on_github_ci
+    on_ci = args.ci
     format_code = args.format_code or args.default
     clear_warnings = args.clear_warnings or args.default
     coalesce_streams = args.coalesce_streams or args.default
@@ -568,19 +561,23 @@ Fix by running:
 
         print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
 
-        if on_github_ci:
+        if on_ci:
             # github actions
             annotation_output = "\n".join(f"::error file={path}::Notebook failed format check" for path in check_failed)
             print(annotation_output)
-        elif on_buildkite_ci:
-            subprocess.run(
-                [
-                    "buildkite-agent",
-                    "annotate",
-                    "--style=error",
-                    "--context=format_notebooks",
-                    message,
-                ]
-            )
+            # buildkite
+            try:
+                subprocess.run(
+                    [
+                        "buildkite-agent",
+                        "annotate",
+                        "--style=error",
+                        "--context=format_notebooks",
+                        message,
+                    ]
+                )
+            except FileNotFoundError:
+                # no agent, so probably not on buildkite, and so silently continue without an annotation
+                pass
 
         sys.exit(1)
