@@ -2,8 +2,6 @@
 ---
 version: 2
 
-foo: yes
-
 python:
   version: 3.6
   install:
