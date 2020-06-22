@@ -163,7 +163,7 @@ steps:
   - label: ":python-black::jupyter: check notebook format"
     <<: *timeout
     depends_on: "runner-3_6"
-    command: "python scripts/format_notebooks.py --default --buildkite_ci demos/"
+    command: "python scripts/format_notebooks.py --default --ci demos/"
     plugins:
       <<: *plugins
       docker-compose#v3.2.0:

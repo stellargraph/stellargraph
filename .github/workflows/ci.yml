@@ -228,7 +228,7 @@ jobs:
           pip install black
 
       - name: Run check
-        run: python scripts/format_notebooks.py --default --github_ci demos/
+        run: python scripts/format_notebooks.py --default --ci demos/
 
   check-notebook-text:
     runs-on: ubuntu-latest
