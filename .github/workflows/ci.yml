@@ -206,7 +206,8 @@ jobs:
 
       - name: Start Neo4j
         run: |
-          docker-compose -f scripts/ci/docker-compose.yml --project-directory . up --detach neo4j
+          docker-compose -f scripts/ci/actions-docker-compose.yml --project-directory . \
+            up --detach neo4j
         env:
           NEO4J_VERSION: ${{ matrix.neo4j_version }}
 
@@ -283,7 +284,8 @@ jobs:
       # Clean up
 
       - name: Stop Neo4j
-        run: "docker-compose -f scripts/ci/docker-compose.yml --project-directory . down"
+        run: |
+          docker-compose -f scripts/ci/actions-docker-compose.yml --project-directory . down
         if: always()
 
   black:
