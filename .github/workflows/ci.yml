@@ -58,6 +58,131 @@ jobs:
         with:
           env_vars: OS,PYTHON
 
+  notebooks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # MARKER: list of all notebooks
+        notebook:
+          - "demos/basics/loading-networkx.ipynb"
+          - "demos/basics/loading-numpy.ipynb"
+          - "demos/basics/loading-pandas.ipynb"
+          - "demos/basics/loading-saving-neo4j.ipynb"
+          - "demos/calibration/calibration-link-prediction.ipynb"
+          - "demos/calibration/calibration-node-classification.ipynb"
+          - "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          - "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          - "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          - "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          - "demos/embeddings/attri2vec-embeddings.ipynb"
+          - "demos/embeddings/deep-graph-infomax-embeddings.ipynb"
+          - "demos/embeddings/gcn-unsupervised-graph-embeddings.ipynb"
+          - "demos/embeddings/graphsage-unsupervised-sampler-embeddings.ipynb"
+          - "demos/embeddings/graphwave-embeddings.ipynb"
+          - "demos/embeddings/keras-node2vec-embeddings.ipynb"
+          - "demos/embeddings/metapath2vec-embeddings.ipynb"
+          - "demos/embeddings/node2vec-embeddings.ipynb"
+          - "demos/embeddings/watch-your-step-embeddings.ipynb"
+          - "demos/ensembles/ensemble-link-prediction-example.ipynb"
+          - "demos/ensembles/ensemble-node-classification-example.ipynb"
+          - "demos/graph-classification/dgcnn-graph-classification.ipynb"
+          - "demos/graph-classification/gcn-supervised-graph-classification.ipynb"
+          - "demos/interpretability/gat-node-link-importance.ipynb"
+          - "demos/interpretability/gcn-node-link-importance.ipynb"
+          - "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
+          - "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - "demos/link-prediction/complex-link-prediction.ipynb"
+          - "demos/link-prediction/ctdne-link-prediction.ipynb"
+          - "demos/link-prediction/distmult-link-prediction.ipynb"
+          - "demos/link-prediction/gcn-link-prediction.ipynb"
+          - "demos/link-prediction/graphsage-link-prediction.ipynb"
+          - "demos/link-prediction/hinsage-link-prediction.ipynb"
+          - "demos/link-prediction/homogeneous-comparison-link-prediction.ipynb"
+          - "demos/link-prediction/metapath2vec-link-prediction.ipynb"
+          - "demos/link-prediction/node2vec-link-prediction.ipynb"
+          - "demos/node-classification/attri2vec-node-classification.ipynb"
+          - "demos/node-classification/cluster-gcn-node-classification.ipynb"
+          - "demos/node-classification/directed-graphsage-node-classification.ipynb"
+          - "demos/node-classification/gat-node-classification.ipynb"
+          - "demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.ipynb"
+          - "demos/node-classification/gcn-node-classification.ipynb"
+          - "demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb"
+          - "demos/node-classification/graphsage-inductive-node-classification.ipynb"
+          - "demos/node-classification/graphsage-node-classification.ipynb"
+          - "demos/node-classification/keras-node2vec-node-classification.ipynb"
+          - "demos/node-classification/node2vec-node-classification.ipynb"
+          - "demos/node-classification/node2vec-weighted-node-classification.ipynb"
+          - "demos/node-classification/ppnp-node-classification.ipynb"
+          - "demos/node-classification/rgcn-node-classification.ipynb"
+          - "demos/node-classification/sgc-node-classification.ipynb"
+          - "demos/time-series/gcn-lstm-time-series.ipynb"
+          - "demos/use-cases/hateful-twitters.ipynb"
+          - "demos/zzz-internal-developers/graph-resource-usage.ipynb"
+        exclude:
+          # notebooks that require Neo4j, and are run separately
+          - notebook: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          - notebook: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          - notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          - notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          - notebook: "demos/basics/loading-saving-neo4j.ipynb"
+          # notebooks that don't yet run on CI
+          # FIXME #818: datasets can't be downloaded
+          # FIXME #819: out-of-memory
+          - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - notebook: "demos/interpretability/gat-node-link-importance.ipynb"
+          - notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
+          - notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
+          - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
+          - notebook: "demos/use-cases/hateful-twitters.ipynb"
+
+    env:
+      PYTHON_VERSION: 3.6
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,demos]
+
+      - name: Run notebook
+        id: run_notebook
+        run: scripts/ci/run_notebook.sh ${{ matrix.notebook }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.run_notebook.outputs.notebook_name }}
+          path: ${{ matrix.notebook }}
+        if: ${{ always() }}
+
+  validate-notebooks-list:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run check
+        run: python3 scripts/ci/ci_workflow_notebook_list.py
+
   check-linters:
     runs-on: ubuntu-latest
     steps:
