@@ -73,7 +73,8 @@ jobs:
         if: always()
         run: |
           python scripts/ci/junit_to_checkstyle_xml.py ${{ env.JUNIT_NAME }}.xml \
-            | reviewdog -f=checkstyle -name="Pytest (Python ${{ matrix.python-version }})" \
+            | reviewdog -f=checkstyle \
+                -name="Pytest summary (Python ${{ matrix.python-version }}, ${{ runner.os }})" \
                 -reporter="github-pr-check" -filter-mode="nofilter"
 
       - name: Upload coverage to Codecov
