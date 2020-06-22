@@ -198,11 +198,16 @@ jobs:
           github_token: ${{ github.token }}
           filter_mode: file
 
-      # run black and annotate incorrect files with reviewdog
+      # prepare for non-natively-supported reviewdog checks
       - name: Install reviewdog
         run: |
-          mkdir -p $HOME/.local/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $HOME/.local/bin
+          mkdir -p $HOME/.local/bin
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh \
+            | sh -s -- -b $HOME/.local/bin
+
           echo ::add-path::$HOME/.local/bin
+
+      # run black and annotate incorrect files with reviewdog
       - name: Install black
         run: |
           python3 -m pip install --upgrade pip
@@ -214,6 +219,7 @@ jobs:
           if ! black --check --diff . ; then
               version="$(black --version)"
               black --check . 2>&1 \
-                | sed "s/would reformat \(.*\)/\1: invalid formatting according to $version/" \
-                | reviewdog -efm="%f: %m" -name="black" -reporter="github-pr-check" -filter-mode="file"
+                | sed "s/would reformat \(.*\)/\1:1: invalid formatting according to $version/" \
+                | reviewdog -efm="%f:%l: %m" -name="black" \
+                    -reporter="github-pr-check" -filter-mode="file"
           fi
