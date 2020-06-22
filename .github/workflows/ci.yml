@@ -240,7 +240,9 @@ jobs:
           python-version: '3.x'
 
       - name: Install requirements
-        run: pip install nbformat
+        run: |
+          pip install nbformat
+          pip install commonmark
 
       - name: Run check
         run: python scripts/notebook_text_checker.py demos/
