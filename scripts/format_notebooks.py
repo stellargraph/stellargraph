@@ -562,9 +562,12 @@ Fix by running:
         print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
 
         if on_ci:
-            # github actions
-            annotation_output = "\n".join(f"::error file={path}::Notebook failed format check" for path in check_failed)
-            print(annotation_output)
+            if "GITHUB_ACTIONS" in os.environ:
+                annotation_output = "\n".join(
+                    f"::error file={path}::Notebook failed format check"
+                    for path in check_failed
+                )
+                print(annotation_output)
 
             # buildkite
             try:
