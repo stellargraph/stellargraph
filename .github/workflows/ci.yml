@@ -16,6 +16,9 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
+    env:
+      JUNIT_NAME: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
+
     steps:
       - uses: actions/checkout@v2
 
@@ -44,7 +47,7 @@ jobs:
           # just runs them once (as a test)
           py.test -ra tests/ --doctest-modules \
               --cov=stellargraph --cov-report=xml \
-              -p no:cacheprovider --junitxml="pytest-results-${{ matrix.python-version }}.xml" \
+              -p no:cacheprovider --junitxml="${{ env.JUNIT_NAME }}.xml" \
               --benchmark-disable
         # explicitly use bash on windows, for consistent command parsing
         shell: bash
@@ -52,8 +55,8 @@ jobs:
       - name: Upload pytest test results
         uses: actions/upload-artifact@v1
         with:
-          name: pytest-results-${{ matrix.python-version }}
-          path: pytest-results-${{ matrix.python-version }}.xml
+          name: ${{ env.JUNIT_NAME }}
+          path: ${{ env.JUNIT_NAME }}.xml
         if: ${{ always() }}
 
       - name: Upload coverage to Codecov
