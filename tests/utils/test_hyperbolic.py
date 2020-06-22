@@ -22,7 +22,7 @@ from stellargraph.utils.hyperbolic import *
 
 @pytest.fixture
 def seeded():
-    seed = np.random.randint(2 ** 32)
+    seed = np.random.randint(2 ** 32, dtype=np.uint32)
     # log for reproducibility
     print("seed:", seed)
     np.random.seed(seed)
