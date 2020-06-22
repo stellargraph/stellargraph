@@ -182,3 +182,32 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run check
         run: python3 scripts/ci/ci_workflow_notebook_list.py
+
+  black:
+    name: "Format Python"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install black
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install black==19.10b0
+          echo ::add-path::$HOME/.local/bin
+      - name: Check formatting
+        run: |
+          black --check --diff .
+
+  check-linters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-shellcheck@v1
+        with:
+          filter_mode: file
+      - uses: reviewdog/action-hadolint@v1
+        with:
+          filter_mode: file
+      - uses: reviewdog/action-yamllint@v1
+        with:
+          github_token: ${{ github.token }}
+          filter_mode: file
