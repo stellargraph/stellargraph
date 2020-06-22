@@ -29,7 +29,7 @@ def graph_log_likelihood(batch_adj, wys_output):
     """
     Computes the graph log likelihood loss function as in https://arxiv.org/abs/1710.09599.
 
-    This is different to most keras loss functions in that it doesn't directly compare predicted values to expected
+    This is different to most Keras loss functions in that it doesn't directly compare predicted values to expected
     values. It uses `wys_output` which contains the dot products of embeddings and expected random walks,
     and part of the adjacency matrix `batch_adj` to calculate how well the node embeddings capture the graph
     structure in some sense.
