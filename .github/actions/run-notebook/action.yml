@@ -1,0 +1,9 @@
+name: "Run notebook"
+description: "Run a Jupyter notebook with papermill, and upload the result as an artifact"
+inputs:
+  notebook:
+    description: "The path of the notebook to run"
+    required: true
+runs:
+  using: "node12"
+  main: "index.js"

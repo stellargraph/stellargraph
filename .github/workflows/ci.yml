@@ -164,16 +164,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[test,demos]
 
-      - name: Run notebook
-        id: run_notebook
-        run: scripts/ci/run_notebook.sh ${{ matrix.notebook }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v1
+      - name: Run ${{ matrix.notebook }}
+        uses: ./.github/actions/run-notebook
         with:
-          name: ${{ steps.run_notebook.outputs.notebook_name }}
-          path: ${{ matrix.notebook }}
-        if: ${{ always() }}
+          notebook: "${{ matrix.notebook }}"
 
   validate-notebooks-list:
     runs-on: ubuntu-latest
@@ -224,49 +218,29 @@ jobs:
       # Run each Neo4j notebook, and upload it as an artifact
 
       - name: Run loading-saving-neo4j.ipynb
-        run: "scripts/ci/run_notebook.sh demos/basics/loading-saving-neo4j.ipynb"
-      - name: Upload notebook
-        uses: actions/upload-artifact@v1
-        if: always()
+        uses: ./.github/actions/run-notebook
         with:
-          name: loading-saving-neo4j.ipynb
-          path: "demos/basics/loading-saving-neo4j.ipynb"
+          notebook: "demos/basics/loading-saving-neo4j.ipynb"
 
       - name: Run load-cora-into-neo4j.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/load-cora-into-neo4j.ipynb"
-      - name: Upload notebook
-        uses: actions/upload-artifact@v1
-        if: always()
+        uses: ./.github/actions/run-notebook
         with:
-          name: load-cora-into-neo4j.ipynb
-          path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
 
       - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
-      - name: Upload notebook
-        uses: actions/upload-artifact@v1
-        if: always()
+        uses: ./.github/actions/run-notebook
         with:
-          name: directed-graphsage-on-cora-neo4j-example.ipynb
-          path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          notebook: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
-      - name: Upload notebook
-        uses: actions/upload-artifact@v1
-        if: always()
+        uses: ./.github/actions/run-notebook
         with:
-          name: undirected-graphsage-on-cora-neo4j-example.ipynb
-          path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
-      - name: Upload notebook
-        uses: actions/upload-artifact@v1
-        if: always()
+        uses: ./.github/actions/run-notebook
         with:
-          name: cluster-gcn-on-cora-neo4j-example.ipynb
-          path: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          notebook: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
 
       # Clean up
 
