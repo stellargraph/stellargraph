@@ -176,7 +176,6 @@ def test_movielens_load() -> None:
 @pytest.mark.parametrize("is_directed", [False, True])
 @pytest.mark.parametrize("largest_cc_only", [False, True])
 @pytest.mark.parametrize("subject_as_feature", [False, True])
-@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1698")
 def test_cora_load(is_directed, largest_cc_only, subject_as_feature) -> None:
     g, subjects = Cora().load(is_directed, largest_cc_only, subject_as_feature)
 
@@ -193,7 +192,7 @@ def test_cora_load(is_directed, largest_cc_only, subject_as_feature) -> None:
     else:
         feature_size = base_feature_size
 
-    assert g.nodes().dtype == int
+    assert g.nodes().dtype == np.int64
     assert g.is_directed() == is_directed
 
     assert g.number_of_nodes() == expected_nodes
