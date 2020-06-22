@@ -90,7 +90,7 @@ def test_GraphConvolution_dense():
         np.testing.assert_array_equal(preds[i, ...], preds[0, ...])
 
 
-@pytest.mark.xfail(sys.platform == 'win32', reason="FIXME #1699")
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GraphConvolution_sparse():
     G, features = create_graph_features()
     n_nodes = features.shape[0]
@@ -165,7 +165,7 @@ def test_GCN_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.xfail(sys.platform == 'win32', reason="FIXME #1699")
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_apply_sparse():
 
     G, features = create_graph_features()
@@ -218,7 +218,7 @@ def test_GCN_linkmodel_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.xfail(sys.platform == 'win32', reason="FIXME #1699")
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_linkmodel_apply_sparse():
 
     G, features = create_graph_features()
