@@ -242,7 +242,9 @@ jobs:
           path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
 
       - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+        run: |
+          scripts/ci/run_notebook.sh \
+            demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
       - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
@@ -251,7 +253,9 @@ jobs:
           path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+        run: |
+          scripts/ci/run_notebook.sh \
+            demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
       - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
@@ -260,7 +264,8 @@ jobs:
           path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
-        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+        run: |
+          scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
       - name: Upload notebook
         uses: actions/upload-artifact@v1
         if: always()
