@@ -1,0 +1,20 @@
+---
+extends: default
+
+rules:
+  line-length:
+    max: 100
+
+  empty-lines:
+    max: 1
+
+  comments:
+    require-starting-space: false
+    min-spaces-from-content: 1
+
+  braces:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+
+  # managed by prettier
+  indentation: false
