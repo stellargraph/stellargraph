@@ -24,9 +24,10 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-# for every (git ls-files) non-binary (grep -I) file, normalise the whitespace and write it back, to
+# for every (git ls-files) non-binary (grep -I) file outside of a node_modules folder
+# (:(exclude)..., see pathspec in 'man gitglossary'), normalise the whitespace and write it back, to
 # be able to do a `git diff` to get nice output
-git ls-files -z | xargs -0 grep --null -I --files-with-match '' | while read -rd $'\0' file; do
+git ls-files -z -- ':(exclude)**/node_modules/*' | xargs -0 grep --null -I --files-with-match '' | while read -rd $'\0' file; do
   # strip trailing whitespace from each line with sed, and use bash's collapsing to delete multiple
   # newlines
   contents=$(sed 's/  *$//' "$file")
