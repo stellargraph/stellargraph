@@ -565,7 +565,7 @@ Fix by running:
             # github actions
             annotation_output = "\n".join(f"::error file={path}::Notebook failed format check" for path in check_failed)
             print(annotation_output)
-            print("test")
+
             # buildkite
             try:
                 subprocess.run(
