@@ -212,12 +212,12 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install black==19.10b0
-      - name: Check formatting
+      - name: Check Python formatting
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           if ! black --check --diff . ; then
-              msg='file formatting doesn't match $(black --version); fix using `black .`'
+              msg='file formatting does not match $(black --version); fix using `black .`'
               black --check . 2>&1 \
                 | sed "s/would reformat \(.*\)/\1:1: $msg/" \
                 | reviewdog -efm="%f:%l: %m" -name="black" \
