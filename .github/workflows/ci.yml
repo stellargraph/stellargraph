@@ -1,5 +1,6 @@
 ---
-name: Continuous Integration
+# Continuous Integration is too long for the GitHub view
+name: CI
 
 "on":
   push:
