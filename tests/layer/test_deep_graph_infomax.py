@@ -22,6 +22,7 @@ from .. import require_gpu, test_utils
 import tensorflow as tf
 import pytest
 import numpy as np
+import sys
 
 
 def _model_data(model_type, sparse):

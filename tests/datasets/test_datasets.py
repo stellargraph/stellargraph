@@ -17,6 +17,7 @@
 import pytest
 import tempfile
 import os
+import sys
 import numpy as np
 from stellargraph.datasets import *
 from urllib.error import URLError

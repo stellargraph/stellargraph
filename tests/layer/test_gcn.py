@@ -26,6 +26,7 @@ from stellargraph.mapper import FullBatchNodeGenerator, FullBatchLinkGenerator
 from stellargraph.core.graph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
+import sys
 import networkx as nx
 import pandas as pd
 import numpy as np
