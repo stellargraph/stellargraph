@@ -65,10 +65,12 @@ jobs:
           env_vars: OS,PYTHON
 
   notebooks:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
+
         # MARKER: list of all notebooks
         notebook:
           - "demos/basics/loading-networkx.ipynb"
@@ -129,22 +131,65 @@ jobs:
           - "demos/zzz-internal-developers/graph-resource-usage.ipynb"
         exclude:
           # notebooks that require Neo4j, and are run separately
-          - notebook: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
-          - notebook: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
-          - notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
-          - notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
-          - notebook: "demos/basics/loading-saving-neo4j.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/basics/loading-saving-neo4j.ipynb"
           # notebooks that don't yet run on CI
           # FIXME #818: datasets can't be downloaded
           # FIXME #819: out-of-memory
-          - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
-          - notebook: "demos/interpretability/gat-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
-          - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
-          - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
-          - notebook: "demos/use-cases/hateful-twitters.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/interpretability/gat-node-link-importance.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/node-classification/rgcn-node-classification.ipynb"
+          - os: ubuntu-latest
+            notebook: "demos/use-cases/hateful-twitters.ipynb"
+          # notebooks that require Neo4j, and are run separately
+          - os: windows-latest
+            notebook: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          - os: windows-latest
+            notebook: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          - os: windows-latest
+            notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          - os: windows-latest
+            notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          - os: windows-latest
+            notebook: "demos/basics/loading-saving-neo4j.ipynb"
+          # notebooks that don't yet run on CI
+          # FIXME #818: datasets can't be downloaded
+          # FIXME #819: out-of-memory
+          - os: windows-latest
+            notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - os: windows-latest
+            notebook: "demos/interpretability/gat-node-link-importance.ipynb"
+          - os: windows-latest
+            notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
+          - os: windows-latest
+            notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
+          - os: windows-latest
+            notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - os: windows-latest
+            notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - os: windows-latest
+            notebook: "demos/node-classification/rgcn-node-classification.ipynb"
+          - os: windows-latest
+            notebook: "demos/use-cases/hateful-twitters.ipynb"
 
     env:
       PYTHON_VERSION: 3.6
@@ -177,7 +222,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
-          name: ${{ steps.run_notebook.outputs.notebook_name }}
+          name: ${{ steps.run_notebook.outputs.notebook_name }} (${{ runner.os }})
           path: ${{ matrix.notebook }}
         if: ${{ always() }}
 
