@@ -386,5 +386,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Check documentation
-        run: "scripts/ci/test-documentation.sh"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install pandoc
+          run: |
+            cd docs
+            sudo apt update
+            sudo apt install -y pandoc enchant
+
+      - name: Install python requirements
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Listing dependency versions
+          run: pip freeze
+
+      - name: Building docs
+        run: make html SPHINXOPTS="-W --keep-going"
+
+      - name: Checking spelling
+        run: make spelling SPHINXOPTS="-W --keep-going"
