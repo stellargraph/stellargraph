@@ -520,7 +520,7 @@ This check can be run locally, via `{command}`."""
         if "GITHUB_ACTIONS" in os.environ:
 
             def github_file_list(path, errors):
-                whole_list = "%0A".join(error.replace('\n', '%0A') for error in errors)
+                whole_list = "%0A".join(error.replace("\n", "%0A") for error in errors)
                 return (
                     f"::error file={path}::Notebook failed text check:%0A{whole_list}"
                 )
