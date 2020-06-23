@@ -405,11 +405,9 @@ jobs:
         run: pip freeze
 
       - name: Building docs
-        run: |
-          cd docs
-          make html SPHINXOPTS="-W --keep-going"
+        run: make html SPHINXOPTS="-W --keep-going"
+        working-directory: ./docs
 
       - name: Checking spelling
-        run: |
-          cd docs
-          make spelling SPHINXOPTS="-W --keep-going"
+        run: make spelling SPHINXOPTS="-W --keep-going"
+        working-directory: ./docs
