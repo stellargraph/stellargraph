@@ -19,7 +19,6 @@ jobs:
 
     env:
       JUNIT_NAME: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
-      PYTHONDONTWRITEBYTECODE: 1
       # make sure that no new uses of the legacy constructor are added (see also: test in
       # test_graph.py, filterwarnings in pytest.ini)
       PYTHONWARNINGS: "error:Constructing a StellarGraph:DeprecationWarning"
