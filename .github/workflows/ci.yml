@@ -374,7 +374,7 @@ jobs:
       - name: "Run shfmt"
         uses: docker://mvdan/shfmt:v2.6.4
         with:
-          args: "-i run -v  -d i 2 -ci -sr ."
+          args: "-d -i 2 -ci -sr ."
 
   dockerfile-format:
     runs-on: ubuntu-latest
