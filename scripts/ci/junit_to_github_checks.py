@@ -19,6 +19,7 @@ from collections import defaultdict
 import os
 import sys
 import xml.etree.ElementTree as ET
+import urllib.parse
 
 
 def deduce_file_position(testcase, base):
@@ -59,9 +60,7 @@ def main():
     tree = ET.parse(args.file)
     root = tree.getroot()
 
-    tests_per_file = defaultdict(list)
     invalid = []
-
     for testcase in root.findall(".//testcase"):
         children = {child.tag: child for child in testcase}
 
@@ -74,32 +73,20 @@ def main():
                 invalid.append(e)
                 continue
 
-            tests_per_file[filename].append(
-                (line, testcase.get("name"), problem_child.get("message"))
-            )
+            name = testcase.get("name")
+            base_message = problem_child.get("message").replace("\\n", "\n")
 
-    checkstyle = ET.Element("checkstyle")
-    for file_name, tests in tests_per_file.items():
-        this_file = ET.Element("file", name=file_name)
+            message = f"""\
+Test {name} failed:
 
-        for (line, test_name, message) in tests:
-            real_newlines = message.replace('\\n', '\n')
-            formatted = f"""Test {test_name} failed:
+{base_message}
 
-{real_newlines}"""
+Full output:
 
-            error = ET.Element(
-                "error",
-                severity="error",
-                line=str(line),
-                source=test_name,
-                message=formatted,
-            )
-            this_file.append(error)
-
-        checkstyle.append(this_file)
-
-    ET.ElementTree(checkstyle).write(sys.stdout, encoding="unicode")
+{problem_child.text}
+"""
+            encoded = urllib.parse.quote(message)
+            print(f"::error file={filename},line={line}::{encoded}")
 
     if invalid:
         print(

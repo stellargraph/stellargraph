@@ -64,14 +64,7 @@ jobs:
       - name: Annotate test results
         if: always()
         run: |
-          mkdir -p $HOME/.local/bin
-          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh \
-            | sh -s -- -b $HOME/.local/bin
-
-          python scripts/ci/junit_to_checkstyle_xml.py ${{ env.JUNIT_NAME }}.xml \
-            | $HOME/.local/bin/reviewdog -f=checkstyle \
-                -name="Pytest summary (Python ${{ matrix.python-version }}, ${{ runner.os }})" \
-                -reporter="github-pr-check" -filter-mode="nofilter"
+          python scripts/ci/junit_to_github_checks.py ${{ env.JUNIT_NAME }}.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
