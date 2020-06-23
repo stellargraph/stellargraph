@@ -26,7 +26,7 @@ def models_equals(model1, model2):
         np.testing.assert_array_equal(w, w_new)
 
 
-def assert_reproducible(func, num_iter=3):
+def assert_reproducible(func, num_iter=1):
     """
     Assert Keras models produced from calling ``func`` are reproducible.
 
