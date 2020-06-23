@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.6.10, 3.7.7, 3.8.3]
         os: [ubuntu-latest, windows-latest]
 
     runs-on: ${{ matrix.os }}
@@ -28,13 +28,18 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Find site packages
+        id: site-packages
+        run: |
+          python -c "import site; print('::set-output name=dir::' + site.getsitepackages()[0])"
+
       - name: Restore cache
         uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('setup.py') }}
+          path: ${{ steps.site-packages.outputs.dir }}/../../..
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-site-packages-${{ hashFiles('setup.py') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+            ${{ runner.os }}-${{ matrix.python-version }}-pip-site-packages-
 
       - name: Install dependencies
         run: |
