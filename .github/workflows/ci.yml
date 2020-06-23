@@ -384,7 +384,7 @@ jobs:
 
   check-documentation:
     runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v2
-        - name: Check documentation
-          run: "scripts/ci/test-documentation.sh"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check documentation
+        run: "scripts/ci/test-documentation.sh"
