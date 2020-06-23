@@ -53,6 +53,7 @@ test:
     - tests/test_utils
     - tests/core
     - tests/layer
+    - pytest.ini
   commands:
     - py.test -ra -p no:cacheprovider --benchmark-disable --color=yes tests/
 about:

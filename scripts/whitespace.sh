@@ -5,6 +5,7 @@ set -euo pipefail
 usage="$(basename "$0") [-h | --help] [--ci] -- script to normalise whitespace, or validate that it is normalised on CI"
 
 on_ci=0
+on_buildkite=0
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -h | --help)
@@ -13,6 +14,12 @@ while [ "$#" -gt 0 ]; do
       ;;
     --ci)
       on_ci=1
+      on_buildkite=1
+      shift
+      ;;
+    --github-ci)
+      on_ci=1
+      on_buildkite=0
       shift
       ;;
     *)
@@ -50,7 +57,8 @@ if [ "$on_ci" -eq 1 ]; then
     # (https://buildkite.com/docs/pipelines/managing-log-output) so indent the diff lines a bit
     sed 's/^/  /' "$tmp"
 
-    buildkite-agent annotate --context whitespace --style error << EOF
+    if [ "$on_buildkite" -eq 1 ]; then
+      buildkite-agent annotate --context whitespace --style error << EOF
 $msg
 
 <details>
@@ -62,6 +70,7 @@ $(cat "$tmp")
 </details>
 EOF
 
+    fi
     exit 1
   fi
 fi
