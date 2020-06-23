@@ -39,7 +39,10 @@ class Neo4jStellarGraph:
     database of interest and contains functions to query the graph data necessary
     for machine learning.
 
-    .. seealso:: the `Neo4j demos <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/index.html>`_ for examples of using this class
+    .. seealso::
+
+       `Neoj demos <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_
+         Examples of using this class.
 
     Args:
         graph_db (py2neo.Graph): a :class:`py2neo.Graph` connected to a Neo4j graph database.

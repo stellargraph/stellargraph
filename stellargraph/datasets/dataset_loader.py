@@ -98,7 +98,7 @@ class DatasetLoader:
 
 
    `\"Basics\" demos <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
-     Demonstration notebooks that show how to load data into a :class:`StellarGraph` from many formats.\
+     Examples for loading data into a :class:`StellarGraph` from many formats.\
 """
 
         super().__init_subclass__(**kwargs)  # type: ignore

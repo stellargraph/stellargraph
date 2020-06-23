@@ -45,9 +45,8 @@ class APPNPPropagationLayer(Layer):
        :class:`APPNP`
          A model that combines several of these layers.
 
-       the `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
+       `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
          An example of using this class, via :class:`APPNP`.
-
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -208,7 +207,7 @@ class APPNP:
        :class:`APPNPPropagationLayer`
          The base layer out of which an APPNP model is built
 
-       the `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
+       `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
          An example of using this class.
 
        :class:`FullBatchNodeGenerator`

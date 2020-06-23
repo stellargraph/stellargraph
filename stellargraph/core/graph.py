@@ -282,8 +282,7 @@ class StellarGraph:
           Construction from a NetworkX graph.
 
         `"Basics" demos <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
-          Demonstration notebooks that show how to load data into a :class:`StellarGraph` from many
-          formats.
+          Examples for loading data into a :class:`StellarGraph` from many formats.
 
     Args:
         nodes (Numpy array, IndexedArray, DataFrame or dict of hashable to IndexedArray or Pandas DataFrame, optional):
@@ -539,7 +538,10 @@ class StellarGraph:
             Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
 
 
-        .. seealso:: The `loading from NetworkX <https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-networkx.html>`_ demo.
+        .. seealso::
+
+           `Loading from NetworkX demo <https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-networkx.html>`_
+             An example of using this function.
 
         Args:
             graph: The NetworkX graph instance.
