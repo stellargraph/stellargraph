@@ -40,7 +40,7 @@ jobs:
       - name: Restore cache
         uses: actions/cache@v2
         with:
-          path: ${{ steps.site-packages.outputs.dir }}/../../..
+          path: ${{ steps.site-packages.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-pip-site-packages-${{ hashFiles('setup.py') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.python-version }}-pip-site-packages-
