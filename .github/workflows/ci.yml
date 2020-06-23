@@ -391,10 +391,10 @@ jobs:
           python-version: '3.x'
 
       - name: Install pandoc
-          run: |
-            cd docs
-            sudo apt update
-            sudo apt install -y pandoc enchant
+        run: |
+          cd docs
+          sudo apt update
+          sudo apt install -y pandoc enchant
 
       - name: Install python requirements
         run: |
@@ -402,7 +402,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Listing dependency versions
-          run: pip freeze
+        run: pip freeze
 
       - name: Building docs
         run: make html SPHINXOPTS="-W --keep-going"
