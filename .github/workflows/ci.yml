@@ -206,6 +206,7 @@ jobs:
               msg="file formatting does not match $(black --version); fix using \`black .\`"
               # convert the black output to syntax understood by GitHub Actions
               black --check . 2>&1 | sed "s/would reformat \(.*\)/::error file=\1::$msg/"
+              exit 1
           fi
 
   check-linters:
