@@ -410,4 +410,6 @@ jobs:
           make html SPHINXOPTS="-W --keep-going"
 
       - name: Checking spelling
-        run: make spelling SPHINXOPTS="-W --keep-going"
+        run: |
+          cd docs
+          make spelling SPHINXOPTS="-W --keep-going"
