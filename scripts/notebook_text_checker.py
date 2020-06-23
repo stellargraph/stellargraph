@@ -517,10 +517,18 @@ Found some notebooks with inconsistent formatting. These notebooks may be less c
 
 This check can be run locally, via `{command}`."""
 
-        if 'GITHUB_ACTIONS' in os.environ:
-            annotation_output = "\n".join(f"::error file={path}::Notebook failed text check" for path, _ in all_errors)
-            print(annotation_output)
+        if "GITHUB_ACTIONS" in os.environ:
 
+            def github_file_list(path, errors):
+                whole_list = "%0A".join(list_element(error) for error in errors)
+                return (
+                    f"::error file={path}::Notebook failed text check:%0A{whole_list}"
+                )
+
+            annotation_output = "\n".join(
+                github_file_list(path, errors) for path, errors in all_errors
+            )
+            print(annotation_output)
         try:
             subprocess.run(
                 [
