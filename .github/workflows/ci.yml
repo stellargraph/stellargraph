@@ -398,6 +398,7 @@ jobs:
       - name: Install python requirements
         run: |
           pip install --upgrade pip
+          pip install numpy
           pip install -r docs/requirements.txt
 
       - name: Listing dependency versions
