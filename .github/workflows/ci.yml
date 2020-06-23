@@ -34,7 +34,9 @@ jobs:
           python -c "
           import site
           from os.path import dirname
-          print('::set-output name=dir::' + dirname(dirname(dirname(site.getsitepackages()[0]))))
+          sitepkgs = site.getsitepackages()[0]
+          print(sitepkgs)
+          print('::set-output name=dir::' + dirname(dirname(sitepkgs)))
           "
 
       - name: Restore cache
