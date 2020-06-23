@@ -193,7 +193,7 @@ def test_cora_load(is_directed, largest_cc_only, subject_as_feature) -> None:
     else:
         feature_size = base_feature_size
 
-    assert g.nodes().dtype == int
+    assert g.nodes().dtype == np.int64
     assert g.is_directed() == is_directed
 
     assert g.number_of_nodes() == expected_nodes
