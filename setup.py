@@ -45,7 +45,7 @@ REQUIRES = [
 #
 # Other demos do not have specific requirements
 EXTRAS_REQUIRES = {
-    'demos': ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
+    "demos": ["numba", "jupyter", "seaborn", "rdflib", "mplleaflet==0.0.5"],
     "igraph": ["python-igraph"],
     "neo4j": ["py2neo"],
     "test": [
@@ -65,7 +65,7 @@ EXTRAS_REQUIRES = {
 # Long description
 try:
     with open("README.md", "r", encoding="utf8") as fh:
-        LONG_DESCRIPTION =        fh.read()
+        LONG_DESCRIPTION = fh.read()
 except FileNotFoundError:
     # can't find the README (e.g. building the docker image), so skip it
     LONG_DESCRIPTION = ""
