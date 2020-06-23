@@ -520,16 +520,24 @@ if __name__ == "__main__":
                     check_failed.append(str(file_loc))
 
                     if on_ci:
-                        # CI doesn't provide enough state to diagnose a peculiar or
+                        # Buildkiet CI doesn't provide enough state to diagnose a peculiar or
                         # seemingly-spurious difference, so include a diff in the logs. This allows
                         # us to inspect the change retroactive if required, but doesn't junk up the
                         # final output/annotation.
-                        sys.stdout.writelines(
-                            difflib.unified_diff(
-                                original.splitlines(keepends=True),
-                                updated.splitlines(keepends=True),
-                            )
+                        diff = difflib.unified_diff(
+                            original.splitlines(keepends=True),
+                            updated.splitlines(keepends=True),
+                            lineterm="",
                         )
+                        sys.stdout.writelines(d + "\n" for d in diff)
+
+                        if "GITHUB_ACTIONS" in os.environ:
+                            # special annotations for github actions
+                            print(
+                                f"::error file={file_loc}::Notebook failed format check:",
+                                end="%0A",
+                            )
+                            sys.stdout.writelines(d + "%0A" for d in diff)
 
                 tempdir.cleanup()
 
@@ -562,14 +570,6 @@ Fix by running:
         print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
 
         if on_ci:
-            if "GITHUB_ACTIONS" in os.environ:
-                annotation_output = "\n".join(
-                    f"::error file={path}::Notebook failed format check"
-                    for path in check_failed
-                )
-                print(annotation_output)
-
-            # buildkite
             try:
                 subprocess.run(
                     [
