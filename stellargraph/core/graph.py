@@ -276,7 +276,14 @@ class StellarGraph:
     for explicitly switching the methods to consume and return ilocs directly, cutting out the
     conversion overhead.
 
-    .. seealso:: :meth:`from_networkx` for construction from a NetworkX graph.
+    .. seealso::
+
+        :meth:`from_networkx`
+          Construction from a NetworkX graph.
+
+        `"Basics" demos <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
+          Demonstration notebooks that show how to load data into a :class:`StellarGraph` from many
+          formats.
 
     Args:
         nodes (Numpy array, IndexedArray, DataFrame or dict of hashable to IndexedArray or Pandas DataFrame, optional):
@@ -531,6 +538,8 @@ class StellarGraph:
                 [feature_vector_1, feature_vector_2, ..])
             Gs = StellarGraph.from_networkx(nx_graph, node_features=node_data)
 
+
+        .. seealso:: The `loading from NetworkX <https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-networkx.html>`_ demo.
 
         Args:
             graph: The NetworkX graph instance.

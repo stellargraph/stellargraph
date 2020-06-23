@@ -39,6 +39,8 @@ class Neo4jStellarGraph:
     database of interest and contains functions to query the graph data necessary
     for machine learning.
 
+    .. seealso:: the `Neo4j demos <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/index.html>`_ for examples of using this class
+
     Args:
         graph_db (py2neo.Graph): a :class:`py2neo.Graph` connected to a Neo4j graph database.
         node_label (str, optional): Common label for all nodes in the graph, if such label exists.

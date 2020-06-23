@@ -40,6 +40,15 @@ class APPNPPropagationLayer(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
+    .. seealso:
+
+       :class:`APPNP`
+         A model that combines several of these layers.
+
+       the `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
+         An example of using this class, via :class:`APPNP`.
+
+
     Args:
         units (int): dimensionality of output feature vectors
         final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
@@ -193,6 +202,20 @@ class APPNP:
         in the same way as the adjacency matrix.
 
       - The size of the final fully connected layer must be equal to the number of classes to predict.
+
+    .. seealso:
+
+       :class:`APPNPPropagationLayer`
+         The base layer out of which an APPNP model is built
+
+       the `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
+         An example of using this class.
+
+       :class:`FullBatchNodeGenerator`
+         The data generator to use for node classification with APPNP.
+
+       :class:`FullBatchLinkGenerator`
+         The data generator to use for link classification with APPNP.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack

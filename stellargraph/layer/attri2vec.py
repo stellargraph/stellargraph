@@ -47,6 +47,8 @@ class Attri2Vec:
     The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
+    .. seealso:
+
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence.

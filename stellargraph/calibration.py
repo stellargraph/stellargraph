@@ -43,6 +43,8 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
     been calculated for each point in the dataset and given in the array
     prediction_probabilities.
 
+    .. seealso:: the `calibration demos <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_ for examples of using this function
+
     Args:
         prediction_probabilities (numpy array):  The predicted probabilities.
         accuracy (numpy array): The accuracy such that the i-th entry in the array holds the proportion of correctly
@@ -94,6 +96,8 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
 def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=None):
     """
     Helper function for plotting a reliability diagram.
+
+    .. seealso:: the `calibration demos <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_ for examples of using this function
 
     Args:
         calibration_data (list): The calibration data as a list where each entry in the list is a 2-tuple of type
@@ -169,6 +173,8 @@ class TemperatureCalibration(object):
     logits to calculate the probabilistic output. As noted in the cited paper, Temperature
     Scaling does not change the maximum of the softmax function so the classifier's prediction
     remain the same.
+
+    .. seealso:: the `calibration demos <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_ for examples of using this class
     """
 
     def __init__(self, epochs=1000):
@@ -359,6 +365,8 @@ class TemperatureCalibration(object):
 class IsotonicCalibration(object):
     """
     A class for applying Isotonic Calibration to the outputs of a binary or multi-class classifier.
+
+    .. seealso:: the `calibration demos <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_ for examples of using this class
     """
 
     def __init__(self):

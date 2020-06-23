@@ -95,6 +95,8 @@ class Neo4jGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
         test_data_gen = G_generator.flow(test_node_ids)
 
+    .. seealso:: the `Neo4j GraphSAGE demos <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html>`_ for examples of using this class
+
     Args:
         graph (Neo4jStellarGraph): Neo4jStellarGraph object
         batch_size (int): Size of batch to return.
@@ -170,6 +172,8 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
         G_generator = DirectedGraphSAGENodeGenerator(G, 50, [10,5], [5,1])
         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
         test_data_gen = G_generator.flow(test_node_ids)
+
+    .. seealso:: the `Neo4j Directed GraphSAGE demos <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`_ for examples of using this class
 
     Args:
         graph (Neo4jStellarDiGraph): Neo4jStellarGraph object
