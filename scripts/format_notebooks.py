@@ -520,7 +520,7 @@ if __name__ == "__main__":
                     check_failed.append(str(file_loc))
 
                     if on_ci:
-                        # Buildkiet CI doesn't provide enough state to diagnose a peculiar or
+                        # Buildkite CI doesn't provide enough state to diagnose a peculiar or
                         # seemingly-spurious difference, so include a diff in the logs. This allows
                         # us to inspect the change retroactive if required, but doesn't junk up the
                         # final output/annotation.
