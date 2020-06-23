@@ -31,7 +31,11 @@ jobs:
       - name: Find site packages
         id: site-packages
         run: |
-          python -c "import site; print('::set-output name=dir::' + site.getsitepackages()[0])"
+          python -c "
+          import site
+          from os.path import dirname
+          print('::set-output name=dir::' + dirname(dirname(dirname(site.getsitepackages()[0]))))
+          "
 
       - name: Restore cache
         uses: actions/cache@v2
