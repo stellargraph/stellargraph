@@ -18,8 +18,8 @@ import argparse
 from collections import defaultdict
 import os
 import sys
+import textwrap
 import xml.etree.ElementTree as ET
-import urllib.parse
 
 
 def deduce_file_position(testcase, base):
@@ -75,17 +75,16 @@ def main():
 
             name = testcase.get("name")
             base_message = problem_child.get("message").replace("\\n", "\n")
+            indented = textwrap.indent(base_message, "    ")
 
             message = f"""\
 Test {name} failed:
 
-{base_message}
-
-Full output:
-
-{problem_child.text}
+{indented}
 """
-            encoded = urllib.parse.quote(message)
+            # multiline output is possible by escaping (only) the \n
+            # https://github.com/actions/toolkit/issues/193#issuecomment-605394935
+            encoded = message.replace("\n", "%0A")
             print(f"::error file={filename},line={line}::{encoded}")
 
     if invalid:
