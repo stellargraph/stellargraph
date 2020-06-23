@@ -47,7 +47,18 @@ class Attri2Vec:
     The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer and a generator object.
 
-    .. seealso:
+    .. seealso::
+
+       `Attri2vec node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`_
+       `Attri2vec link prediction demo <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`_
+       `Attri2vec unsupervised representation learning demo <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`_
+          Examples of using this class.
+
+       :class:`Attri2VecNodeGenerator`
+         The data generator to use for node classification with Attri2vec.
+
+       :class:`Attri2VecLinkGenerator`
+         The data generator to use for link prediction with Attri2vec.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.

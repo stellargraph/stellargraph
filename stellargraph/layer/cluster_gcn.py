@@ -50,9 +50,6 @@ class ClusterGCN:
     To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using the :class:`ClusterNodeGenerator` class.
 
-    For more details, please see `the Cluster-GCN demo notebook
-    <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
-
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`ClusterNodeGenerator` object.
@@ -74,6 +71,15 @@ class ClusterGCN:
                              dropout=0.5
                 )
             x_inp, predictions = cluster_gcn.in_out_tensors()
+
+    .. seealso::
+
+       `Cluster-GCN demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
+       `Neo4j Cluster-GCN demo <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`_
+         Examples of using this class.
+
+       :class:`ClusterNodeGenerator`
+         The data generator to use for node classification with Cluster-GCN.
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack

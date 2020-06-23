@@ -205,7 +205,7 @@ class APPNP:
     .. seealso::
 
        :class:`APPNPPropagationLayer`
-         The base layer out of which an APPNP model is built
+         The base layer out of which an APPNP model is built.
 
        `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
          An example of using this class.

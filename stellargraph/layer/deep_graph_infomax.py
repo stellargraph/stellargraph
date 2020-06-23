@@ -30,6 +30,11 @@ __all__ = ["DeepGraphInfomax", "DGIDiscriminator"]
 class DGIDiscriminator(Layer):
     """
     This Layer computes the Discriminator function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
+
+    .. seealso::
+
+       :class:`DeepGraphInfomax`
+         A model that uses this layer.
     """
 
     def __init__(self, *args, **kwargs):
@@ -103,6 +108,15 @@ class DeepGraphInfomax:
     """
     A class to wrap stellargraph models for Deep Graph Infomax unsupervised training
     (https://arxiv.org/pdf/1809.10341.pdf).
+
+    .. seealso::
+
+       `Unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       `Semi-supervised node classification with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`_
+         Examples of using this class.
+
+       :class:`CorruptedGenerator`
+         The data generator to use with Deep Graph Infomax.
 
     Args:
         base_model: the base stellargraph model class
