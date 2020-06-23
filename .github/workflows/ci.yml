@@ -316,3 +316,26 @@ jobs:
         with:
           github_token: ${{ github.token }}
           filter_mode: file
+
+  check-demo-indexing:
+    runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-python@v2
+            with:
+              python-version: '3.x'
+
+        - name: Install requirements
+          run: |
+            pip install --upgrade pip
+            pip install nbformat
+
+        - name: Check demo indexing
+          run: python scripts/demo_indexing.py --action=compare
+
+  check-documentation:
+    runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2
+        - name: Check documentation
+          run: "scripts/ci/test-documentation.sh"
