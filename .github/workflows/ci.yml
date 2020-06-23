@@ -183,6 +183,24 @@ jobs:
       - name: Run check
         run: python3 scripts/ci/ci_workflow_notebook_list.py
 
+  black:
+    name: "Format Python"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install black
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install black==19.10b0
+          echo ::add-path::$HOME/.local/bin
+      - name: Check formatting
+        run: |
+          if ! black --check --diff . ; then
+              msg="file formatting does not match $(black --version); fix using \`black .\`"
+              # convert the black output to syntax understood by GitHub Actions
+              black --check . 2>&1 | sed "s/would reformat \(.*\)/::error file=\1::$msg/"
+          fi
+
   check-linters:
     runs-on: ubuntu-latest
     steps:
@@ -197,29 +215,3 @@ jobs:
         with:
           github_token: ${{ github.token }}
           filter_mode: file
-
-      # prepare for non-natively-supported reviewdog checks
-      - name: Install reviewdog
-        run: |
-          mkdir -p $HOME/.local/bin
-          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh \
-            | sh -s -- -b $HOME/.local/bin
-
-          echo ::add-path::$HOME/.local/bin
-
-      # run black and annotate incorrect files with reviewdog
-      - name: Install black
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install black==19.10b0
-      - name: Check Python formatting
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
-        run: |
-          if ! black --check --diff . ; then
-              msg="file formatting does not match $(black --version); fix using \`black .\`"
-              black --check . 2>&1 \
-                | sed "s/would reformat \(.*\)/\1:1: $msg/" \
-                | reviewdog -efm="%f:%l: %m" -name="black" \
-                    -reporter="github-pr-check" -filter-mode="file"
-          fi
