@@ -38,13 +38,15 @@ def deduce_file_position(testcase, base):
     with open(os.path.join(base, filename)) as f:
         contents = f.read()
 
-    # estimate the line of the test by doing a string search
+    # estimate the location of the test by doing a string search
     try:
         index = contents.index(f"def {base_name}")
     except:
         raise ValueError(f"count not find failing test '{base_name}' in {filename}")
 
-    line = contents.count("\n", index) + 1
+    # number of newlines since the start of the file = zero-based line, GitHub uses one-based lines
+    line = contents.count("\n", 0, index) + 1
+
     return filename, line
 
 
