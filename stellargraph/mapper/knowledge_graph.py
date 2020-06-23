@@ -75,11 +75,13 @@ class KGTripleGenerator(Generator):
 
             sample_strategy (str, optional): the sampling strategy to use for negative sampling, if ``negative_samples`` is not None. Supported values:
 
-                ``uniform`` Uniform sampling, where a negative edge is created from a positive edge
-                  in ``edges`` by replacing the source or destination entity with a uniformly
-                  sampled random entity in the graph (without verifying if the edge exists in the
-                  graph: for sparse graphs, this is unlikely). Each element in a batch is labelled
-                  as 1 (positive) or 0 (negative). An appropriate loss function is
+                ``uniform``
+
+                  Uniform sampling, where a negative edge is created from a positive edge in
+                  ``edges`` by replacing the source or destination entity with a uniformly sampled
+                  random entity in the graph (without verifying if the edge exists in the graph: for
+                  sparse graphs, this is unlikely). Each element in a batch is labelled as 1
+                  (positive) or 0 (negative). An appropriate loss function is
                   :class:`tensorflow.keras.losses.BinaryCrossentropy` (probably with
                   ``from_logits=True``).
 
