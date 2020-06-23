@@ -405,8 +405,8 @@ jobs:
 
       - name: Building docs
         run: |
-        cd docs
-        make html SPHINXOPTS="-W --keep-going"
+          cd docs
+          make html SPHINXOPTS="-W --keep-going"
 
       - name: Checking spelling
         run: make spelling SPHINXOPTS="-W --keep-going"
