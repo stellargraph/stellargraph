@@ -91,7 +91,7 @@ class DatasetLoader:
         cls.__doc__ = f"""\
 {cls.description}
 
-.. seealso:
+.. seealso::
 
    {cls.source}
      The source of the {cls.name} dataset.

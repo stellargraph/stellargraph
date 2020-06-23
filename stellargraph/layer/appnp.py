@@ -40,7 +40,7 @@ class APPNPPropagationLayer(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
-    .. seealso:
+    .. seealso::
 
        :class:`APPNP`
          A model that combines several of these layers.
@@ -203,7 +203,7 @@ class APPNP:
 
       - The size of the final fully connected layer must be equal to the number of classes to predict.
 
-    .. seealso:
+    .. seealso::
 
        :class:`APPNPPropagationLayer`
          The base layer out of which an APPNP model is built
