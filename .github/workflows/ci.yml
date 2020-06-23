@@ -321,3 +321,47 @@ jobs:
         with:
           github_token: ${{ github.token }}
           filter_mode: file
+
+  copyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check that files have copyright headers
+        run: scripts/ci/check-copyright-headers.sh
+
+  whitespace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check whitespace
+        run: scripts/whitespace.sh --github-ci
+
+  conda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: s-weigand/setup-conda@v1
+
+      - name: Install conda build tools
+        run: |
+          conda install conda-build
+          conda install conda-verify
+
+      - name: Conda build StellarGraph
+        run: conda build . --no-anaconda-upload
+
+      - name: Get conda package details
+        id: get_package
+        run: |
+          package_path=$(conda build . --output)
+          package_name=$(basename $package_path)
+          echo "::set-output name=package_path::${package_path}"
+          echo "::set-output name=package_name::${package_name}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.get_package.outputs.package_name }}
+          path: ${{ steps.get_package.outputs.package_path }}
