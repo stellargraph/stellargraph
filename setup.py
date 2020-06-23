@@ -64,7 +64,7 @@ EXTRAS_REQUIRES = {
 
 # Long description
 try:
-    with open("README.md", "r") as fh:
+    with open("README.md", "r", encoding="utf8") as fh:
         LONG_DESCRIPTION =        fh.read()
 except FileNotFoundError:
     # can't find the README (e.g. building the docker image), so skip it
