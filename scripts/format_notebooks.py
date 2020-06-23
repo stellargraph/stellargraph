@@ -524,20 +524,19 @@ if __name__ == "__main__":
                         # seemingly-spurious difference, so include a diff in the logs. This allows
                         # us to inspect the change retroactive if required, but doesn't junk up the
                         # final output/annotation.
-                        diff = difflib.unified_diff(
+                        diff = list(difflib.unified_diff(
                             original.splitlines(keepends=True),
                             updated.splitlines(keepends=True),
                             lineterm="",
-                        )
+                        ))
                         sys.stdout.writelines(d + "\n" for d in diff)
 
                         if "GITHUB_ACTIONS" in os.environ:
                             # special annotations for github actions
+                            diff_urlencoded = "%0A".join(d for d in diff)
                             print(
-                                f"::error file={file_loc}::Notebook failed format check:",
-                                end="%0A",
+                                f"::error file={file_loc}::Notebook failed format check%0AFix by running: python ./scripts/format_notebooks.py --default --overwrite {file_loc}%0A{diff_urlencoded}",
                             )
-                            sys.stdout.writelines(d + "%0A" for d in diff)
 
                 tempdir.cleanup()
 
