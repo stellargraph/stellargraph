@@ -35,14 +35,20 @@ def deduce_file_position(testcase, base):
     classname = testcase.get("classname")
     filename = classname.replace(".", "/") + ".py"
 
-    with open(os.path.join(base, filename)) as f:
-        contents = f.read()
+    open_filename = os.path.join(base, filename)
+    try:
+        with open(open_filename) as f:
+            contents = f.read()
+    except:
+        raise ValueError(
+            f"failed to read '{filename}', as deduced from failing test '{name}' in '{classname}'"
+        )
 
     # estimate the location of the test by doing a string search
     try:
         index = contents.index(f"def {base_name}")
     except:
-        raise ValueError(f"count not find failing test '{base_name}' in {filename}")
+        raise ValueError(f"could not find failing test '{base_name}' in '{filename}'")
 
     # number of newlines since the start of the file = zero-based line, GitHub uses one-based lines
     line = contents.count("\n", 0, index) + 1
@@ -64,34 +70,31 @@ def main():
 
     invalid = []
     for testcase in root.findall(".//testcase"):
-        children = {child.tag: child for child in testcase}
+        for child in testcase:
+            if child.tag in ("error", "failure"):
+                try:
+                    filename, line = deduce_file_position(testcase, base_directory)
+                except ValueError as e:
+                    invalid.append(e)
+                    continue
 
-        problem_child = children.get("error") or children.get("failure")
+                name = testcase.get("name")
+                base_message = child.get("message").replace("\\n", "\n")
+                indented = textwrap.indent(base_message, "    ")
 
-        if problem_child is not None:
-            try:
-                filename, line = deduce_file_position(testcase, base_directory)
-            except ValueError as e:
-                invalid.append(e)
-                continue
-
-            name = testcase.get("name")
-            base_message = problem_child.get("message").replace("\\n", "\n")
-            indented = textwrap.indent(base_message, "    ")
-
-            message = f"""\
-Test {name} failed:
+                message = f"""\
+Test '{name}' failed:
 
 {indented}
 """
-            # multiline output is possible by escaping (only) the \n
-            # https://github.com/actions/toolkit/issues/193#issuecomment-605394935
-            encoded = message.replace("\n", "%0A")
-            print(f"::error file={filename},line={line}::{encoded}")
+                # multiline output is possible by escaping (only) the \n
+                # https://github.com/actions/toolkit/issues/193#issuecomment-605394935
+                encoded = message.replace("\n", "%0A")
+                print(f"::error file={filename},line={line}::{encoded}")
 
     if invalid:
         print(
-            "failed to understand several failed tests (fixing the tests will stop this error too):",
+            "failed to understand some failed test(s) (fixing the test(s) will stop this error too):",
             file=sys.stderr,
         )
         for exc in invalid:
