@@ -17,43 +17,13 @@
 import argparse
 from collections import defaultdict
 import os
+import re
 import sys
 import textwrap
 import xml.etree.ElementTree as ET
 
 
-def deduce_file_position(testcase, base):
-    name = testcase.get("name")
-    try:
-        index = name.index("[")
-    except:
-        # no parameters
-        base_name = name
-    else:
-        base_name = name[:index]
-
-    classname = testcase.get("classname")
-    filename = classname.replace(".", "/") + ".py"
-
-    open_filename = os.path.join(base, filename)
-    try:
-        with open(open_filename) as f:
-            contents = f.read()
-    except:
-        raise ValueError(
-            f"failed to read '{filename}', as deduced from failing test '{name}' in '{classname}'"
-        )
-
-    # estimate the location of the test by doing a string search
-    try:
-        index = contents.index(f"def {base_name}")
-    except:
-        raise ValueError(f"could not find failing test '{base_name}' in '{filename}'")
-
-    # number of newlines since the start of the file = zero-based line, GitHub uses one-based lines
-    line = contents.count("\n", 0, index) + 1
-
-    return filename, line
+FILE_LINE = re.compile(r"([a-z0-9_/\\.]*):([0-9]*):")
 
 
 def main():
@@ -63,8 +33,6 @@ def main():
     parser.add_argument("file", type=argparse.FileType("r"), default="-", nargs="?")
     args = parser.parse_args()
 
-    base_directory = os.path.join(os.path.dirname(__file__), "../..")
-
     tree = ET.parse(args.file)
     root = tree.getroot()
 
@@ -72,13 +40,19 @@ def main():
     for testcase in root.findall(".//testcase"):
         for child in testcase:
             if child.tag in ("error", "failure"):
-                try:
-                    filename, line = deduce_file_position(testcase, base_directory)
-                except ValueError as e:
-                    invalid.append(e)
+                classname = testcase.get("classname")
+                name = testcase.get("name")
+
+                match = FILE_LINE.search(child.text)
+                if match is None:
+                    invalid.append(
+                        f"output of test '{name}' in '{classname}' does not contain match for filename & line regex /{FILE_LINE.pattern}/"
+                    )
                     continue
 
-                name = testcase.get("name")
+                filename = match[1]
+                line = int(match[2])
+
                 base_message = child.get("message").replace("\\n", "\n")
                 indented = textwrap.indent(base_message, "    ")
 
