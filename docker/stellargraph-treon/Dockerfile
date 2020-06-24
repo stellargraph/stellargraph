@@ -12,7 +12,7 @@ RUN apt-get update \
     && curl -sLO "https://linqs-data.soe.ucsc.edu/public/Pubmed-Diabetes.tgz" \
     && tar --no-same-owner -xf Pubmed-Diabetes.tgz \
     && curl -sLO "http://socialcomputing.asu.edu/uploads/1283153973/BlogCatalog-dataset.zip" \
-        && unzip BlogCatalog-dataset.zip
+    && unzip BlogCatalog-dataset.zip
 
 # hadolint ignore=DL3006
 FROM stellargraph/stellargraph
