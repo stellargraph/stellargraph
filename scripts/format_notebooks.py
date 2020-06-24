@@ -531,6 +531,13 @@ if __name__ == "__main__":
                             )
                         )
 
+                        if "GITHUB_ACTIONS" in os.environ:
+                            # special annotations for github actions
+                            print(
+                                f"::error file={file_loc}::Notebook failed format check. Fix by running:%0A"
+                                f"python ./scripts/format_notebooks.py --default --overwrite {file_loc}"
+                            )
+
                 tempdir.cleanup()
 
         if write_html:
@@ -562,14 +569,18 @@ Fix by running:
         print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
 
         if on_ci:
-            subprocess.run(
-                [
-                    "buildkite-agent",
-                    "annotate",
-                    "--style=error",
-                    "--context=format_notebooks",
-                    message,
-                ]
-            )
+            try:
+                subprocess.run(
+                    [
+                        "buildkite-agent",
+                        "annotate",
+                        "--style=error",
+                        "--context=format_notebooks",
+                        message,
+                    ]
+                )
+            except FileNotFoundError:
+                # no agent, so probably not on buildkite, and so silently continue without an annotation
+                pass
 
         sys.exit(1)
