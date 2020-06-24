@@ -107,8 +107,9 @@ def test_GraphConvolution_sparse():
 
     # Note we add a batch dimension of 1 to model inputs
     adj = G.to_adjacency_matrix().tocoo()
-    A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
-    print(A_indices.dtype)
+    A_indices = np.expand_dims(
+        np.hstack((adj.row[:, None], adj.col[:, None])), 0
+    ).astype(np.int64)
     A_values = np.expand_dims(adj.data, 0)
     out_indices = np.array([[0, 1]], dtype="int32")
     x = features[None, :, :]
@@ -166,14 +167,15 @@ def test_GCN_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_apply_sparse():
 
     G, features = create_graph_features()
     adj = G.to_adjacency_matrix()
     features, adj = GCN_Aadj_feats_op(features, adj)
     adj = adj.tocoo()
-    A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
+    A_indices = np.expand_dims(
+        np.hstack((adj.row[:, None], adj.col[:, None])), 0
+    ).astype(np.int64)
     A_values = np.expand_dims(adj.data, 0)
 
     generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
