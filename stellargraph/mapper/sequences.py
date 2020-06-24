@@ -509,7 +509,9 @@ class RelationalFullBatchNodeSequence(Sequence):
         # Convert all adj matrices to dense and reshape to have batch dimension of 1
         if self.use_sparse:
             self.A_indices = [
-                np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0)
+                np.expand_dims(
+                    np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0
+                )
                 for A in As
             ]
             self.A_values = [np.expand_dims(A.data, 0) for A in As]

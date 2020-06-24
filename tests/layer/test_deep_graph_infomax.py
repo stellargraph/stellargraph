@@ -78,9 +78,6 @@ def _model_data(model_type, sparse):
 )
 @pytest.mark.parametrize("sparse", [False, True])
 def test_dgi(model_type, sparse):
-    if sys.platform == "win32" and model_type is RGCN and sparse:
-        pytest.xfail("FIXME #1699")
-
     base_generator, base_model, nodes = _model_data(model_type, sparse)
     corrupted_generator = CorruptedGenerator(base_generator)
     gen = corrupted_generator.flow(nodes)
