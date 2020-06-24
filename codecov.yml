@@ -3,7 +3,7 @@
 comment: false
 
 coverage:
-  precision: 1
+  precision:    1
   round: nearest
   status:
     project:
