@@ -32,6 +32,10 @@ import pytest
 from ..test_utils.graphs import create_graph_features
 from .. import test_utils
 
+pytestmark = pytest.mark.filterwarnings(
+    r"ignore:ClusterGCN has been replaced by GCN:DeprecationWarning"
+)
+
 
 def test_ClusterGCN_init():
     G, features = create_graph_features()
@@ -87,11 +91,11 @@ def test_ClusterGCN_activations():
         # activations for layers must be specified
         ClusterGCN(layer_sizes=[2], generator=generator)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         # More activations than layers
         ClusterGCN(layer_sizes=[2], generator=generator, activations=["relu", "linear"])
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         # Fewer activations than layers
         ClusterGCN(layer_sizes=[2, 2], generator=generator, activations=["relu"])
 

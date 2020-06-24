@@ -228,8 +228,11 @@ class GCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
-    or the :class:`FullBatchLinkGenerator` class for link inference.
+    should be supplied using:
+
+    - the :class:`FullBatchNodeGenerator` class for node inference
+    - the :class:`ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`FullBatchLinkGenerator` class for link inference
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the ``method='gcn'`` argument.
@@ -278,6 +281,7 @@ class GCN:
         bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
         bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        squeeze_output_batch (bool, optional): if True, remove the batch dimension when the batch size is 1. If False, leave the batch dimension.
     """
 
     def __init__(
@@ -293,6 +297,7 @@ class GCN:
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
+        squeeze_output_batch=True,
     ):
         if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
             raise TypeError(
@@ -305,6 +310,7 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
+        self.squeeze_output_batch = squeeze_output_batch
 
         # Copy required information from generator
         self.method = generator.method
@@ -447,7 +453,7 @@ class GCN:
         x_out = self(x_inp)
 
         # Flatten output by removing singleton batch dimension
-        if x_out.shape[0] == 1:
+        if self.squeeze_output_batch and x_out.shape[0] == 1:
             self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
         else:
             self.x_out_flat = x_out
