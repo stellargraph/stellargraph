@@ -98,7 +98,7 @@ class DatasetLoader:
    - :class:`StellarGraph`
    - `Examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`__
 
-   The source of the {cls.name} dataset: {cls.source}\
+   The source of this dataset: {cls.source}\
 """
 
         super().__init_subclass__(**kwargs)  # type: ignore
