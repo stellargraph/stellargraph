@@ -400,7 +400,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version:    12.x
 
       - name: "Install prettier"
         run: "npm install --global prettier@1.19.1"
