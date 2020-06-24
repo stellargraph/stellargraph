@@ -102,7 +102,7 @@ class Test_LinkEmbedding(object):
         assert li.numpy() == pytest.approx(0.7310586, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
-        """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
+        """ Test the binary operators: 'mul'/'Hadamard', 'l1', 'l2', 'avg'"""
 
         x_src, x_dst = make_orthonormal_vectors(self.d)
 
@@ -129,7 +129,7 @@ class Test_LinkEmbedding(object):
             assert isinstance(res.flatten()[0], np.float32)
 
     def test_mul_l1_l2_avg_single_tensor(self):
-        """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
+        """ Test the binary operators: 'mul'/'Hadamard', 'l1', 'l2', 'avg'"""
 
         x_src, x_dst = make_orthonormal_vectors(self.d)
         x_src = x_src.reshape(1, self.d)
@@ -194,7 +194,7 @@ class Test_Link_Inference(object):
         assert li.numpy() == pytest.approx(0.7310586, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
-        """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
+        """ Test the binary operators: 'mul'/'Hadamard', 'l1', 'l2', 'avg'"""
 
         x_src, x_dst = make_orthonormal_vectors(self.d)
         x_src = x_src.reshape(1, 1, self.d)
@@ -257,7 +257,7 @@ class Test_Link_Classification(object):
         assert li.numpy() == pytest.approx(0.7310586, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
-        """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
+        """ Test the binary operators: 'mul'/'Hadamard', 'l1', 'l2', 'avg'"""
 
         x_src, x_dst = make_orthonormal_vectors(self.d)
         x_src = x_src.reshape(1, 1, self.d)
@@ -314,7 +314,7 @@ class Test_Link_Regression(object):
         assert li.numpy() == pytest.approx(1, abs=1.5e-7)
 
     def test_mul_l1_l2_avg(self):
-        """ Test the binary operators: 'mul'/'hadamard', 'l1', 'l2', 'avg'"""
+        """ Test the binary operators: 'mul'/'Hadamard', 'l1', 'l2', 'avg'"""
 
         x_src, x_dst = make_orthonormal_vectors(self.d)
         x_src = x_src.reshape(1, 1, self.d)

@@ -168,3 +168,16 @@ def test_attri2vec_serialize():
 
     actual = model2.predict(x)
     assert expected == pytest.approx(actual)
+
+
+def test_attri2vec_save_load(tmpdir):
+    attri2vec = Attri2Vec(
+        layer_sizes=[4],
+        bias=True,
+        input_dim=2,
+        node_num=4,
+        multiplicity=2,
+        activation="linear",
+        normalize=None,
+    )
+    test_utils.model_save_load(tmpdir, attri2vec)

@@ -28,6 +28,7 @@ from stellargraph import StellarGraph
 from stellargraph.layer.hinsage import *
 from stellargraph.mapper import *
 from ..test_utils.graphs import example_hin_1
+from .. import test_utils
 
 
 def test_mean_hin_agg_constructor():
@@ -635,3 +636,18 @@ def test_kernel_and_bias_defaults():
             assert layer.bias_regularizer is None
             assert layer.kernel_constraint is None
             assert layer.bias_constraint is None
+
+
+def test_hinsage_save_load(tmpdir):
+    G = example_hin_1({"A": 8, "B": 4})
+
+    gen = HinSAGENodeGenerator(G, 1, [2, 2], "A")
+
+    hs = HinSAGE(
+        layer_sizes=[2, 2],
+        generator=gen,
+        normalize="none",
+        activations=["relu", "relu"],
+    )
+
+    test_utils.model_save_load(tmpdir, hs)

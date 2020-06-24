@@ -27,7 +27,7 @@ class SortPooling(Layer):
     Note that sorting is performed using only the last column of the input tensor as stated in [1], "For convenience,
     we set the last graph convolution to have one channel and only used this single channel for sorting."
 
-    [1] An End-to-End Deep Learning Atchitecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
+    [1] An End-to-End Deep Learning Architecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
     Y. Chen, AAAI-18, https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17146
 
     Args:
@@ -46,7 +46,7 @@ class SortPooling(Layer):
 
     def get_config(self):
         """
-        Gets class configuration for Keras serialization. Used by keras model serialization.
+        Gets class configuration for Keras serialization. Used by Keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
@@ -59,7 +59,7 @@ class SortPooling(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:

@@ -68,7 +68,7 @@ def test_exp_biases(temporal_graph):
     t_0 = 1
     expected = np.exp(t_0 - times) / sum(np.exp(t_0 - times))
     biases = rw._exp_biases(times, t_0, decay=True)
-    assert np.allclose(biases, expected)
+    np.testing.assert_allclose(biases, expected)
 
 
 def test_exp_biases_extreme(temporal_graph):
@@ -122,4 +122,4 @@ def test_init_parameters(temporal_graph):
         num_cw=num_cw, cw_size=cw_size, max_walk_length=max_walk_length, seed=seed
     )
 
-    assert np.array_equal(run_1, run_2)
+    np.testing.assert_array_equal(run_1, run_2)

@@ -18,10 +18,11 @@ from stellargraph.layer import *
 from stellargraph.mapper import *
 
 from ..test_utils.graphs import example_graph_random
-from .. import require_gpu
+from .. import require_gpu, test_utils
 import tensorflow as tf
 import pytest
 import numpy as np
+import sys
 
 
 def _model_data(model_type, sparse):
@@ -77,6 +78,9 @@ def _model_data(model_type, sparse):
 )
 @pytest.mark.parametrize("sparse", [False, True])
 def test_dgi(model_type, sparse):
+    if sys.platform == "win32" and model_type is RGCN and sparse:
+        pytest.xfail("FIXME #1699")
+
     base_generator, base_model, nodes = _model_data(model_type, sparse)
     corrupted_generator = CorruptedGenerator(base_generator)
     gen = corrupted_generator.flow(nodes)
@@ -123,7 +127,7 @@ def test_dgi_stateful():
         generator.flow(G.nodes())
     )
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_1.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model_1.fit(gen)
@@ -136,7 +140,7 @@ def test_dgi_stateful():
         generator.flow(G.nodes())
     )
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_2.compile(loss=tf.nn.sigmoid_cross_entropy_with_logits, optimizer="Adam")
     model_2.fit(gen)
@@ -149,7 +153,7 @@ def test_dgi_stateful():
         generator.flow(G.nodes())
     )
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
 
 def test_dgi_deprecated_no_generator():
@@ -162,3 +166,12 @@ def test_dgi_deprecated_no_generator():
         DeepGraphInfomax(
             GCN(generator=generator, activations=["relu"], layer_sizes=[4]),
         )
+
+
+@pytest.mark.parametrize("model_type", [GCN, GraphSAGE, HinSAGE])
+def test_dgi_save_load(tmpdir, model_type):
+    base_generator, base_model, nodes = _model_data(model_type, sparse=False)
+    corrupted_generator = CorruptedGenerator(base_generator)
+    infomax = DeepGraphInfomax(base_model, corrupted_generator)
+
+    test_utils.model_save_load(tmpdir, infomax)

@@ -20,11 +20,13 @@ GCN tests
 
 """
 
+import stellargraph as sg
 from stellargraph.layer.gcn import *
 from stellargraph.mapper import FullBatchNodeGenerator, FullBatchLinkGenerator
 from stellargraph.core.graph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
+import sys
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -32,6 +34,7 @@ from tensorflow import keras
 import tensorflow as tf
 import pytest
 from ..test_utils.graphs import create_graph_features
+from .. import test_utils
 
 
 def test_GraphConvolution_config():
@@ -88,6 +91,7 @@ def test_GraphConvolution_dense():
         np.testing.assert_array_equal(preds[i, ...], preds[0, ...])
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GraphConvolution_sparse():
     G, features = create_graph_features()
     n_nodes = features.shape[0]
@@ -162,6 +166,7 @@ def test_GCN_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_apply_sparse():
 
     G, features = create_graph_features()
@@ -214,6 +219,7 @@ def test_GCN_linkmodel_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_linkmodel_apply_sparse():
 
     G, features = create_graph_features()
@@ -309,3 +315,13 @@ def test_kernel_and_bias_defaults():
             assert layer.bias_regularizer is None
             assert layer.kernel_constraint is None
             assert layer.bias_constraint is None
+
+
+@pytest.mark.parametrize(
+    "sparse", [False, pytest.param(True, marks=pytest.mark.xfail(reason="FIXME #1251"))]
+)
+def test_gcn_save_load(tmpdir, sparse):
+    G, _ = create_graph_features()
+    generator = FullBatchNodeGenerator(G, sparse=sparse)
+    gcn = GCN([2, 3], generator)
+    test_utils.model_save_load(tmpdir, gcn)

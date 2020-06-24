@@ -39,7 +39,7 @@ class UnsupervisedSampler:
         and returning positive and negative samples w.r.t. those walks, on demand.
 
         The positive samples are all the (target, context) pairs from the walks and the negative
-        samples are contexts generated for each target based on a sampling distribtution.
+        samples are contexts generated for each target based on a sampling distribution.
 
         By default, a UniformRandomWalk is used, but a custom `walker` can be specified instead. An
         error will be raised if other parameters are specified along with a custom `walker`.

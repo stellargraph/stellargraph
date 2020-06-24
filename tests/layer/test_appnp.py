@@ -19,12 +19,14 @@ from stellargraph.mapper import FullBatchNodeGenerator, FullBatchLinkGenerator
 from stellargraph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
+import sys
 import networkx as nx
 import pandas as pd
 import numpy as np
 from tensorflow import keras
 import pytest
 from ..test_utils.graphs import create_graph_features
+from .. import test_utils
 
 
 def test_APPNP_edge_cases():
@@ -114,6 +116,7 @@ def test_APPNP_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_APPNP_apply_sparse():
 
     G, features = create_graph_features()
@@ -164,6 +167,7 @@ def test_APPNP_linkmodel_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_APPNP_linkmodel_apply_sparse():
 
     G, features = create_graph_features()
@@ -260,6 +264,7 @@ def test_APPNP_propagate_model_matches_manual(model_type):
     np.testing.assert_allclose(preds_1, manual_preds)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_APPNP_apply_propagate_model_sparse():
 
     G, features = create_graph_features()
@@ -288,3 +293,14 @@ def test_APPNP_apply_propagate_model_sparse():
     assert preds_2.shape == (1, 2, 2)
 
     assert preds_1 == pytest.approx(preds_2)
+
+
+@pytest.mark.parametrize(
+    "sparse",
+    [False, pytest.param(True, marks=pytest.mark.xfail(reason="FIXME #1251"))],
+)
+def test_APPNP_save_load(tmpdir, sparse):
+    G, _ = create_graph_features()
+    generator = FullBatchNodeGenerator(G, sparse=sparse)
+    appnp = APPNP([2, 3], generator, ["relu", "relu"])
+    test_utils.model_save_load(tmpdir, appnp)

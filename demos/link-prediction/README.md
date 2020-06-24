@@ -14,6 +14,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 | [Link prediction with GCN](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html) | [source](gcn-link-prediction.ipynb) |
 | [Link prediction with GraphSAGE](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html) | [source](graphsage-link-prediction.ipynb) |
 | [Link prediction with Heterogeneous GraphSAGE (HinSAGE)](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html) | [source](hinsage-link-prediction.ipynb) |
+| [Comparison of link prediction with random walks based node embedding](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html) | [source](homogeneous-comparison-link-prediction.ipynb) |
 | [Link prediction with Metapath2Vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html) | [source](metapath2vec-link-prediction.ipynb) |
 | [Link prediction with Node2Vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html) | [source](node2vec-link-prediction.ipynb) |
 

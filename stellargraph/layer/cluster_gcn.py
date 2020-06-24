@@ -43,11 +43,11 @@ class ClusterGCN:
     A stack of Cluster Graph Convolutional layers that implement a cluster graph convolution network
     model as in https://arxiv.org/abs/1905.07953
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using the :class:`ClusterNodeGenerator` class.
 
     For more details, please see `the Cluster-GCN demo notebook
@@ -183,9 +183,9 @@ class ClusterGCN:
         Builds a Cluster-GCN model for node prediction.
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two input tensors for the
-            Cluster-GCN model (containing node features and normalized adjacency matrix),
-            and `x_out` is a tensor for the Cluster-GCN model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of two input tensors for the
+                Cluster-GCN model (containing node features and normalized adjacency matrix),
+                and ``x_out`` is a tensor for the Cluster-GCN model output.
         """
         # Placeholder for node features
         N_feat = self.generator.features.shape[1]

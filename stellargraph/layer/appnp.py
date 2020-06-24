@@ -43,7 +43,7 @@ class APPNPPropagationLayer(Layer):
     Args:
         units (int): dimensionality of output feature vectors
         final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
-        teleport_probability: "probability" of returning to the starting node in the propogation step as desribed  in
+        teleport_probability: "probability" of returning to the starting node in the propagation step as described  in
         the paper (alpha in the paper)
         input_dim (int, optional): the size of the input shape, if known.
         kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
@@ -72,7 +72,7 @@ class APPNPPropagationLayer(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Used by Keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
@@ -80,7 +80,6 @@ class APPNPPropagationLayer(Layer):
 
         config = {
             "units": self.units,
-            "final_layer": self.final_layer,
             "teleport_probability": self.teleport_probability,
         }
 
@@ -93,7 +92,7 @@ class APPNPPropagationLayer(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -157,15 +156,15 @@ class APPNP:
     Implementation of Approximate Personalized Propagation of Neural Predictions (APPNP)
     as in https://arxiv.org/abs/1810.05997.
 
-    The model minimally requires specification of the fully connected layer sizes as a list of ints
+    The model minimally requires specification of the fully connected layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
     or the :class:`FullBatchLinkGenerator` class for link inference.
 
-    To have the appropriate pre-processing the generator object should be instanciated
+    To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gcn'` argument.
 
     Example:
@@ -186,7 +185,7 @@ class APPNP:
 
       - This assumes that the normalized Laplacian matrix is provided as input to
         Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
-        ``method='gcn'`` argument to do this pre-processing.
+        ``method='gcn'`` argument to do this preprocessing.
 
       - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
@@ -201,8 +200,8 @@ class APPNP:
         generator (FullBatchNodeGenerator): an instance of FullBatchNodeGenerator class constructed on the graph of interest
         bias (bool): toggles an optional bias in fully connected layers
         dropout (float): dropout rate applied to input features of each layer
-        kernel_regularizer (str): normalization applied to the kernels of fully connetcted layers
-        teleport_probability: "probability" of returning to the starting node in the propagation step as desribed in
+        kernel_regularizer (str): normalization applied to the kernels of fully connected layers
+        teleport_probability: "probability" of returning to the starting node in the propagation step as described in
         the paper (alpha in the paper)
         approx_iter: number of iterations to approximate PPNP as described in the paper (K in the paper)
     """
@@ -391,8 +390,8 @@ class APPNP:
         Builds an APPNP model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the model and `x_out` is a tensor of the model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the model and ``x_out`` is a tensor of the model output.
         """
         x_inp, x_out = self._tensors(
             multiplicity=multiplicity, feature_layers=self._feature_layers
@@ -422,13 +421,14 @@ class APPNP:
     def propagate_model(self, base_model):
         """
         Propagates a trained model using personalised PageRank.
+
         Args:
             base_model (keras Model): trained model with node features as input, predicted classes as output
 
-        returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two Keras input tensors
-            for the APPNP model (containing node features and graph adjacency),
-            and `x_out` is a Keras tensor for the APPNP model output.
+        Returns:
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of two Keras input tensors
+                for the APPNP model (containing node features and graph adjacency),
+                and ``x_out`` is a Keras tensor for the APPNP model output.
         """
         if self.multiplicity != 1:
             raise RuntimeError(

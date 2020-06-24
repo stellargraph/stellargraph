@@ -1,0 +1,367 @@
+---
+# Continuous Integration is too long for the GitHub view
+name: CI
+
+"on":
+  push:
+    # only build each push to develop and master, other branches are built through pull requests
+    branches: [develop, master]
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      JUNIT_NAME: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,demos]
+
+      - name: Run pytest tests
+        run: |
+          # benchmarks on shared infrastructure like the CI machines are usually unreliable (high
+          # variance), so there's no point spending too much time, hence --benchmark-disable which
+          # just runs them once (as a test)
+          py.test -ra tests/ --doctest-modules \
+              --cov=stellargraph --cov-report=xml \
+              -p no:cacheprovider --junitxml="${{ env.JUNIT_NAME }}.xml" \
+              --benchmark-disable
+        # explicitly use bash on windows, for consistent command parsing
+        shell: bash
+
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ env.JUNIT_NAME }}
+          path: ${{ env.JUNIT_NAME }}.xml
+        if: ${{ always() }}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          env_vars: OS,PYTHON
+
+  notebooks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # MARKER: list of all notebooks
+        notebook:
+          - "demos/basics/loading-networkx.ipynb"
+          - "demos/basics/loading-numpy.ipynb"
+          - "demos/basics/loading-pandas.ipynb"
+          - "demos/basics/loading-saving-neo4j.ipynb"
+          - "demos/calibration/calibration-link-prediction.ipynb"
+          - "demos/calibration/calibration-node-classification.ipynb"
+          - "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          - "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          - "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          - "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          - "demos/embeddings/attri2vec-embeddings.ipynb"
+          - "demos/embeddings/deep-graph-infomax-embeddings.ipynb"
+          - "demos/embeddings/gcn-unsupervised-graph-embeddings.ipynb"
+          - "demos/embeddings/graphsage-unsupervised-sampler-embeddings.ipynb"
+          - "demos/embeddings/graphwave-embeddings.ipynb"
+          - "demos/embeddings/keras-node2vec-embeddings.ipynb"
+          - "demos/embeddings/metapath2vec-embeddings.ipynb"
+          - "demos/embeddings/node2vec-embeddings.ipynb"
+          - "demos/embeddings/watch-your-step-embeddings.ipynb"
+          - "demos/ensembles/ensemble-link-prediction-example.ipynb"
+          - "demos/ensembles/ensemble-node-classification-example.ipynb"
+          - "demos/graph-classification/dgcnn-graph-classification.ipynb"
+          - "demos/graph-classification/gcn-supervised-graph-classification.ipynb"
+          - "demos/interpretability/gat-node-link-importance.ipynb"
+          - "demos/interpretability/gcn-node-link-importance.ipynb"
+          - "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
+          - "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - "demos/link-prediction/complex-link-prediction.ipynb"
+          - "demos/link-prediction/ctdne-link-prediction.ipynb"
+          - "demos/link-prediction/distmult-link-prediction.ipynb"
+          - "demos/link-prediction/gcn-link-prediction.ipynb"
+          - "demos/link-prediction/graphsage-link-prediction.ipynb"
+          - "demos/link-prediction/hinsage-link-prediction.ipynb"
+          - "demos/link-prediction/homogeneous-comparison-link-prediction.ipynb"
+          - "demos/link-prediction/metapath2vec-link-prediction.ipynb"
+          - "demos/link-prediction/node2vec-link-prediction.ipynb"
+          - "demos/node-classification/attri2vec-node-classification.ipynb"
+          - "demos/node-classification/cluster-gcn-node-classification.ipynb"
+          - "demos/node-classification/directed-graphsage-node-classification.ipynb"
+          - "demos/node-classification/gat-node-classification.ipynb"
+          - "demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.ipynb"
+          - "demos/node-classification/gcn-node-classification.ipynb"
+          - "demos/node-classification/gcn/gcn-cora-node-classification-example.ipynb"
+          - "demos/node-classification/graphsage-inductive-node-classification.ipynb"
+          - "demos/node-classification/graphsage-node-classification.ipynb"
+          - "demos/node-classification/keras-node2vec-node-classification.ipynb"
+          - "demos/node-classification/node2vec-node-classification.ipynb"
+          - "demos/node-classification/node2vec-weighted-node-classification.ipynb"
+          - "demos/node-classification/ppnp-node-classification.ipynb"
+          - "demos/node-classification/rgcn-node-classification.ipynb"
+          - "demos/node-classification/sgc-node-classification.ipynb"
+          - "demos/time-series/gcn-lstm-time-series.ipynb"
+          - "demos/use-cases/hateful-twitters.ipynb"
+          - "demos/zzz-internal-developers/graph-resource-usage.ipynb"
+        exclude:
+          # notebooks that require Neo4j, and are run separately
+          - notebook: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+          - notebook: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+          - notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+          - notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+          - notebook: "demos/basics/loading-saving-neo4j.ipynb"
+          # notebooks that don't yet run on CI
+          # FIXME #818: datasets can't be downloaded
+          # FIXME #819: out-of-memory
+          - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - notebook: "demos/interpretability/gat-node-link-importance.ipynb"
+          - notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
+          - notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
+          - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
+          - notebook: "demos/use-cases/hateful-twitters.ipynb"
+
+    env:
+      PYTHON_VERSION: 3.6
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,demos]
+
+      - name: Run notebook
+        id: run_notebook
+        run: scripts/ci/run_notebook.sh ${{ matrix.notebook }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ steps.run_notebook.outputs.notebook_name }}
+          path: ${{ matrix.notebook }}
+        if: ${{ always() }}
+
+  validate-notebooks-list:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run check
+        run: python3 scripts/ci/ci_workflow_notebook_list.py
+
+  neo4j-notebooks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        neo4j_version: ["3.5", "4.0"]
+
+    env:
+      STELLARGRAPH_NEO4J_HOST: localhost
+      PYTHON_VERSION: 3.6
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Start Neo4j
+        run: |
+          docker-compose -f scripts/ci/actions-docker-compose.yml --project-directory . \
+            up --detach neo4j
+        env:
+          NEO4J_VERSION: ${{ matrix.neo4j_version }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,neo4j]
+
+      # Run each Neo4j notebook, and upload it as an artifact
+
+      - name: Run loading-saving-neo4j.ipynb
+        run: "scripts/ci/run_notebook.sh demos/basics/loading-saving-neo4j.ipynb"
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: loading-saving-neo4j.ipynb
+          path: "demos/basics/loading-saving-neo4j.ipynb"
+
+      - name: Run load-cora-into-neo4j.ipynb
+        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: load-cora-into-neo4j.ipynb
+          path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+
+      - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
+        run: |
+          scripts/ci/run_notebook.sh \
+            demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: directed-graphsage-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+
+      - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
+        run: |
+          scripts/ci/run_notebook.sh \
+            demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: undirected-graphsage-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+
+      - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
+        run: |
+          scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cluster-gcn-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+
+      # Clean up
+
+      - name: Stop Neo4j
+        run: |
+          docker-compose -f scripts/ci/actions-docker-compose.yml --project-directory . down
+        if: always()
+
+  black:
+    name: "Format Python"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install black
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install black==19.10b0
+          echo ::add-path::$HOME/.local/bin
+      - name: Check formatting
+        run: |
+          if ! black --check --diff . ; then
+              msg="file formatting does not match $(black --version); fix using \`black .\`"
+              # convert the black output to syntax understood by GitHub Actions
+              black --check . 2>&1 | sed "s/would reformat \(.*\)/::error file=\1::$msg/"
+              exit 1
+          fi
+
+  check-linters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: reviewdog/action-shellcheck@v1
+        with:
+          filter_mode: file
+      - uses: reviewdog/action-hadolint@v1
+        with:
+          filter_mode: file
+      - uses: reviewdog/action-yamllint@v1
+        with:
+          github_token: ${{ github.token }}
+          filter_mode: file
+
+  copyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check that files have copyright headers
+        run: scripts/ci/check-copyright-headers.sh
+
+  whitespace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check whitespace
+        run: scripts/whitespace.sh --github-ci
+
+  conda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: s-weigand/setup-conda@v1
+
+      - name: Install conda build tools
+        run: |
+          conda install conda-build
+          conda install conda-verify
+
+      - name: Conda build StellarGraph
+        run: conda build . --no-anaconda-upload
+
+      - name: Get conda package details
+        id: get_package
+        run: |
+          package_path=$(conda build . --output)
+          package_name=$(basename $package_path)
+          echo "::set-output name=package_path::${package_path}"
+          echo "::set-output name=package_name::${package_name}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.get_package.outputs.package_name }}
+          path: ${{ steps.get_package.outputs.package_path }}

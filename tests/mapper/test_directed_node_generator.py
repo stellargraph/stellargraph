@@ -19,6 +19,8 @@ import pandas as pd
 from stellargraph.mapper import DirectedGraphSAGENodeGenerator
 from stellargraph.core.graph import StellarDiGraph
 
+from ..test_utils.graphs import weighted_tree
+
 
 # FIXME (#535): Consider using graph fixtures
 def create_simple_graph():
@@ -228,3 +230,11 @@ class TestDirectedNodeGenerator(object):
                 assert out_features[idx, 0, 0] == 0.0
             else:
                 assert False
+
+    def test_weighted(self):
+        g, checker = weighted_tree(is_directed=True)
+
+        gen = DirectedGraphSAGENodeGenerator(g, 7, [5, 3], [5, 3], weighted=True)
+        samples = gen.flow([0] * 10)
+
+        checker(node_id for array in samples[0][0] for node_id in array.ravel())
