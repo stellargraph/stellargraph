@@ -96,7 +96,7 @@ class DatasetLoader:
    For more information about loading data for graph machine learning:
 
    - :class:`StellarGraph`
-   - `Examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
+   - `Examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`__
 
    The source of the {cls.name} dataset: {cls.source}\
 """

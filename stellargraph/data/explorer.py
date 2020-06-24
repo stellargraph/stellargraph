@@ -360,9 +360,9 @@ class BiasedRandomWalk(RandomWalk):
 
        Examples using this random walk:
 
-       - unsupervised representation learning: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/node2vec-embeddings.html>`_, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_
-       - node classification: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-node-classification.html>`_, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`_, `Node2Vec with edge weights <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-weighted-node-classification.html>`_
-       - link prediction: `Node2Vec <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html>`_, `comparison to CTDNE (TemporalRandomWalk) <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`_, `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+       - unsupervised representation learning: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/node2vec-embeddings.html>`__, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
+       - node classification: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-node-classification.html>`__, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `Node2Vec with edge weights <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-weighted-node-classification.html>`__
+       - link prediction: `Node2Vec <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html>`__, `comparison to CTDNE (TemporalRandomWalk) <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`__, `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
        Related functionality:
 
@@ -543,8 +543,8 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
        Examples using this random walk:
 
-       - `Metapath2Vec link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html>`_
-       - `Metapath2Vec unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/metapath2vec-embeddings.html>`_
+       - `Metapath2Vec link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html>`__
+       - `Metapath2Vec unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/metapath2vec-embeddings.html>`__
 
        Related functionality:
 
@@ -960,7 +960,7 @@ class TemporalRandomWalk(GraphWalk):
 
     .. seealso::
 
-       Example using this random walk: `link prediction with CTDNE <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`_
+       Example using this random walk: `link prediction with CTDNE <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`__
 
        Related functionality: other random walks: :class:`UniformRandomWalk`, :class:`BiasedRandomWalk`, :class:`UniformRandomMetaPathWalk`.
 

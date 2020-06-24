@@ -56,8 +56,8 @@ class GCNSupervisedGraphClassification:
 
        Examples using GCN graph classification:
 
-       - `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`_
-       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`_
+       - `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`__
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`__
 
        Appropriate data generator: :class:`PaddedGraphGenerator`.
 
@@ -270,7 +270,7 @@ class DeepGraphCNN(GCNSupervisedGraphClassification):
 
     .. seealso::
 
-       Example using DGCNN: `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`_.
+       Example using DGCNN: `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`__.
 
        Appropriate data generator: :class:`PaddedGraphGenerator`.
 

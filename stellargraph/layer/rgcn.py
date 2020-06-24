@@ -365,8 +365,8 @@ class RGCN:
 
        Examples using RGCN:
 
-       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
-       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
 
        Appropriate data generator: :class:`RelationalFullBatchNodeGenerator`.
 

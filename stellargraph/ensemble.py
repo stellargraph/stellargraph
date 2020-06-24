@@ -43,7 +43,7 @@ class Ensemble(object):
 
     .. seealso::
 
-       Example using ensembles: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_.
+       Example using ensembles: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__.
 
        Related functionality: :class:`BaggingEnsemble` for bootstrap sampling while training, in addition to random initialisation.
    """
@@ -559,7 +559,7 @@ class BaggingEnsemble(Ensemble):
 
     .. seealso::
 
-       `Examples using ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/index.html>`_.
+       `Examples using ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/index.html>`__.
 
        Related functionality: :class:`Ensemble` for only random initialisation.
     """

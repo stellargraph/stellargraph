@@ -38,7 +38,7 @@ class KGTripleGenerator(Generator):
 
        Models using this generator: :class:`ComplEx`, :class:`DistMult`, :class:`RotatE`, :class:`RotE`, :class:`RotH`.
 
-       Example using this generator (see individual models for more): `link prediction with ComplEx <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`_.
+       Example using this generator (see individual models for more): `link prediction with ComplEx <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`__.
 
     Args:
         G (StellarGraph): the graph containing all nodes, and all edge types.

@@ -110,8 +110,8 @@ class DeepGraphInfomax:
 
        Examples using Deep Graph Infomax:
 
-       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
-       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`_
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
 
        Appropriate data generator: :class:`CorruptedGenerator`.
 

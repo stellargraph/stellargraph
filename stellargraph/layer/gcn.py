@@ -239,8 +239,6 @@ class GCN:
     Note that currently the GCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
 
-    For more details, please see `the GCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_
-
     Example:
         Creating a GCN node classification model from an existing :class:`StellarGraph`
         object ``G``::
@@ -271,13 +269,13 @@ class GCN:
 
        Examples using GCN:
 
-       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_
-       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`_
-       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_
-       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
-       - interpreting GCN predictions: `dense <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-node-link-importance.html>`_, `sparse <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-sparse-node-link-importance.html>`_
-       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_
-       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - interpreting GCN predictions: `dense <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-node-link-importance.html>`__, `sparse <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-sparse-node-link-importance.html>`__
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
        Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
 

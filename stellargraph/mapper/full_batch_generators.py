@@ -245,7 +245,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
        Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
 
-       Example using this generator (see individual models for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_.
+       Example using this generator (see individual models for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__.
 
        Related generators:
 
@@ -347,7 +347,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
        Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
 
-       Example using this generator: `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_.
+       Example using this generator: `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__.
 
        Related generator: :class:`FullBatchNodeGenerator` for node classification and similar tasks.
 
@@ -425,8 +425,8 @@ class RelationalFullBatchNodeGenerator(Generator):
 
        Examples using this generator:
 
-       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
-       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
 
        Related generators:
 

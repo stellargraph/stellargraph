@@ -45,7 +45,7 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
 
     .. seealso::
 
-       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_.
+       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
        Related functionality: :func:`plot_reliability_diagram`, :class:`IsotonicCalibration`, :class:`TemperatureCalibration`.
 
@@ -103,7 +103,7 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
 
     .. seealso::
 
-       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_.
+       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
        Related functionality: :func:`expected_calibration_error`, :class:`IsotonicCalibration`, :class:`TemperatureCalibration`.
 
@@ -184,7 +184,7 @@ class TemperatureCalibration(object):
 
     .. seealso::
 
-       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_.
+       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
        Related functionality: :func:`expected_calibration_error`, :func:`plot_reliability_diagram`, :class:`IsotonicCalibration`.
     """
@@ -380,7 +380,7 @@ class IsotonicCalibration(object):
 
     .. seealso::
 
-       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`_.
+       `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
        Related functionality: :func:`expected_calibration_error`, :func:`plot_reliability_diagram`, :class:`TemperatureCalibration`.
     """

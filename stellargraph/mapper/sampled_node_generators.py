@@ -201,8 +201,8 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
        Some examples using this generator (see the model for more):
 
-       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`_
-       - `unsupervised representation learning via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`__
+       - `unsupervised representation learning via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
 
        Related functionality:
 
@@ -323,7 +323,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
        Model using this generator: :class:`DirectedGraphSAGE`.
 
-       Example using this generator: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`_.
+       Example using this generator: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`__.
 
        Related functionality:
 
@@ -594,7 +594,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
        Model using this generator: :class:`Attri2Vec`.
 
-       An example using this generator (see the model for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`_.
+       An example using this generator (see the model for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__.
 
        Related functionality: :class:`Attri2VecLinkGenerator` for training, link prediction and related tasks.
 

@@ -175,7 +175,7 @@ class PPNP:
 
     .. seealso::
 
-       Example using PPNP: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_.
+       Example using PPNP: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`__.
 
        Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`.
 

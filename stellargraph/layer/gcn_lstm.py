@@ -212,7 +212,7 @@ class GCN_LSTM:
 
     .. seealso::
 
-       Example using GCN_LSTM: `spatio-temporal time-series prediction <https://stellargraph.readthedocs.io/en/stable/demos/time-series/gcn-lstm-time-series.html>`_.
+       Example using GCN_LSTM: `spatio-temporal time-series prediction <https://stellargraph.readthedocs.io/en/stable/demos/time-series/gcn-lstm-time-series.html>`__.
 
        Appropriate data generator: :class:`SlidingFeaturesNodeGenerator`.
 

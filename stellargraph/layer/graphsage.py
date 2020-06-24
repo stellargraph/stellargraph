@@ -761,12 +761,12 @@ class GraphSAGE:
 
        Examples using GraphSAGE:
 
-       - node classification: `natively <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`_, `via Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html>`_
-       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`_
-       - unsupervised representation learning: `via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_, `via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
-       - calibrating models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-node-classification.html>`_, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`_
-       - ensemble models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`_
-       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+       - node classification: `natively <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`__, `via Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html>`__
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`__
+       - unsupervised representation learning: `via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`__, `via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - calibrating models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-node-classification.html>`__, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`__
+       - ensemble models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
        Appropriate data generators: :class:`GraphSAGENodeGenerator`, :class:`Neo4jGraphSAGENodeGenerator`, :class:`GraphSAGELinkGenerator`.
 
@@ -1111,8 +1111,8 @@ class DirectedGraphSAGE(GraphSAGE):
 
        Examples using Directed GraphSAGE:
 
-       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`_
-       - `node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`_
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`__
+       - `node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`__
 
        Appropriate data generators: :class:`DirectedGraphSAGENodeGenerator`, :class:`Neo4jDirectedGraphSAGENodeGenerator`, :class:`DirectedGraphSAGELinkGenerator`.
 

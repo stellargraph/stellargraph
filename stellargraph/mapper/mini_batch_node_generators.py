@@ -52,8 +52,8 @@ class ClusterNodeGenerator(Generator):
 
        Examples using this generator:
 
-       - `Cluster-GCN node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
-       - `Cluster-GCN node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`_
+       - `Cluster-GCN node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`__
+       - `Cluster-GCN node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`__
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph

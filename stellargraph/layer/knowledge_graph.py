@@ -446,7 +446,7 @@ class ComplEx(KGModel):
 
     .. seealso::
 
-       Example using ComplEx: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`_
+       Example using ComplEx: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`__
 
        Related models: other knowledge graph models, see :class:`KGTripleGenerator` for a full list.
 
@@ -554,7 +554,7 @@ class DistMult(KGModel):
 
     .. seealso::
 
-       Example using DistMult: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/distmult-link-prediction.html>`_
+       Example using DistMult: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/distmult-link-prediction.html>`__
 
        Related models: other knowledge graph models, see :class:`KGTripleGenerator` for a full list.
 

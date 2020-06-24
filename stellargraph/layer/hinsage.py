@@ -279,8 +279,8 @@ class HinSAGE:
 
        Examples using HinSAGE:
 
-       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_
-       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
 
        Appropriate data generators: :class:`HinSAGENodeGenerator`, :class:`HinSAGELinkGenerator`.
 
@@ -292,7 +292,7 @@ class HinSAGE:
 
        Aggregators: :class:`MeanHinAggregator`.
 
-       The `Heterogeneous GraphSAGE (HinSAGE) <https://stellargraph.readthedocs.io/en/stable/hinsage.html>`_ explanatory document has more theoretical details.
+       The `Heterogeneous GraphSAGE (HinSAGE) <https://stellargraph.readthedocs.io/en/stable/hinsage.html>`__ explanatory document has more theoretical details.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer

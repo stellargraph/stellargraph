@@ -96,8 +96,8 @@ class LinkEmbedding(Layer):
 
        Examples using this class:
 
-       - `GCN link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_
-       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+       - `GCN link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
        Related functions: :func:`link_inference`, :func:`link_classification`, :func:`link_regression`.
 
@@ -307,10 +307,10 @@ def link_classification(
 
        Examples using this function:
 
-       - Attri2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`_ `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`_
-       - GraphSAGE: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_
-       - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_
-       - other link prediction: `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_, `ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`_, `calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`_
+       - Attri2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__ `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`__
+       - GraphSAGE: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`__
+       - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
+       - other link prediction: `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__, `ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`__, `calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`__
 
        Related functionality: :class:`LinkEmbedding`, :func:`link_inference`, :func:`link_regression`.
 
@@ -363,7 +363,7 @@ def link_regression(
 
     .. seealso::
 
-       Example using this function: `HinSAGE link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
+       Example using this function: `HinSAGE link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__.
 
        Related functionality: :class:`LinkEmbedding`, :func:`link_inference`, :func:`link_classification`.
 

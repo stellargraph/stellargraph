@@ -40,9 +40,9 @@ class PaddedGraphGenerator(Generator):
 
        Examples using this generator:
 
-       - `graph classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`_
-       - `graph classification with Deep Graph CNN <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/dgcnn-graph-classification.html>`_
-       - `unsupervised graph representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`_
+       - `graph classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`__
+       - `graph classification with Deep Graph CNN <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/dgcnn-graph-classification.html>`__
+       - `unsupervised graph representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`__
 
     Args:
         graphs (list): a collection of StellarGraph objects

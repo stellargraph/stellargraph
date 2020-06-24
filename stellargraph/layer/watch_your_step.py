@@ -116,7 +116,7 @@ class WatchYourStep:
 
     .. seealso::
 
-       Example using Watch Your Step: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`_
+       Example using Watch Your Step: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`__
 
        Appropriate data generator: :class:`AdjacencyPowerGenerator`.
 

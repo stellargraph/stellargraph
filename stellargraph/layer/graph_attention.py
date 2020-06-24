@@ -550,8 +550,6 @@ class GAT:
                 )
             x_inp, predictions = gat.in_out_tensors()
 
-    For more details, please see `the GAT demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`_
-
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`FullBatchNodeGenerator` object.
@@ -569,10 +567,10 @@ class GAT:
 
        Examples using GAT:
 
-       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`_
-       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
-       - `interpreting GAT predictions <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat-node-link-importance.html>`_
-       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - `interpreting GAT predictions <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat-node-link-importance.html>`__
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__
 
        Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
 

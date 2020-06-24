@@ -222,8 +222,8 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
        Some examples using this generator (see the model for more):
 
-       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`_
-       - `unsupervised representation learning via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`__
+       - `unsupervised representation learning via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`__
 
        Related functionality:
 
@@ -350,7 +350,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
        Model using this generator: :class:`HinSAGE`.
 
-       Example using this generator: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
+       Example using this generator: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__.
 
        Related functionality:
 
@@ -513,7 +513,7 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
        Model using this generator: :class:`Attri2Vec`.
 
-       An example using this generator (see the model for more): `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`_.
+       An example using this generator (see the model for more): `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__.
 
        Related functionality:
 
@@ -577,7 +577,7 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
 
        Model using this generator: :class:`Node2Vec`.
 
-       An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_.
+       An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__.
 
        Related functionality: :class:`Node2VecNodeGenerator` for node classification and related tasks.
 
