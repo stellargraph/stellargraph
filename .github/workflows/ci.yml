@@ -411,4 +411,4 @@ jobs:
 
           # meta.yaml is not valid YAML because of jinja templating
           prettier --list-different "**/*.yml" "**/*.yaml" "!meta.yaml" \
-            | sed 's/\(.*\)/::error file=\1::formatting of \1 $msg'
+            | sed 's/\(.*\)/::error file=\1::formatting of \1 $msg/'
