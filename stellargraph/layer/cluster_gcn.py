@@ -19,7 +19,7 @@ from tensorflow.keras import activations, initializers, constraints, regularizer
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 from .misc import deprecated_model_function, GatherIndices
 from ..mapper import ClusterNodeGenerator
-from .gcn import GraphConvolution
+from .gcn import GraphConvolution, GCN
 
 import warnings
 
@@ -38,59 +38,15 @@ class ClusterGraphConvolution(GraphConvolution):
         super().__init__(*args, **kwargs)
 
 
-class ClusterGCN:
+class ClusterGCN(GCN):
     """
-    A stack of Cluster Graph Convolutional layers that implement a cluster graph convolution network
-    model as in https://arxiv.org/abs/1905.07953
-
-    The model minimally requires specification of the layer sizes as a list of int
-    corresponding to the feature dimensions for each hidden layer,
-    activation functions for each hidden layers, and a generator object.
-
-    To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using the :class:`ClusterNodeGenerator` class.
-
-    For more details, please see `the Cluster-GCN demo notebook
-    <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
-
-    Notes:
-      - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`ClusterNodeGenerator` object.
-
-      - The nodes provided to the :class:`ClusterNodeGenerator.flow` method are
-        used by the final layer to select the predictions for those nodes in order.
-        However, the intermediate layers before the final layer order the nodes
-        in the same way as the adjacency matrix.
-
-    Examples:
-        Creating a Cluster-GCN node classification model from an existing :class:`StellarGraph`
-        object ``G``::
-
-            generator = ClusterNodeGenerator(G, clusters=10, q=2)
-            cluster_gcn = ClusterGCN(
-                             layer_sizes=[32, 4],
-                             activations=["elu","softmax"],
-                             generator=generator,
-                             dropout=0.5
-                )
-            x_inp, predictions = cluster_gcn.in_out_tensors()
-
-    Args:
-        layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack
-        activations (list of str): list of activations applied to each layer's output
-        generator (ClusterNodeGenerator): an instance of ClusterNodeGenerator class constructed on the graph of interest
-        bias (bool): toggles an optional bias in graph convolutional layers
-        dropout (float): dropout rate applied to input features of each graph convolutional layer
-        kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
-        kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
-        kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
-        bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
-        bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+    Deprecated: use :class:`stellargraph.layer.GCN` with :class:`stellargraph.mapper.ClusterNodeGenerator`.
     """
 
     def __init__(
         self,
+        # the parameter order is slightly different between this and GCN, so the *args,
+        # **kwargs trick doesn't work
         layer_sizes,
         activations,
         generator,
@@ -103,104 +59,23 @@ class ClusterGCN:
         bias_regularizer=None,
         bias_constraint=None,
     ):
-        if not isinstance(generator, ClusterNodeGenerator):
-            raise TypeError("Generator should be a instance of ClusterNodeGenerator")
-
-        if len(layer_sizes) != len(activations):
-            raise AssertionError(
-                "The number of given layers should be the same as the number of activations."
-                "However given len(layer_sizes): {} vs len(activations): {}".format(
-                    len(layer_sizes), len(activations)
-                )
-            )
-
-        self.layer_sizes = layer_sizes
-        self.activations = activations
-        self.bias = bias
-        self.dropout = dropout
-        self.generator = generator
-        self.support = 1
-
-        # Initialize a stack of Cluster GCN layers
-        n_layers = len(self.layer_sizes)
-        self._layers = []
-        for ii in range(n_layers):
-            l = self.layer_sizes[ii]
-            a = self.activations[ii]
-            self._layers.append(Dropout(self.dropout))
-            self._layers.append(
-                GraphConvolution(
-                    l,
-                    activation=a,
-                    use_bias=self.bias,
-                    kernel_initializer=kernel_initializer,
-                    kernel_regularizer=kernel_regularizer,
-                    kernel_constraint=kernel_constraint,
-                    bias_initializer=bias_initializer,
-                    bias_regularizer=bias_regularizer,
-                    bias_constraint=bias_constraint,
-                )
-            )
-
-    def __call__(self, x):
-        """
-        Apply a stack of Cluster GCN-layers to the inputs.
-        The input tensors are expected to be a list of the following:
-        [
-            Node features shape (1, N, F),
-            Adjacency indices (1, E, 2),
-            Adjacency values (1, E),
-            Output indices (1, O)
-        ]
-        where N is the number of nodes, F the number of input features,
-              E is the number of edges, O the number of output nodes.
-
-        Args:
-            x (Tensor): input tensors
-
-        Returns:
-            Output tensor
-        """
-        x_in, out_indices, *As = x
-
-        h_layer = x_in
-
-        for layer in self._layers:
-            if isinstance(layer, GraphConvolution):
-                # For a GCN layer add the matrix
-                h_layer = layer([h_layer] + As)
-            else:
-                # For other (non-graph) layers only supply the input tensor
-                h_layer = layer(h_layer)
-
-        # only return data for the requested nodes
-        h_layer = GatherIndices(batch_dims=1)([h_layer, out_indices])
-
-        return h_layer
-
-    def in_out_tensors(self):
-        """
-        Builds a Cluster-GCN model for node prediction.
-
-        Returns:
-            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of two input tensors for the
-                Cluster-GCN model (containing node features and normalized adjacency matrix),
-                and ``x_out`` is a tensor for the Cluster-GCN model output.
-        """
-        # Placeholder for node features
-        N_feat = self.generator.features.shape[1]
-
-        # Inputs for features & target indices
-        x_t = Input(batch_shape=(1, None, N_feat))
-        out_indices_t = Input(batch_shape=(1, None), dtype="int32")
-
-        # Placeholders for the dense adjacency matrix
-        A_m = Input(batch_shape=(1, None, None))
-        A_placeholders = [A_m]
-
-        x_inp = [x_t, out_indices_t] + A_placeholders
-        x_out = self(x_inp)
-
-        return x_inp, x_out
-
-    build = deprecated_model_function(in_out_tensors, "build")
+        warnings.warn(
+            "ClusterGCN has been replaced by GCN with little functionality change (the GCN class removes the batch dimension in some cases)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(
+            layer_sizes=layer_sizes,
+            generator=generator,
+            bias=bias,
+            dropout=dropout,
+            activations=activations,
+            kernel_initializer=kernel_initializer,
+            kernel_regularizer=kernel_regularizer,
+            kernel_constraint=kernel_constraint,
+            bias_initializer=bias_initializer,
+            bias_regularizer=bias_regularizer,
+            bias_constraint=bias_constraint,
+            # for compatibility
+            squeeze_output_batch=False,
+        )
