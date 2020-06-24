@@ -407,5 +407,8 @@ jobs:
 
       - name: "Run prettier"
         run: |
+          msg="does not match prettier $(prettier --version); fix using \`prettier --write ...\`"
+
           # meta.yaml is not valid YAML because of jinja templating
-          prettier --check "**/*.yml" "**/*.yaml" "!meta.yaml"
+          prettier --list-different "**/*.yml" "**/*.yaml" "!meta.yaml" \
+            | sed 's/\(.*\)/::error file=\1::formatting of \1 $msg'
