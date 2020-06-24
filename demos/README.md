@@ -39,7 +39,7 @@ These demos are displayed with detailed descriptions in the documentation: https
       <span title='UnsupervisedSampler'>US</span>
       <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td>see Cluster-GCN</td>
+    <td>via Cluster-GCN</td>
     <td><a href='graph-classification/gcn-supervised-graph-classification.ipynb'>demo</a></td>
   </tr>
   <tr>
@@ -94,7 +94,7 @@ These demos are displayed with detailed descriptions in the documentation: https
       <span title='UnsupervisedSampler'>US</span>
       <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td></td>
+    <td>via Cluster-GCN</td>
     <td></td>
   </tr>
   <tr>
@@ -139,7 +139,7 @@ These demos are displayed with detailed descriptions in the documentation: https
       <span title='UnsupervisedSampler'>US</span>
       <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td></td>
+    <td>via Cluster-GCN</td>
     <td></td>
   </tr>
   <tr>
