@@ -28,10 +28,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
       - name: Restore cache
         uses: actions/cache@v2
         with:
-          path: ~/.cache/pip
+          path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('setup.py') }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.python-version }}-pip-
