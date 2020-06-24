@@ -31,10 +31,7 @@ class DGIDiscriminator(Layer):
     """
     This Layer computes the Discriminator function for Deep Graph Infomax (https://arxiv.org/pdf/1809.10341.pdf).
 
-    .. seealso::
-
-       :class:`DeepGraphInfomax`
-         A model that uses this layer.
+    .. seealso:: :class:`DeepGraphInfomax` uses this layer.
     """
 
     def __init__(self, *args, **kwargs):

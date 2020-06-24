@@ -347,7 +347,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
        Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
 
-       Example using this generator `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_.
+       Example using this generator: `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_.
 
        Related generator: :class:`FullBatchNodeGenerator` for node classification and similar tasks.
 

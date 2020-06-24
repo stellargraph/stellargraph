@@ -267,6 +267,13 @@ class UniformRandomWalk(RandomWalk):
     """
     Performs uniform random walks on the given graph
 
+    .. seealso::
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`BiasedRandomWalk`, :class:`UniformRandomMetaPathWalk`, :class:`TemporalRandomWalk`.
+
     Args:
         graph (StellarGraph): Graph to traverse
         n (int, optional): Total number of random walks per root node
@@ -348,6 +355,20 @@ class BiasedRandomWalk(RandomWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
+
+    .. seealso::
+
+       Examples using this random walk:
+
+       - unsupervised representation learning: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/node2vec-embeddings.html>`_, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_
+       - node classification: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-node-classification.html>`_, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`_, `Node2Vec with edge weights <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-weighted-node-classification.html>`_
+       - link prediction: `Node2Vec <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html>`_, `comparison to CTDNE (TemporalRandomWalk) <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`_, `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - :class:`Node2Vec`, :class:`Node2VecNodeGenerator` and :class:`Node2VecLinkGenerator` for training a Node2Vec using only StellarGraph
+       - Other random walks: :class:`UniformRandomWalk`, :class:`UniformRandomMetaPathWalk`, :class:`TemporalRandomWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -517,6 +538,19 @@ class UniformRandomMetaPathWalk(RandomWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths. Optional
     parameters default to using the values passed in during construction.
+
+    .. seealso::
+
+       Examples using this random walk:
+
+       - `Metapath2Vec link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html>`_
+       - `Metapath2Vec unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/metapath2vec-embeddings.html>`_
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`UniformRandomWalk`, :class:`BiasedRandomWalk`, :class:`TemporalRandomWalk`.
+
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -923,6 +957,12 @@ class TemporalRandomWalk(GraphWalk):
     Performs temporal random walks on the given graph. The graph should contain numerical edge
     weights that correspond to the time at which the edge was created. Exact units are not relevant
     for the algorithm, only the relative differences (e.g. seconds, days, etc).
+
+    .. seealso::
+
+       Example using this random walk: `link prediction with CTDNE <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`_
+
+       Related functionality: other random walks: :class:`UniformRandomWalk`, :class:`BiasedRandomWalk`, :class:`UniformRandomMetaPathWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse

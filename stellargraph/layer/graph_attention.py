@@ -570,7 +570,6 @@ class GAT:
        Examples using GAT:
 
        - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`_
-       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gat-link-prediction.html>`_
        - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
        - `interpreting GAT predictions <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat-node-link-importance.html>`_
        - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_
