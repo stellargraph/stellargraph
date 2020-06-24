@@ -72,6 +72,10 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      # Each notebook is mostly independent, unlike testing on (for instance) different Python
+      # versions
+      fail-fast: false
+
       matrix:
         # MARKER: list of all notebooks
         notebook:
