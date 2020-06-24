@@ -52,6 +52,20 @@ class GCNSupervisedGraphClassification:
             predictions = Dense(units=8, activation='relu')(x_out)
             predictions = Dense(units=2, activation='softmax')(predictions)
 
+    .. seealso::
+
+       Examples using GCN graph classification:
+
+       - `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`_
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`_
+
+       Appropriate data generator: :class:`PaddedGraphGenerator`.
+
+       Related models:
+
+       - :class:`DeepGraphCNN` for a specialisation using :class:`SortPooling`
+       - :class:`GCN` for predictions for individual nodes or links
+
     Args:
         layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.
         activations (list of str): list of activations applied to each GCN layer's output.
@@ -253,6 +267,17 @@ class DeepGraphCNN(GCNSupervisedGraphClassification):
 
             model = Model(inputs=x_inp, outputs=predictions)
 
+
+    .. seealso::
+
+       Example using DGCNN: `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`_.
+
+       Appropriate data generator: :class:`PaddedGraphGenerator`.
+
+       Related models:
+
+       - :class:`GCNSupervisedGraphClassification` for the general form, supporting more customisation
+       - :class:`GCN` for predictions for individual nodes or links
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.

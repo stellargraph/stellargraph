@@ -37,6 +37,8 @@ class RelationalGraphConvolution(Layer):
           - There are 1 + R inputs required (where R is the number of relationships): the node features,
             and a normalized adjacency matrix for each relationship
 
+        .. seealso:: :class:`RGCN` combines several of these layers.
+
         Args:
             units (int): dimensionality of output feature vectors
             num_relationships (int): the number of relationships in the graph
@@ -336,8 +338,6 @@ class RGCN:
     Note that currently the RGCN class is compatible with both sparse and dense adjacency
     matrices and the :class:`RelationalFullBatchNodeGenerator` will default to sparse.
 
-    For more details, please see `the RGCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
-
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`RelationalFullBatchNodeGenerator` object.
@@ -360,6 +360,19 @@ class RGCN:
                     dropout=0.5
                 )
             x_inp, predictions = rgcn.in_out_tensors()
+
+    .. seealso::
+
+       Examples using RGCN:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+
+       Appropriate data generator: :class:`RelationalFullBatchNodeGenerator`.
+
+       Related model: :class:`GCN` is a specialisation for a single edge type.
+
+       :class:`RelationalGraphConvolution` is the base layer out of which an RGCN model is built.
 
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.

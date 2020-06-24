@@ -28,6 +28,12 @@ class AdjacencyPowerGenerator(Generator):
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first ``num_powers``
     of the adjacency matrix row by row.
 
+    .. seealso::
+
+       Model using this generator: :class:`WatchYourStep`.
+
+       Example using this generator: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`_
+
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         num_powers (int): the number of adjacency powers to calculate. Defaults

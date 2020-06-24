@@ -34,6 +34,16 @@ class PaddedGraphGenerator(Generator):
     batch of features and adjacency matrices, and supplying a boolean mask indicating which are
     valid and which are padding.
 
+    .. seealso::
+
+       Models using this generator: :class:`GCNSupervisedGraphClassification`, :class:`DeepGraphCNN`.
+
+       Examples using this generator:
+
+       - `graph classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`_
+       - `graph classification with Deep Graph CNN <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/dgcnn-graph-classification.html>`_
+       - `unsupervised graph representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`_
+
     Args:
         graphs (list): a collection of StellarGraph objects
         name (str): an optional name of the generator

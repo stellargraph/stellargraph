@@ -50,6 +50,8 @@ class GraphConvolution(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
+    .. seealso:: :class:`GCN` combines several of these layers.
+
     Args:
         units (int): dimensionality of output feature vectors
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
@@ -264,6 +266,30 @@ class GCN:
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
+
+    .. seealso::
+
+       Examples using GCN:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`_
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - interpreting GCN predictions: `dense <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-node-link-importance.html>`_, `sparse <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-sparse-node-link-importance.html>`_
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+
+       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
+
+       Related models:
+
+       - Other full-batch models: see the documentation of :class:`FullBatchNodeGenerator` for a full list
+       - :class:`RGCN` for a generalisation to multiple edge types
+       - :class:`GCNSupervisedGraphClassification` for graph classification by pooling the output of GCN
+       - :class:`GCN_LSTM` for time-series and sequence prediction, incorporating the graph structure via GCN
+       - :class:`DeepGraphInfomax` for unsupervised training
+
+       :class:`GraphConvolution` is the base layer out of which a GCN model is built.
 
     Args:
         layer_sizes (list of int): Output sizes of GCN layers in the stack.

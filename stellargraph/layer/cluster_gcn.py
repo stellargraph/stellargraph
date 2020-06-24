@@ -74,12 +74,14 @@ class ClusterGCN:
 
     .. seealso::
 
-       `Cluster-GCN demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
-       `Neo4j Cluster-GCN demo <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`_
-         Examples of using this class.
+       Examples using Cluster-GCN:
 
-       :class:`ClusterNodeGenerator`
-         The data generator to use for node classification with Cluster-GCN.
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`_
+       - `node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`_
+
+       This is a specialised form of the :class:`GCN` model.
+
+       Appropriate data generator: :class:`ClusterNodeGenerator`.
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack

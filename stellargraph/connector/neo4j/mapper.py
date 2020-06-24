@@ -97,8 +97,11 @@ class Neo4jGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
 
     .. seealso::
 
-       `Neo4j GraphSAGE demo <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html>`_
-         An example of using this class.
+       Model using this generator: :class:`GraphSAGE`.
+
+       Example using this generator: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html>`_.
+
+       Related functionality: :class:`GraphSAGENodeGenerator` for using :class:`GraphSAGE` without Neo4j.
 
     Args:
         graph (Neo4jStellarGraph): Neo4jStellarGraph object
@@ -178,8 +181,11 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
 
     .. seealso::
 
-       `Neo4j Directed GraphSAGE demo <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`_
-         An example of using this class.
+       Model using this generator: :class:`DirectedGraphSAGE`.
+
+       Example using this generator: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`_.
+
+       Related functionality: :class:`DirectedGraphSAGENodeGenerator` for using :class:`DirectedGraphSAGE` without Neo4j.
 
     Args:
         graph (Neo4jStellarDiGraph): Neo4jStellarGraph object

@@ -757,8 +757,26 @@ class GraphSAGE:
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
-    For more details, please see `the GraphSAGE demo notebooks
-    <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`_.
+    .. seealso::
+
+       Examples using GraphSAGE:
+
+       - node classification: `natively <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`_, `via Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.html>`_
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`
+       - unsupervised representation learning: `via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_, `via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - calibrating models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-node-classification.html>`_, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`_
+       - ensemble models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`_
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+
+       Appropriate data generators: :class:`GraphSAGENodeGenerator`, :class:`Neo4jGraphSAGENodeGenerator`, :class:`GraphSAGELinkGenerator`.
+
+       Related models:
+
+       - :class:`DirectedGraphSAGE` for a generalisation to directed graphs
+       - :class:`HinSAGE` for a generalisation to heterogeneous graphs
+       - :class:`DeepGraphInfomax` for unsupervised training
+
+       Aggregators: :class:`MeanAggregator`, :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`, :class:`AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
@@ -1088,6 +1106,22 @@ class DirectedGraphSAGE(GraphSAGE):
     argument, which should be the aggregator class,
     either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
     :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
+
+    .. seealso::
+
+       Examples using Directed GraphSAGE:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`_
+       - `node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`_
+
+       Appropriate data generators: :class:`DirectedGraphSAGENodeGenerator`, :class:`Neo4jDirectedGraphSAGENodeGenerator`, :class:`DirectedGraphSAGELinkGenerator`.
+
+       Related models:
+
+       - :class:`GraphSAGE` for undirected graphs
+       - :class:`HinSAGE` for undirected heterogeneous graphs
+
+       Aggregators: :class:`MeanAggregator`, :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`, :class:`AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.

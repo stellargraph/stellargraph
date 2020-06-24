@@ -41,7 +41,7 @@ class Ensemble(object):
     Naive ensembles add model diversity by random initialisation of the models' weights (before training) to
     different values. Each model in the ensemble is trained on the same training set of examples.
 
-    .. seealso:: the `ensemble node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_ for an example of using this class
+    .. seealso:: Example using ensembles: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_.
    """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):
@@ -553,7 +553,7 @@ class BaggingEnsemble(Ensemble):
     model in the ensemble is trained on a random subset of the training examples, sampled with replacement from the
     original training data.
 
-    .. seealso:: the `ensemble demos <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/index.html>`_ for examples of using this class
+    .. seealso:: `Examples using ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/index.html>`_.
     """
 
     def __init__(self, model, n_estimators=3, n_predictions=3):

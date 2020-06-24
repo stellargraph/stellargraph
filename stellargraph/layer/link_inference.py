@@ -92,6 +92,15 @@ class LinkEmbedding(Layer):
 
             li = LinkEmbedding(method="ip", activation="sigmoid")([x_src, x_dst])
 
+    .. seealso::
+
+       Examples using this class:
+
+       - `GCN link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+
+       Related functions: :func:`link_inference`, :func:`link_classification`, :func:`link_regression`.
+
     Args:
         axis (int): If a single tensor is supplied this is the axis that indexes the node
             embeddings so that the indices 0 and 1 give the node embeddings to be combined.
@@ -215,6 +224,8 @@ def link_inference(
 
     Note that the output tensor is flattened before being returned.
 
+    .. seealso:: Related functionality: :class:`LinkEmbedding`, :func:`link_classification`, :func:`link_regression`.
+
     Args:
         output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
@@ -292,6 +303,17 @@ def link_classification(
 
     Note that the output tensor is flattened before being returned.
 
+    .. seealso::
+
+       Examples using this function:
+
+       - Attri2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`_ `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`_
+       - GraphSAGE: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_
+       - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_
+       - other link prediction: `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_, `ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`_, `calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`_
+
+       Related functionality: :class:`LinkEmbedding`, :func:`link_inference`, :func:`link_regression`.
+
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
@@ -338,6 +360,12 @@ def link_regression(
        in the link and N is the number of links and M the embedding size.
 
     Note that the output tensor is flattened before being returned.
+
+    .. seealso::
+
+       Example using this function: `HinSAGE link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
+
+       Related functionality: :class:`LinkEmbedding`, :func:`link_inference`, :func:`link_classification`.
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,

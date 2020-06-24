@@ -40,13 +40,7 @@ class APPNPPropagationLayer(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
-    .. seealso::
-
-       :class:`APPNP`
-         A model that combines several of these layers.
-
-       `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
-         An example of using this class, via :class:`APPNP`.
+    .. seealso:: :class:`APPNP` combines several of these layers.
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -204,17 +198,11 @@ class APPNP:
 
     .. seealso::
 
-       :class:`APPNPPropagationLayer`
-         The base layer out of which an APPNP model is built.
+       Example using APPNP: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_.
 
-       `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
-         An example of using this class.
+       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
 
-       :class:`FullBatchNodeGenerator`
-         The data generator to use for node classification with APPNP.
-
-       :class:`FullBatchLinkGenerator`
-         The data generator to use for link classification with APPNP.
+       :class:`APPNPPropagationLayer` is the base layer out of which an APPNP model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack

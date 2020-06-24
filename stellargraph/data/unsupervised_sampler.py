@@ -44,6 +44,15 @@ class UnsupervisedSampler:
         By default, a UniformRandomWalk is used, but a custom `walker` can be specified instead. An
         error will be raised if other parameters are specified along with a custom `walker`.
 
+        .. seealso::
+
+           Examples using this sampler:
+
+           - Attri2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`_ `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`_
+           - GraphSAGE: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_
+           - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_
+           - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+
         Args:
             G (StellarGraph): A stellargraph with features.
             nodes (iterable, optional) The root nodes from which individual walks start.

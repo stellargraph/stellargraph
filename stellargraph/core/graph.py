@@ -278,11 +278,9 @@ class StellarGraph:
 
     .. seealso::
 
-        :meth:`from_networkx`
-          Construction from a NetworkX graph.
+        The :meth:`from_networkx` allows constructing from a NetworkX graph.
 
-        `"Basics" demos <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
-          Examples for loading data into a :class:`StellarGraph` from many formats.
+        `The examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_ into a :class:`StellarGraph` from many formats.
 
     Args:
         nodes (Numpy array, IndexedArray, DataFrame or dict of hashable to IndexedArray or Pandas DataFrame, optional):
@@ -540,8 +538,7 @@ class StellarGraph:
 
         .. seealso::
 
-           `Loading from NetworkX demo <https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-networkx.html>`_
-             An example of using this function.
+           `The Loading from NetworkX example <https://stellargraph.readthedocs.io/en/stable/demos/basics/loading-networkx.html>`_
 
         Args:
             graph: The NetworkX graph instance.

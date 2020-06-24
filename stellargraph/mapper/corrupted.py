@@ -59,6 +59,17 @@ class CorruptedGenerator(Generator):
     Keras compatible data generator that wraps a :class:`Generator` and provides corrupted data for
     training Deep Graph Infomax.
 
+    .. seealso::
+
+       Model using this generator: :class:`DeepGraphInfomax`.
+
+       Examples using this generator:
+
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`_
+
+       Generators that support corruption natively: :class:`FullBatchNodeGenerator`, :class:`RelationalFullBatchNodeGenerator`, :class:`GraphSAGENodeGenerator`, :class:`DirectedGraphSAGENodeGenerator`, :class:`HinSAGENodeGenerator`.
+
     Args:
         base_generator (Generator): the uncorrupted Generator object.
         corrupt_index_groups (list of list of int, optional): an explicit list of which input

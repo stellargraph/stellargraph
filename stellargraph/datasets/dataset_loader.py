@@ -93,12 +93,12 @@ class DatasetLoader:
 
 .. seealso::
 
-   {cls.source}
-     The source of the {cls.name} dataset.
+   For more information about loading data for graph machine learning:
 
+   - :class:`StellarGraph`
+   - `Examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
 
-   `\"Basics\" demos <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`_
-     Examples for loading data into a :class:`StellarGraph` from many formats.\
+   The source of the {cls.name} dataset: {cls.source}\
 """
 
         super().__init_subclass__(**kwargs)  # type: ignore

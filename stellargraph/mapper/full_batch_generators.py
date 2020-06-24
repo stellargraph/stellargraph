@@ -240,7 +240,20 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the `GCN, GAT, PPNP/APPNP and SGC demos <https://stellargraph.readthedocs.io/en/stable/demos/index.html>`_.
+
+    .. seealso::
+
+       Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
+
+       Example using this generator (see individual models for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_.
+
+       Related generators:
+
+       - :class:`ClusterNodeGenerator` for scalable/inductive training
+       - :class:`CorruptedGenerator` for unsupervised training with :class:`DeepGraphInfomax`
+       - :class:`FullBatchLinkGenerator` for link prediction and similar tasks
+       - :class:`RelationalFullBatchNodeGenerator` for multiple edge types, with :class:`RGCN`
+       - :class:`PaddedGraphGenerator` for graph classification
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -330,7 +343,13 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the `GCN, GAT, PPNP/APPNP and SGC demos <https://stellargraph.readthedocs.io/en/stable/demos/index.html>`_.
+    .. seealso::
+
+       Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
+
+       Example using this generator `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`_.
+
+       Related generator: :class:`FullBatchNodeGenerator` for node classification and similar tasks.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -399,6 +418,20 @@ class RelationalFullBatchNodeGenerator(Generator):
         # Fetch the data from train_data_gen, and feed into a Keras model:
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_gen, epochs=num_epochs, ...)
+
+    .. seealso::
+
+       Model using this generator: :class:`RGCN`.
+
+       Examples using this generator:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+
+       Related generators:
+
+       - :class:`FullBatchNodeGenerator` for graphs with one edge type
+       - :class:`CorruptedGenerator` for unsupervised training with :class:`DeepGraphInfomax`
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph

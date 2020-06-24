@@ -47,6 +47,19 @@ class Node2Vec:
 
     The model minimally requires specification of the embedding size and a generator object.
 
+    .. seealso::
+
+       Examples using Node2Vec:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`_
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`_
+       - using Gensim Word2Vec, not this class: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-node-classification.html>`_, `node classification with edge weights <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-weighted-node-classification.html>`_, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html>`_, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/node2vec-embeddings.html>`_.
+
+       Appropriate data generators: class:`Node2VecNodeGenerator`, :class:`Node2VecLinkGenerator`.
+
+       Related functionality: :class:`BiasedRandomWalk` does the underlying random walks.
+
     Args:
         emb_size (int): The dimension of node embeddings.
         generator (Sequence): A NodeSequence or LinkSequence.

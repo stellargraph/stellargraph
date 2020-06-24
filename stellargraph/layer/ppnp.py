@@ -43,13 +43,7 @@ class PPNPPropagationLayer(Layer):
       - This class assumes that the personalized page rank matrix (specified in paper) matrix is passed as
         input to the Keras methods.
 
-    .. seealso::
-
-       :class:`PPNP`
-         A model that combines several of these layers.
-
-       `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
-         An example of using this class, via :class:`PPNP`.
+    .. seealso:: :class:`PPNP` combines several of these layers.
 
     Args:
         units (int): dimensionality of output feature vectors
@@ -181,17 +175,11 @@ class PPNP:
 
     .. seealso::
 
-       :class:`PPNPPropagationLayer`
-         The base layer out of which an PPNP model is built.
+       Example using PPNP: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_.
 
-       `PPNP and APPNP node classification demo <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`_
-         An example of using this class.
+       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`.
 
-       :class:`FullBatchNodeGenerator`
-         The data generator to use for node classification with PPNP.
-
-       :class:`FullBatchLinkGenerator`
-         The data generator to use for link classification with PPNP.
+       :class:`PPNPPropagationLayer` is the base layer out of which a PPNP model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack

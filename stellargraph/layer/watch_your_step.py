@@ -114,6 +114,14 @@ class WatchYourStep:
     This model requires specification of the number of random walks starting from each node, and the embedding dimension
     to use for the node embeddings.
 
+    .. seealso::
+
+       Example using Watch Your Step: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`_
+
+       Appropriate data generator: :class:`AdjacencyPowerGenerator`.
+
+       Appropriate loss function: :func:`graph_log_likelihood`.
+
     Args:
         generator (AdjacencyPowerGenerator): the generator
         num_walks (int): the number of random walks starting at each node to use when calculating the expected random

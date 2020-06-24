@@ -275,7 +275,24 @@ class HinSAGE:
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
-    For more details, please see `the HinSAGE demo notebooks <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
+    .. seealso::
+
+       Examples using HinSAGE:
+
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+
+       Appropriate data generators: :class:`HinSAGENodeGenerator`, :class:`HinSAGELinkGenerator`.
+
+       Related models:
+
+       - :class:`GraphSAGE` for homogeneous graphs
+       - :class:`DirectedGraphSAGE` for homogeneous directed graphs
+       - :class:`DeepGraphInfomax` for unsupervised training
+
+       Aggregators: :class:`MeanHinAggregator`.
+
+       The `Heterogeneous GraphSAGE (HinSAGE) <https://stellargraph.readthedocs.io/en/stable/hinsage.html>`_ explanatory document has more theoretical details.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer

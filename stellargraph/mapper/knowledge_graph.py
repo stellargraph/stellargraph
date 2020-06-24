@@ -34,6 +34,12 @@ class KGTripleGenerator(Generator):
     will be trained or predicted upon. The graph does not need to contain the edges/triples that are
     used for training or prediction.
 
+    .. seealso::
+
+       Models using this generator: :class:`ComplEx`, :class:`DistMult`, :class:`RotatE`, :class:`RotE`, :class:`RotH`.
+
+       Example using this generator (see individual models for more): `link prediction with ComplEx <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`_.
+
     Args:
         G (StellarGraph): the graph containing all nodes, and all edge types.
 

@@ -48,6 +48,8 @@ class GraphAttention(Layer):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
+    .. seealso:: :class:`GAT` combines several of these layers, and :class:`GraphAttentionSparse` supports a sparse adjacency matrix.
+
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
@@ -386,6 +388,8 @@ class GraphAttentionSparse(GraphAttention):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
+    .. seealso:: :class:`GAT` combines several of these layers, and :class:`GraphAttention` supports a dense adjacency matrix.
+
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
@@ -560,6 +564,25 @@ class GAT:
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
+
+    .. seealso::
+
+       Examples using GAT:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`_
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gat-link-prediction.html>`_
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_
+       - `interpreting GAT predictions <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat-node-link-importance.html>`_
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`_
+
+       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
+
+       Related models:
+
+       - Other full-batch models: see the documentation of :class:`FullBatchNodeGenerator` for a full list
+       - :class:`DeepGraphInfomax` for unsupervised training
+
+       :class:`GraphAttention` and :class:`GraphAttentionSparse` are the base layers out of which a GAT model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines

@@ -216,6 +216,22 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         G_generator = GraphSageLinkGenerator(G, 50, [10,10])
         train_data_gen = G_generator.flow(edge_ids)
 
+    .. seealso::
+
+       Model using this generator: :class:`GraphSAGE`.
+
+       Some examples using this generator (see the model for more):
+
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`_
+       - `unsupervised representation learning via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`_
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`GraphSAGENodeGenerator` for node classification and related tasks
+       - :class:`DirectedGraphSAGELinkGenerator` for directed graphs
+       - :class:`HinSAGELinkGenerator` for heterogeneous graphs
+
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
@@ -330,6 +346,18 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
     * It's possible to do link prediction on a graph where that link type is completely removed from the graph
       (e.g., "same_as" links in ER)
 
+    .. seealso::
+
+       Model using this generator: :class:`HinSAGE`.
+
+       Example using this generator: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`HinSAGENodeGenerator` for node classification and related tasks
+       - :class:`GraphSAGELinkGenerator` for homogeneous graphs
+       - :class:`DirectedGraphSAGELinkGenerator` for directed homogeneous graphs
 
     Args:
         g (StellarGraph): A machine-learning ready graph.
@@ -481,6 +509,17 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         G_generator = Attri2VecLinkGenerator(G, 50)
         train_data_gen = G_generator.flow(edge_ids, edge_labels)
 
+    .. seealso::
+
+       Model using this generator: :class:`Attri2Vec`.
+
+       An example using this generator (see the model for more): `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`_.
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`Attri2VecNodeGenerator` for node classification and related tasks
+
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
@@ -534,6 +573,14 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
         G_generator = Node2VecLinkGenerator(G, 50)
         data_gen = G_generator.flow(edge_ids, edge_labels)
 
+    .. seealso::
+
+       Model using this generator: :class:`Node2Vec`.
+
+       An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_.
+
+       Related functionality: :class:`Node2VecNodeGenerator` for node classification and related tasks.
+
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
@@ -578,6 +625,17 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
 
         G_generator = DirectedGraphSageLinkGenerator(G, 50, [10,10], [10,10])
         train_data_gen = G_generator.flow(edge_ids)
+
+    .. seealso::
+
+       Model using this generator: :class:`GraphSAGE`.
+
+       Related functionality:
+
+       - :class:`UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`DirectedGraphSAGENodeGenerator` for node classification and related tasks
+       - :class:`GraphSAGELinkGenerator` for undirected graphs
+       - :class:`HinSAGELinkGenerator` for heterogeneous graphs
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
