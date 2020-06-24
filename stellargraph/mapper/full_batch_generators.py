@@ -243,17 +243,17 @@ class FullBatchNodeGenerator(FullBatchGenerator):
 
     .. seealso::
 
-       Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
+       Models using this generator: :class:`.GCN`, :class:`.GAT`, :class:`.APPNP`, :class:`.PPNP`.
 
        Example using this generator (see individual models for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__.
 
        Related generators:
 
-       - :class:`ClusterNodeGenerator` for scalable/inductive training
-       - :class:`CorruptedGenerator` for unsupervised training with :class:`DeepGraphInfomax`
-       - :class:`FullBatchLinkGenerator` for link prediction and similar tasks
-       - :class:`RelationalFullBatchNodeGenerator` for multiple edge types, with :class:`RGCN`
-       - :class:`PaddedGraphGenerator` for graph classification
+       - :class:`.ClusterNodeGenerator` for scalable/inductive training
+       - :class:`.CorruptedGenerator` for unsupervised training with :class:`.DeepGraphInfomax`
+       - :class:`.FullBatchLinkGenerator` for link prediction and similar tasks
+       - :class:`.RelationalFullBatchNodeGenerator` for multiple edge types, with :class:`.RGCN`
+       - :class:`.PaddedGraphGenerator` for graph classification
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -345,11 +345,11 @@ class FullBatchLinkGenerator(FullBatchGenerator):
 
     .. seealso::
 
-       Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`, :class:`PPNP`.
+       Models using this generator: :class:`.GCN`, :class:`.GAT`, :class:`.APPNP`, :class:`.PPNP`.
 
        Example using this generator: `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__.
 
-       Related generator: :class:`FullBatchNodeGenerator` for node classification and similar tasks.
+       Related generator: :class:`.FullBatchNodeGenerator` for node classification and similar tasks.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
@@ -421,7 +421,7 @@ class RelationalFullBatchNodeGenerator(Generator):
 
     .. seealso::
 
-       Model using this generator: :class:`RGCN`.
+       Model using this generator: :class:`.RGCN`.
 
        Examples using this generator:
 
@@ -430,8 +430,8 @@ class RelationalFullBatchNodeGenerator(Generator):
 
        Related generators:
 
-       - :class:`FullBatchNodeGenerator` for graphs with one edge type
-       - :class:`CorruptedGenerator` for unsupervised training with :class:`DeepGraphInfomax`
+       - :class:`.FullBatchNodeGenerator` for graphs with one edge type
+       - :class:`.CorruptedGenerator` for unsupervised training with :class:`.DeepGraphInfomax`
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph

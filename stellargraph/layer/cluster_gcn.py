@@ -26,7 +26,7 @@ import warnings
 
 class ClusterGraphConvolution(GraphConvolution):
     """
-    Deprecated: use :class:`GraphConvolution`.
+    Deprecated: use :class:`.GraphConvolution`.
     """
 
     def __init__(self, *args, **kwargs):
@@ -48,19 +48,19 @@ class ClusterGCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using the :class:`ClusterNodeGenerator` class.
+    should be supplied using the :class:`.ClusterNodeGenerator` class.
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`ClusterNodeGenerator` object.
+        :class:`.ClusterNodeGenerator` object.
 
-      - The nodes provided to the :class:`ClusterNodeGenerator.flow` method are
+      - The nodes provided to the :class:`.ClusterNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
     Examples:
-        Creating a Cluster-GCN node classification model from an existing :class:`StellarGraph`
+        Creating a Cluster-GCN node classification model from an existing :class:`.StellarGraph`
         object ``G``::
 
             generator = ClusterNodeGenerator(G, clusters=10, q=2)
@@ -79,9 +79,9 @@ class ClusterGCN:
        - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`__
        - `node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`__
 
-       This is a specialised form of the :class:`GCN` model.
+       This is a specialised form of the :class:`.GCN` model.
 
-       Appropriate data generator: :class:`ClusterNodeGenerator`.
+       Appropriate data generator: :class:`.ClusterNodeGenerator`.
 
     Args:
         layer_sizes (list of int): list of output sizes of the graph convolutional layers in the stack

@@ -159,7 +159,7 @@ class StellarGraph:
 
     One can also pass information about nodes, as either:
 
-    - a :class:`IndexedArray`
+    - a :class:`.IndexedArray`
     - a NumPy array, if the node IDs are 0, 1, 2, ...
     - a Pandas DataFrame
 
@@ -187,7 +187,7 @@ class StellarGraph:
         # Note, edges must change to using 0, 1, 2, 3 (instead of a, b, c, d)
         nodes = feature_array
 
-    Construction directly from a :class:`IndexedArray` or NumPy array will have the least overhead, but
+    Construction directly from a :class:`.IndexedArray` or NumPy array will have the least overhead, but
     construction from Pandas allows for convenient data transformation.
 
     Edge weights are taken as the optional ``weight`` column of the edges DataFrame::
@@ -212,7 +212,7 @@ class StellarGraph:
         })
 
     Heterogeneous graphs, with multiple node or edge types, can be created by passing multiple
-    :class:`IndexedArray` or DataFrames in a dictionary. The dictionary keys are the names/identifiers
+    :class:`.IndexedArray` or DataFrames in a dictionary. The dictionary keys are the names/identifiers
     for the type. For example, if the graph above has node ``a`` of type ``foo``, and the rest as
     type ``bar``, the construction might look like::
 
@@ -224,7 +224,7 @@ class StellarGraph:
         StellarGraph({"foo": foo_nodes, "bar": bar_nodes}, edges)
 
     (One cannot pass multiple NumPy arrays, because the node IDs cannot be inferred properly in this
-    case. The node IDs for a NumPy array can be specified via the :class:`IndexedArray` type.)
+    case. The node IDs for a NumPy array can be specified via the :class:`.IndexedArray` type.)
 
     Notice the ``foo`` node has one feature ``x``, while the ``bar`` nodes have 2 features ``y`` and
     ``z``. A heterogeneous graph can have different features for each type.
@@ -280,12 +280,12 @@ class StellarGraph:
 
         The :meth:`from_networkx` allows constructing from a NetworkX graph.
 
-        `The examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`__ into a :class:`StellarGraph` from many formats.
+        `The examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`__ into a :class:`.StellarGraph` from many formats.
 
     Args:
         nodes (Numpy array, IndexedArray, DataFrame or dict of hashable to IndexedArray or Pandas DataFrame, optional):
             Features for every node in the graph. The values are taken as numeric
-            node features of type ``dtype``. If there is only one type of node, a NumPy array, :class:`IndexedArray` or DataFrame can be
+            node features of type ``dtype``. If there is only one type of node, a NumPy array, :class:`.IndexedArray` or DataFrame can be
             passed directly, and the type defaults to the ``node_type_default`` parameter. Nodes
             have an ID taken from the index of the dataframe, and they have to be unique across all
             types.  For nodes with no features, an appropriate value can be created with
@@ -1630,7 +1630,7 @@ class StellarGraph:
             nodes (iterable): The nodes in the subgraph.
 
         Returns:
-            A :class:`StellarGraph` or :class:`StellarDiGraph` instance containing only the nodes in
+            A :class:`.StellarGraph` or :class:`.StellarDiGraph` instance containing only the nodes in
             ``nodes``, and any edges between them in ``self``. It contains the same node & edge
             types, node features and edge weights as in ``self``.
         """

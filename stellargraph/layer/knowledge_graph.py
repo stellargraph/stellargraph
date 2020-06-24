@@ -448,9 +448,9 @@ class ComplEx(KGModel):
 
        Example using ComplEx: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`__
 
-       Related models: other knowledge graph models, see :class:`KGTripleGenerator` for a full list.
+       Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
 
-       Appropriate data generator: :class:`KGTripleGenerator`.
+       Appropriate data generator: :class:`.KGTripleGenerator`.
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
@@ -556,9 +556,9 @@ class DistMult(KGModel):
 
        Example using DistMult: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/distmult-link-prediction.html>`__
 
-       Related models: other knowledge graph models, see :class:`KGTripleGenerator` for a full list.
+       Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
 
-       Appropriate data generator: :class:`KGTripleGenerator`.
+       Appropriate data generator: :class:`.KGTripleGenerator`.
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
@@ -668,9 +668,9 @@ class RotatE(KGModel):
 
     .. seealso::
 
-       Related models: other knowledge graph models, see :class:`KGTripleGenerator` for a full list.
+       Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
 
-       Appropriate data generator: :class:`KGTripleGenerator`.
+       Appropriate data generator: :class:`.KGTripleGenerator`.
     """
 
     def __init__(
@@ -828,10 +828,10 @@ class RotH(KGModel):
 
        Related models:
 
-       - other knowledge graph models, see :class:`KGTripleGenerator` for a full list
-       - :class:`RotE` for the Euclidean version of this hyperbolic model
+       - other knowledge graph models, see :class:`.KGTripleGenerator` for a full list
+       - :class:`.RotE` for the Euclidean version of this hyperbolic model
 
-       Appropriate data generator: :class:`KGTripleGenerator`.
+       Appropriate data generator: :class:`.KGTripleGenerator`.
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
@@ -872,10 +872,10 @@ class RotE(KGModel):
 
        Related models:
 
-       - other knowledge graph models, see :class:`KGTripleGenerator` for a full list
-       - :class:`RotH` for the hyperbolic version of this Euclidean model
+       - other knowledge graph models, see :class:`.KGTripleGenerator` for a full list
+       - :class:`.RotH` for the hyperbolic version of this Euclidean model
 
-       Appropriate data generator: :class:`KGTripleGenerator`.
+       Appropriate data generator: :class:`.KGTripleGenerator`.
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.

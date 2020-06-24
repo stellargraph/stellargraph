@@ -43,11 +43,11 @@ class PPNPPropagationLayer(Layer):
       - This class assumes that the personalized page rank matrix (specified in paper) matrix is passed as
         input to the Keras methods.
 
-    .. seealso:: :class:`PPNP` combines several of these layers.
+    .. seealso:: :class:`.PPNP` combines several of these layers.
 
     Args:
         units (int): dimensionality of output feature vectors
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         input_dim (int, optional): the size of the input shape, if known.
         kwargs: any additional arguments to pass to :class:`tensorflow.keras.layers.Layer`
     """
@@ -151,17 +151,17 @@ class PPNP:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using the :class:`FullBatchNodeGenerator` class. To have the appropriate
+    should be supplied using the :class:`.FullBatchNodeGenerator` class. To have the appropriate
     preprocessing the generator object should be instantiated as follows::
 
         generator = FullBatchNodeGenerator(G, method="ppnp")
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`FullBatchNodeGenerator` object.
+        :class:`.FullBatchNodeGenerator` object.
 
       - This assumes that the personalized page rank matrix is provided as input to
-        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
+        Keras methods. When using the :class:`.FullBatchNodeGenerator` specify the
         ``method='ppnp'`` argument to do this preprocessing.
 
       - ``method='ppnp'`` requires that ``use_sparse=False`` and generates a dense personalized page rank matrix
@@ -177,9 +177,9 @@ class PPNP:
 
        Example using PPNP: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`__.
 
-       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`.
+       Appropriate data generators: :class:`.FullBatchNodeGenerator`, :class:`.FullBatchLinkGenerator`.
 
-       :class:`PPNPPropagationLayer` is the base layer out of which a PPNP model is built.
+       :class:`.PPNPPropagationLayer` is the base layer out of which a PPNP model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack

@@ -56,7 +56,7 @@ class Attri2Vec:
        - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`__
        - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
-       Appropriate data generators: :class:`Attri2VecNodeGenerator`, :class:`Attri2VecLinkGenerator`.
+       Appropriate data generators: :class:`.Attri2VecNodeGenerator`, :class:`.Attri2VecLinkGenerator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.

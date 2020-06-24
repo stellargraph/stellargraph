@@ -53,7 +53,7 @@ class UnsupervisedSampler:
            - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
            - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
-           Built-in classes for ``walker``: :class:`UniformRandomWalk`, :class:`BiasedRandomWalk`, :class:`UniformRandomMetaPathWalk`.
+           Built-in classes for ``walker``: :class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.UniformRandomMetaPathWalk`.
 
         Args:
             G (StellarGraph): A stellargraph with features.

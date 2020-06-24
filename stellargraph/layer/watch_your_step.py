@@ -118,9 +118,9 @@ class WatchYourStep:
 
        Example using Watch Your Step: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`__
 
-       Appropriate data generator: :class:`AdjacencyPowerGenerator`.
+       Appropriate data generator: :class:`.AdjacencyPowerGenerator`.
 
-       Appropriate loss function: :func:`graph_log_likelihood`.
+       Appropriate loss function: :func:`.graph_log_likelihood`.
 
     Args:
         generator (AdjacencyPowerGenerator): the generator

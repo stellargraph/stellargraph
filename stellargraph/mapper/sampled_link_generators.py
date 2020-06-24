@@ -218,7 +218,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`GraphSAGE`.
+       Model using this generator: :class:`.GraphSAGE`.
 
        Some examples using this generator (see the model for more):
 
@@ -227,10 +227,10 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for unsupervised training using random walks
-       - :class:`GraphSAGENodeGenerator` for node classification and related tasks
-       - :class:`DirectedGraphSAGELinkGenerator` for directed graphs
-       - :class:`HinSAGELinkGenerator` for heterogeneous graphs
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.GraphSAGENodeGenerator` for node classification and related tasks
+       - :class:`.DirectedGraphSAGELinkGenerator` for directed graphs
+       - :class:`.HinSAGELinkGenerator` for heterogeneous graphs
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
@@ -348,16 +348,16 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`HinSAGE`.
+       Model using this generator: :class:`.HinSAGE`.
 
        Example using this generator: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__.
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for unsupervised training using random walks
-       - :class:`HinSAGENodeGenerator` for node classification and related tasks
-       - :class:`GraphSAGELinkGenerator` for homogeneous graphs
-       - :class:`DirectedGraphSAGELinkGenerator` for directed homogeneous graphs
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.HinSAGENodeGenerator` for node classification and related tasks
+       - :class:`.GraphSAGELinkGenerator` for homogeneous graphs
+       - :class:`.DirectedGraphSAGELinkGenerator` for directed homogeneous graphs
 
     Args:
         g (StellarGraph): A machine-learning ready graph.
@@ -511,14 +511,14 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`Attri2Vec`.
+       Model using this generator: :class:`.Attri2Vec`.
 
        An example using this generator (see the model for more): `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__.
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for unsupervised training using random walks
-       - :class:`Attri2VecNodeGenerator` for node classification and related tasks
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.Attri2VecNodeGenerator` for node classification and related tasks
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
@@ -575,11 +575,11 @@ class Node2VecLinkGenerator(BatchedLinkGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`Node2Vec`.
+       Model using this generator: :class:`.Node2Vec`.
 
        An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__.
 
-       Related functionality: :class:`Node2VecNodeGenerator` for node classification and related tasks.
+       Related functionality: :class:`.Node2VecNodeGenerator` for node classification and related tasks.
 
     Args:
         G (StellarGraph): A machine-learning ready graph.
@@ -628,14 +628,14 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`GraphSAGE`.
+       Model using this generator: :class:`.GraphSAGE`.
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for unsupervised training using random walks
-       - :class:`DirectedGraphSAGENodeGenerator` for node classification and related tasks
-       - :class:`GraphSAGELinkGenerator` for undirected graphs
-       - :class:`HinSAGELinkGenerator` for heterogeneous graphs
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.DirectedGraphSAGENodeGenerator` for node classification and related tasks
+       - :class:`.GraphSAGELinkGenerator` for undirected graphs
+       - :class:`.HinSAGELinkGenerator` for heterogeneous graphs
 
     Args:
         G (StellarGraph): A machine-learning ready graph.

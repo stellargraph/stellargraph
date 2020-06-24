@@ -214,9 +214,9 @@ class GCN_LSTM:
 
        Example using GCN_LSTM: `spatio-temporal time-series prediction <https://stellargraph.readthedocs.io/en/stable/demos/time-series/gcn-lstm-time-series.html>`__.
 
-       Appropriate data generator: :class:`SlidingFeaturesNodeGenerator`.
+       Appropriate data generator: :class:`.SlidingFeaturesNodeGenerator`.
 
-       Related model: :class:`GCN` for graphs without time-series node features.
+       Related model: :class:`.GCN` for graphs without time-series node features.
 
     Args:
        seq_len: No. of LSTM cells

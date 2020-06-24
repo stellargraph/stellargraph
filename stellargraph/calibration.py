@@ -47,7 +47,7 @@ def expected_calibration_error(prediction_probabilities, accuracy, confidence):
 
        `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
-       Related functionality: :func:`plot_reliability_diagram`, :class:`IsotonicCalibration`, :class:`TemperatureCalibration`.
+       Related functionality: :func:`.plot_reliability_diagram`, :class:`.IsotonicCalibration`, :class:`.TemperatureCalibration`.
 
     Args:
         prediction_probabilities (numpy array):  The predicted probabilities.
@@ -105,7 +105,7 @@ def plot_reliability_diagram(calibration_data, predictions, ece=None, filename=N
 
        `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
-       Related functionality: :func:`expected_calibration_error`, :class:`IsotonicCalibration`, :class:`TemperatureCalibration`.
+       Related functionality: :func:`.expected_calibration_error`, :class:`.IsotonicCalibration`, :class:`.TemperatureCalibration`.
 
     Args:
         calibration_data (list): The calibration data as a list where each entry in the list is a 2-tuple of type
@@ -186,7 +186,7 @@ class TemperatureCalibration(object):
 
        `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
-       Related functionality: :func:`expected_calibration_error`, :func:`plot_reliability_diagram`, :class:`IsotonicCalibration`.
+       Related functionality: :func:`.expected_calibration_error`, :func:`.plot_reliability_diagram`, :class:`.IsotonicCalibration`.
     """
 
     def __init__(self, epochs=1000):
@@ -382,7 +382,7 @@ class IsotonicCalibration(object):
 
        `Examples using calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/index.html>`__.
 
-       Related functionality: :func:`expected_calibration_error`, :func:`plot_reliability_diagram`, :class:`TemperatureCalibration`.
+       Related functionality: :func:`.expected_calibration_error`, :func:`.plot_reliability_diagram`, :class:`.TemperatureCalibration`.
     """
 
     def __init__(self):

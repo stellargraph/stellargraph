@@ -48,7 +48,7 @@ class ClusterNodeGenerator(Generator):
 
     .. seealso::
 
-       Models using this generator: :class:`GCN`, :class:`GAT`, :class:`APPNP`.
+       Models using this generator: :class:`.GCN`, :class:`.GAT`, :class:`.APPNP`.
 
        Examples using this generator:
 
@@ -173,7 +173,7 @@ class ClusterNodeGenerator(Generator):
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A :class:`ClusterNodeSequence` object to use with :class:`ClusterGCN` in Keras
+            A :class:`.ClusterNodeSequence` object to use with :class:`.ClusterGCN` in Keras
             methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`.
 
         """
@@ -214,7 +214,7 @@ class ClusterNodeSequence(Sequence):
         :meth:`keras.Model.predict`.
 
     This class should be created using the :meth:`flow` method of
-    :class:`ClusterNodeGenerator`.
+    :class:`.ClusterNodeGenerator`.
 
     Args:
         graph (StellarGraph): The graph

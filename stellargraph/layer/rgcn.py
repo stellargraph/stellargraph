@@ -37,7 +37,7 @@ class RelationalGraphConvolution(Layer):
           - There are 1 + R inputs required (where R is the number of relationships): the node features,
             and a normalized adjacency matrix for each relationship
 
-        .. seealso:: :class:`RGCN` combines several of these layers.
+        .. seealso:: :class:`.RGCN` combines several of these layers.
 
         Args:
             units (int): dimensionality of output feature vectors
@@ -46,7 +46,7 @@ class RelationalGraphConvolution(Layer):
                 the paper; defaults to 0. ``num_bases < 0`` triggers the default behaviour of ``num_bases = 0``
             activation (str or func): nonlinear activation applied to layer's output to obtain output features
             use_bias (bool): toggles an optional bias
-            final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+            final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
             kernel_initializer (str or func): The initialiser to use for the self kernel and also relational kernels if ``num_bases=0``.
             kernel_regularizer (str or func): The regulariser to use for the self kernel and also relational kernels if ``num_bases=0``.
             kernel_constraint (str or func): The constraint to use for the self kernel and also relational kernels if ``num_bases=0``.
@@ -330,25 +330,25 @@ class RGCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using the :class:`RelationalFullBatchNodeGenerator` class.
+    should be supplied using the :class:`.RelationalFullBatchNodeGenerator` class.
     The generator object should be instantiated as follows::
 
         generator = RelationalFullBatchNodeGenerator(G)
 
     Note that currently the RGCN class is compatible with both sparse and dense adjacency
-    matrices and the :class:`RelationalFullBatchNodeGenerator` will default to sparse.
+    matrices and the :class:`.RelationalFullBatchNodeGenerator` will default to sparse.
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`RelationalFullBatchNodeGenerator` object.
+        :class:`.RelationalFullBatchNodeGenerator` object.
 
-      - The nodes provided to the :class:`RelationalFullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :class:`.RelationalFullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
     Examples:
-        Creating a RGCN node classification model from an existing :class:`StellarGraph`
+        Creating a RGCN node classification model from an existing :class:`.StellarGraph`
         object ``G``::
 
             generator = RelationalFullBatchNodeGenerator(G)
@@ -368,11 +368,11 @@ class RGCN:
        - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`__
        - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
 
-       Appropriate data generator: :class:`RelationalFullBatchNodeGenerator`.
+       Appropriate data generator: :class:`.RelationalFullBatchNodeGenerator`.
 
-       Related model: :class:`GCN` is a specialisation for a single edge type.
+       Related model: :class:`.GCN` is a specialisation for a single edge type.
 
-       :class:`RelationalGraphConvolution` is the base layer out of which an RGCN model is built.
+       :class:`.RelationalGraphConvolution` is the base layer out of which an RGCN model is built.
 
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.

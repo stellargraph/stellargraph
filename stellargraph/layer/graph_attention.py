@@ -48,7 +48,7 @@ class GraphAttention(Layer):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
-    .. seealso:: :class:`GAT` combines several of these layers, and :class:`GraphAttentionSparse` supports a sparse adjacency matrix.
+    .. seealso:: :class:`.GAT` combines several of these layers, and :class:`.GraphAttentionSparse` supports a sparse adjacency matrix.
 
     Args:
         F_out (int): dimensionality of output feature vectors
@@ -58,7 +58,7 @@ class GraphAttention(Layer):
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
@@ -388,7 +388,7 @@ class GraphAttentionSparse(GraphAttention):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
-    .. seealso:: :class:`GAT` combines several of these layers, and :class:`GraphAttention` supports a dense adjacency matrix.
+    .. seealso:: :class:`.GAT` combines several of these layers, and :class:`.GraphAttention` supports a dense adjacency matrix.
 
     Args:
         F_out (int): dimensionality of output feature vectors
@@ -398,7 +398,7 @@ class GraphAttentionSparse(GraphAttention):
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
@@ -530,14 +530,14 @@ class GAT:
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
-    or the :class:`FullBatchLinkGenerator` class for link inference.
+    should be supplied using either the :class:`.FullBatchNodeGenerator` class for node inference
+    or the :class:`.FullBatchLinkGenerator` class for link inference.
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gat'` argument.
 
     Examples:
-        Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
+        Creating a GAT node classification model from an existing :class:`.StellarGraph` object `G`::
 
             generator = FullBatchNodeGenerator(G, method="gat")
             gat = GAT(
@@ -552,13 +552,13 @@ class GAT:
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`FullBatchNodeGenerator` object.
+        :class:`.FullBatchNodeGenerator` object.
 
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops, using the ``method='gat'`` argument
-        of the :class:`FullBatchNodeGenerator`.
+        of the :class:`.FullBatchNodeGenerator`.
 
-      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :class:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
@@ -572,14 +572,14 @@ class GAT:
        - `interpreting GAT predictions <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat-node-link-importance.html>`__
        - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__
 
-       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
+       Appropriate data generators: :class:`.FullBatchNodeGenerator`, :class:`.FullBatchLinkGenerator`, :class:`.ClusterNodeGenerator`.
 
        Related models:
 
-       - Other full-batch models: see the documentation of :class:`FullBatchNodeGenerator` for a full list
-       - :class:`DeepGraphInfomax` for unsupervised training
+       - Other full-batch models: see the documentation of :class:`.FullBatchNodeGenerator` for a full list
+       - :class:`.DeepGraphInfomax` for unsupervised training
 
-       :class:`GraphAttention` and :class:`GraphAttentionSparse` are the base layers out of which a GAT model is built.
+       :class:`.GraphAttention` and :class:`.GraphAttentionSparse` are the base layers out of which a GAT model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines

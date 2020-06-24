@@ -733,17 +733,17 @@ class GraphSAGE:
 
     Different neighbour node aggregators can also be specified with the ``aggregator``
     argument, which should be the aggregator class,
-    either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
-    :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
+    either :class:`.MeanAggregator`, :class:`.MeanPoolingAggregator`,
+    :class:`.MaxPoolingAggregator`, or :class:`.AttentionalAggregator`.
 
     To use this class as a Keras model, the features and graph should be supplied using the
-    :class:`GraphSAGENodeGenerator` class for node inference models or the
-    :class:`GraphSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
+    :class:`.GraphSAGENodeGenerator` class for node inference models or the
+    :class:`.GraphSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Examples:
         Creating a two-level GrapSAGE node classification model with hidden node sizes of 8 and 4
-        and 10 neighbours sampled at each layer using an existing :class:`StellarGraph` object `G`
+        and 10 neighbours sampled at each layer using an existing :class:`.StellarGraph` object `G`
         containing the graph and node features::
 
             generator = GraphSAGENodeGenerator(G, batch_size=50, num_samples=[10,10])
@@ -768,15 +768,15 @@ class GraphSAGE:
        - ensemble models: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__, `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`__
        - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
-       Appropriate data generators: :class:`GraphSAGENodeGenerator`, :class:`Neo4jGraphSAGENodeGenerator`, :class:`GraphSAGELinkGenerator`.
+       Appropriate data generators: :class:`.GraphSAGENodeGenerator`, :class:`.Neo4jGraphSAGENodeGenerator`, :class:`.GraphSAGELinkGenerator`.
 
        Related models:
 
-       - :class:`DirectedGraphSAGE` for a generalisation to directed graphs
-       - :class:`HinSAGE` for a generalisation to heterogeneous graphs
-       - :class:`DeepGraphInfomax` for unsupervised training
+       - :class:`.DirectedGraphSAGE` for a generalisation to directed graphs
+       - :class:`.HinSAGE` for a generalisation to heterogeneous graphs
+       - :class:`.DeepGraphInfomax` for unsupervised training
 
-       Aggregators: :class:`MeanAggregator`, :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`, :class:`AttentionalAggregator`.
+       Aggregators: :class:`.MeanAggregator`, :class:`.MeanPoolingAggregator`, :class:`.MaxPoolingAggregator`, :class:`.AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
@@ -1104,8 +1104,8 @@ class DirectedGraphSAGE(GraphSAGE):
 
     Different neighbour node aggregators can also be specified with the ``aggregator``
     argument, which should be the aggregator class,
-    either :class:`MeanAggregator`, :class:`MeanPoolingAggregator`,
-    :class:`MaxPoolingAggregator`, or :class:`AttentionalAggregator`.
+    either :class:`.MeanAggregator`, :class:`.MeanPoolingAggregator`,
+    :class:`.MaxPoolingAggregator`, or :class:`.AttentionalAggregator`.
 
     .. seealso::
 
@@ -1114,14 +1114,14 @@ class DirectedGraphSAGE(GraphSAGE):
        - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`__
        - `node classification with Neo4j <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.html>`__
 
-       Appropriate data generators: :class:`DirectedGraphSAGENodeGenerator`, :class:`Neo4jDirectedGraphSAGENodeGenerator`, :class:`DirectedGraphSAGELinkGenerator`.
+       Appropriate data generators: :class:`.DirectedGraphSAGENodeGenerator`, :class:`.Neo4jDirectedGraphSAGENodeGenerator`, :class:`.DirectedGraphSAGELinkGenerator`.
 
        Related models:
 
-       - :class:`GraphSAGE` for undirected graphs
-       - :class:`HinSAGE` for undirected heterogeneous graphs
+       - :class:`.GraphSAGE` for undirected graphs
+       - :class:`.HinSAGE` for undirected heterogeneous graphs
 
-       Aggregators: :class:`MeanAggregator`, :class:`MeanPoolingAggregator`, :class:`MaxPoolingAggregator`, :class:`AttentionalAggregator`.
+       Aggregators: :class:`.MeanAggregator`, :class:`.MeanPoolingAggregator`, :class:`.MaxPoolingAggregator`, :class:`.AttentionalAggregator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.

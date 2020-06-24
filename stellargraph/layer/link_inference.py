@@ -99,7 +99,7 @@ class LinkEmbedding(Layer):
        - `GCN link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
        - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
 
-       Related functions: :func:`link_inference`, :func:`link_classification`, :func:`link_regression`.
+       Related functions: :func:`.link_inference`, :func:`.link_classification`, :func:`.link_regression`.
 
     Args:
         axis (int): If a single tensor is supplied this is the axis that indexes the node
@@ -224,7 +224,7 @@ def link_inference(
 
     Note that the output tensor is flattened before being returned.
 
-    .. seealso:: Related functionality: :class:`LinkEmbedding`, :func:`link_classification`, :func:`link_regression`.
+    .. seealso:: Related functionality: :class:`.LinkEmbedding`, :func:`.link_classification`, :func:`.link_regression`.
 
     Args:
         output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
@@ -312,7 +312,7 @@ def link_classification(
        - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
        - other link prediction: `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__, `ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`__, `calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`__
 
-       Related functionality: :class:`LinkEmbedding`, :func:`link_inference`, :func:`link_regression`.
+       Related functionality: :class:`.LinkEmbedding`, :func:`.link_inference`, :func:`.link_regression`.
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
@@ -365,7 +365,7 @@ def link_regression(
 
        Example using this function: `HinSAGE link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__.
 
-       Related functionality: :class:`LinkEmbedding`, :func:`link_inference`, :func:`link_classification`.
+       Related functionality: :class:`.LinkEmbedding`, :func:`.link_inference`, :func:`.link_classification`.
 
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,

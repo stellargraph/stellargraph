@@ -30,7 +30,7 @@ class AdjacencyPowerGenerator(Generator):
 
     .. seealso::
 
-       Model using this generator: :class:`WatchYourStep`.
+       Model using this generator: :class:`.WatchYourStep`.
 
        Example using this generator: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`__
 

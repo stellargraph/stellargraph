@@ -31,7 +31,7 @@ class SlidingFeaturesNodeGenerator(Generator):
     A data generator for a graph containing sequence data, created by sliding windows across the
     features of each node in a graph.
 
-    .. seealso:: Model using this generator: :class:`GCN_LSTM`.
+    .. seealso:: Model using this generator: :class:`.GCN_LSTM`.
 
     Args:
         G (StellarGraph): a graph instance where the node features are ordered sequence data

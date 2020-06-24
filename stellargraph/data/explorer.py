@@ -271,8 +271,8 @@ class UniformRandomWalk(RandomWalk):
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
-       - Other random walks: :class:`BiasedRandomWalk`, :class:`UniformRandomMetaPathWalk`, :class:`TemporalRandomWalk`.
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`.BiasedRandomWalk`, :class:`.UniformRandomMetaPathWalk`, :class:`.TemporalRandomWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -366,9 +366,9 @@ class BiasedRandomWalk(RandomWalk):
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
-       - :class:`Node2Vec`, :class:`Node2VecNodeGenerator` and :class:`Node2VecLinkGenerator` for training a Node2Vec using only StellarGraph
-       - Other random walks: :class:`UniformRandomWalk`, :class:`UniformRandomMetaPathWalk`, :class:`TemporalRandomWalk`.
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - :class:`.Node2Vec`, :class:`.Node2VecNodeGenerator` and :class:`.Node2VecLinkGenerator` for training a Node2Vec using only StellarGraph
+       - Other random walks: :class:`.UniformRandomWalk`, :class:`.UniformRandomMetaPathWalk`, :class:`.TemporalRandomWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -548,8 +548,8 @@ class UniformRandomMetaPathWalk(RandomWalk):
 
        Related functionality:
 
-       - :class:`UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
-       - Other random walks: :class:`UniformRandomWalk`, :class:`BiasedRandomWalk`, :class:`TemporalRandomWalk`.
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.TemporalRandomWalk`.
 
 
     Args:
@@ -962,7 +962,7 @@ class TemporalRandomWalk(GraphWalk):
 
        Example using this random walk: `link prediction with CTDNE <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`__
 
-       Related functionality: other random walks: :class:`UniformRandomWalk`, :class:`BiasedRandomWalk`, :class:`UniformRandomMetaPathWalk`.
+       Related functionality: other random walks: :class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.UniformRandomMetaPathWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse

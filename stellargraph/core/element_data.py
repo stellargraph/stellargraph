@@ -115,7 +115,7 @@ class ElementData:
     edges). Elements of every type must have this information, such as the type itself or the
     source, target and weight for edges.
 
-    It indexes these in terms of ilocs (see :class:`ExternalIdIndex`). The data is stored as columns
+    It indexes these in terms of ilocs (see :class:`.ExternalIdIndex`). The data is stored as columns
     of raw numpy arrays, because indexing such arrays is significantly (orders of magnitude) faster
     than indexing pandas dataframes, series or indices.
 

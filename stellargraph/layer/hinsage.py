@@ -231,8 +231,8 @@ class HinSAGE:
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
 
     To use this class as a Keras model, the features and graph should be supplied using the
-    :class:`HinSAGENodeGenerator` class for node inference models or the
-    :class:`HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
+    :class:`.HinSAGENodeGenerator` class for node inference models or the
+    :class:`.HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Currently the class supports node or link prediction models which are built depending on whether
@@ -246,7 +246,7 @@ class HinSAGE:
 
     Examples:
         Creating a two-level GrapSAGE node classification model on nodes of type 'A' with hidden node sizes of 8 and 4
-        and 10 neighbours sampled at each layer using an existing :class:`StellarGraph` object `G`
+        and 10 neighbours sampled at each layer using an existing :class:`.StellarGraph` object `G`
         containing the graph and node features::
 
             generator = HinSAGENodeGenerator(
@@ -282,15 +282,15 @@ class HinSAGE:
        - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__
        - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
 
-       Appropriate data generators: :class:`HinSAGENodeGenerator`, :class:`HinSAGELinkGenerator`.
+       Appropriate data generators: :class:`.HinSAGENodeGenerator`, :class:`.HinSAGELinkGenerator`.
 
        Related models:
 
-       - :class:`GraphSAGE` for homogeneous graphs
-       - :class:`DirectedGraphSAGE` for homogeneous directed graphs
-       - :class:`DeepGraphInfomax` for unsupervised training
+       - :class:`.GraphSAGE` for homogeneous graphs
+       - :class:`.DirectedGraphSAGE` for homogeneous directed graphs
+       - :class:`.DeepGraphInfomax` for unsupervised training
 
-       Aggregators: :class:`MeanHinAggregator`.
+       Aggregators: :class:`.MeanHinAggregator`.
 
        The `Heterogeneous GraphSAGE (HinSAGE) <https://stellargraph.readthedocs.io/en/stable/hinsage.html>`__ explanatory document has more theoretical details.
 

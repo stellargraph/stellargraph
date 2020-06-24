@@ -40,11 +40,11 @@ class APPNPPropagationLayer(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
-    .. seealso:: :class:`APPNP` combines several of these layers.
+    .. seealso:: :class:`.APPNP` combines several of these layers.
 
     Args:
         units (int): dimensionality of output feature vectors
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         teleport_probability: "probability" of returning to the starting node in the propagation step as described  in
         the paper (alpha in the paper)
         input_dim (int, optional): the size of the input shape, if known.
@@ -163,8 +163,8 @@ class APPNP:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
-    or the :class:`FullBatchLinkGenerator` class for link inference.
+    should be supplied using either the :class:`.FullBatchNodeGenerator` class for node inference
+    or the :class:`.FullBatchLinkGenerator` class for link inference.
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gcn'` argument.
@@ -183,13 +183,13 @@ class APPNP:
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`FullBatchNodeGenerator` object.
+        :class:`.FullBatchNodeGenerator` object.
 
       - This assumes that the normalized Laplacian matrix is provided as input to
-        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
+        Keras methods. When using the :class:`.FullBatchNodeGenerator` specify the
         ``method='gcn'`` argument to do this preprocessing.
 
-      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :class:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
@@ -200,9 +200,9 @@ class APPNP:
 
        Example using APPNP: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/ppnp-node-classification.html>`__.
 
-       Appropriate data generators: :class:`FullBatchNodeGenerator`, :class:`FullBatchLinkGenerator`, :class:`ClusterNodeGenerator`.
+       Appropriate data generators: :class:`.FullBatchNodeGenerator`, :class:`.FullBatchLinkGenerator`, :class:`.ClusterNodeGenerator`.
 
-       :class:`APPNPPropagationLayer` is the base layer out of which an APPNP model is built.
+       :class:`.APPNPPropagationLayer` is the base layer out of which an APPNP model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of fully connected layers in the stack

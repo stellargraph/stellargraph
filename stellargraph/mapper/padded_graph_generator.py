@@ -25,7 +25,7 @@ class PaddedGraphGenerator(Generator):
     """
     A data generator for use with graph classification algorithms.
 
-    The supplied graphs should be :class:`StellarGraph` objects with node features.
+    The supplied graphs should be :class:`.StellarGraph` objects with node features.
     Use the :meth:`flow` method supplying the graph indexes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
@@ -36,7 +36,7 @@ class PaddedGraphGenerator(Generator):
 
     .. seealso::
 
-       Models using this generator: :class:`GCNSupervisedGraphClassification`, :class:`DeepGraphCNN`.
+       Models using this generator: :class:`.GCNSupervisedGraphClassification`, :class:`.DeepGraphCNN`.
 
        Examples using this generator:
 
@@ -107,7 +107,7 @@ class PaddedGraphGenerator(Generator):
         with the supplied graph indexes and targets.
 
         Args:
-            graphs (iterable): an iterable of graph indexes in self.graphs or an iterable of :class:`StellarGraph` objects
+            graphs (iterable): an iterable of graph indexes in self.graphs or an iterable of :class:`.StellarGraph` objects
                 for the graphs of interest (e.g., training, validation, or test set nodes).
             targets (2d array, optional): a 2D array of numeric graph targets with shape ``(len(graphs),
                 len(targets))``.
@@ -123,7 +123,7 @@ class PaddedGraphGenerator(Generator):
             seed (int, optional): Random seed to use in the sequence object.
 
         Returns:
-            A :class:`PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
+            A :class:`.PaddedGraphSequence` object to use with Keras methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`
 
         """
         if targets is not None:
@@ -189,7 +189,7 @@ class PaddedGraphSequence(Sequence):
         :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
-    :class:`PaddedGraphGenerator`.
+    :class:`.PaddedGraphGenerator`.
 
     Args:
         graphs (list)): The graphs as StellarGraph objects.

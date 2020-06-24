@@ -197,7 +197,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`GraphSAGE`.
+       Model using this generator: :class:`.GraphSAGE`.
 
        Some examples using this generator (see the model for more):
 
@@ -206,11 +206,11 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
        Related functionality:
 
-       - :class:`Neo4jGraphSAGENodeGenerator` for using :class:`GraphSAGE` with Neo4j
-       - :class:`CorruptedGenerator` for unsupervised training using :class:`DeepGraphInfomax`
-       - :class:`GraphSAGELinkGenerator` for link prediction, unsupervised training using random walks and related tasks
-       - :class:`DirectedGraphSAGENodeGenerator` for directed graphs
-       - :class:`HinSAGENodeGenerator` for heterogeneous graphs
+       - :class:`.Neo4jGraphSAGENodeGenerator` for using :class:`.GraphSAGE` with Neo4j
+       - :class:`.CorruptedGenerator` for unsupervised training using :class:`.DeepGraphInfomax`
+       - :class:`.GraphSAGELinkGenerator` for link prediction, unsupervised training using random walks and related tasks
+       - :class:`.DirectedGraphSAGENodeGenerator` for directed graphs
+       - :class:`.HinSAGENodeGenerator` for heterogeneous graphs
 
     Args:
         G (StellarGraph): The machine-learning ready graph.
@@ -321,17 +321,17 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`DirectedGraphSAGE`.
+       Model using this generator: :class:`.DirectedGraphSAGE`.
 
        Example using this generator: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`__.
 
        Related functionality:
 
-       - :class:`Neo4jDirectedGraphSAGENodeGenerator` for using :class:`DirectedGraphSAGE` with Neo4j
-       - :class:`CorruptedGenerator` for unsupervised training using :class:`DeepGraphInfomax`
-       - :class:`DirectedGraphSAGELinkGenerator` for link prediction and related tasks
-       - :class:`GraphSAGENodeGenerator` for undirected graphs
-       - :class:`HinSAGENodeGenerator` for heterogeneous graphs
+       - :class:`.Neo4jDirectedGraphSAGENodeGenerator` for using :class:`.DirectedGraphSAGE` with Neo4j
+       - :class:`.CorruptedGenerator` for unsupervised training using :class:`.DeepGraphInfomax`
+       - :class:`.DirectedGraphSAGELinkGenerator` for link prediction and related tasks
+       - :class:`.GraphSAGENodeGenerator` for undirected graphs
+       - :class:`.HinSAGENodeGenerator` for heterogeneous graphs
 
     Args:
         G (StellarDiGraph): The machine-learning ready graph.
@@ -446,16 +446,16 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`HinSAGE`.
+       Model using this generator: :class:`.HinSAGE`.
 
        Example using this generator: `unsupervised representation learning via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_.
 
        Related functionality:
 
-       - :class:`CorruptedGenerator` for unsupervised training using :class:`DeepGraphInfomax`
-       - :class:`HinSAGELinkGenerator` for link prediction and related tasks
-       - :class:`GraphSAGENodeGenerator` for homogeneous graphs
-       - :class:`DirectedGraphSAGENodeGenerator` for directed homogeneous graphs
+       - :class:`.CorruptedGenerator` for unsupervised training using :class:`.DeepGraphInfomax`
+       - :class:`.HinSAGELinkGenerator` for link prediction and related tasks
+       - :class:`.GraphSAGENodeGenerator` for homogeneous graphs
+       - :class:`.DirectedGraphSAGENodeGenerator` for directed homogeneous graphs
 
     Args:
         G (StellarGraph): The machine-learning ready graph
@@ -592,11 +592,11 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`Attri2Vec`.
+       Model using this generator: :class:`.Attri2Vec`.
 
        An example using this generator (see the model for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__.
 
-       Related functionality: :class:`Attri2VecLinkGenerator` for training, link prediction and related tasks.
+       Related functionality: :class:`.Attri2VecLinkGenerator` for training, link prediction and related tasks.
 
     Args:
         G (StellarGraph): The machine-learning ready graph.
@@ -686,11 +686,11 @@ class Node2VecNodeGenerator(BatchedNodeGenerator):
 
     .. seealso::
 
-       Model using this generator: :class:`Node2Vec`.
+       Model using this generator: :class:`.Node2Vec`.
 
        An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_.
 
-       Related functionality: :class:`Node2VecLinkGenerator` for training, link prediction, and related tasks.
+       Related functionality: :class:`.Node2VecLinkGenerator` for training, link prediction, and related tasks.
 
     Args:
         G (StellarGraph): The machine-learning ready graph.
