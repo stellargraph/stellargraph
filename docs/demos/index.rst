@@ -62,7 +62,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/gcn-node-classification>`
      - :any:`demo <link-prediction/gcn-link-prediction>`
      - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
-     - see Cluster-GCN
+     - via Cluster-GCN
      - :any:`demo <graph-classification/gcn-supervised-graph-classification>`
    *
      - Cluster-GCN
@@ -110,7 +110,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/gat-node-classification>`
      - yes
      - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
-     -
+     - via Cluster-GCN
      -
    *
      - Simplified Graph Convolution (SGC)
@@ -146,7 +146,7 @@ Find a demo for an algorithm
      - :any:`demo <node-classification/ppnp-node-classification>`
      - yes
      - UnsupervisedSampler, :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
-     -
+     - via Cluster-GCN
      -
    *
      - GraphWave

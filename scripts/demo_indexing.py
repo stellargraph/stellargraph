@@ -374,7 +374,7 @@ ALGORITHMS = [
         interpretability_nc=T(link="interpretability/gcn-node-link-importance"),
         lp=T(link="link-prediction/gcn-link-prediction"),
         rl=[rl_us(), rl_dgi()],
-        inductive="see Cluster-GCN",
+        inductive="via Cluster-GCN",
         gc=T(link="graph-classification/gcn-supervised-graph-classification"),
     ),
     Algorithm(
@@ -408,6 +408,7 @@ ALGORITHMS = [
         interpretability_nc=T(link="interpretability/gat-node-link-importance"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
+        inductive="via Cluster-GCN",
     ),
     Algorithm(
         T("SGC", details="Simplified Graph Convolution (SGC)"),
@@ -431,6 +432,7 @@ ALGORITHMS = [
         nc=T(link="node-classification/ppnp-node-classification"),
         lp=True,
         rl=[rl_us(), rl_dgi()],
+        inductive="via Cluster-GCN",
     ),
     Algorithm(
         "GraphWave",
