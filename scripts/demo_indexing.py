@@ -507,6 +507,7 @@ ALGORITHMS = [
     ),
     Algorithm(
         "Watch Your Step",
+        weighted=True,
         nc=via_rl(link="embeddings/watch-your-step-embeddings"),
         lp=via_rl(),
         rl=T(link="embeddings/watch-your-step-embeddings"),
