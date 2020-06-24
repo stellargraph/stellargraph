@@ -378,7 +378,7 @@ jobs:
         with:
           name: ${{ steps.get_package.outputs.package_name }}
           path: ${{ steps.get_package.outputs.package_path }}
-git status
+
   check-notebook-format:
     runs-on: ubuntu-latest
 
