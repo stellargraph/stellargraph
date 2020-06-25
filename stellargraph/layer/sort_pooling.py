@@ -30,6 +30,8 @@ class SortPooling(Layer):
     [1] An End-to-End Deep Learning Architecture for Graph Classification, M. Zhang, Z. Cui, M. Neumann, and
     Y. Chen, AAAI-18, https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/viewPaper/17146
 
+    .. seealso:: The :class:`.DeepGraphCNN` model uses this class for graph classification.
+
     Args:
         k (int): The number of rows of output tensor.
         flatten_output (bool): If True then the output tensor is reshaped to vector for each element in the batch.

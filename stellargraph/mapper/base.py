@@ -43,7 +43,7 @@ class Generator(abc.ABC):
     def default_corrupt_input_index_groups(self):
         """
         Optionally returns the indices of input tensors that can be shuffled for
-        :class:`CorruptGenerator` to use in :class:`DeepGraphInfomax`.
+        :class:`.CorruptGenerator` to use in :class:`.DeepGraphInfomax`.
 
         If this isn't overridden, this method returns None, indicating that the generator doesn't
         have a default or "canonical" set of indices that can be corrupted for Deep Graph Infomax.

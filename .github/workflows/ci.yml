@@ -28,14 +28,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Restore cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('setup.py') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ matrix.python-version }}-pip-
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -165,14 +157,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Restore cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-${{ hashFiles('setup.py') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -225,14 +209,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Restore cache
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-${{ hashFiles('setup.py') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-
 
       - name: Install dependencies
         run: |
@@ -412,6 +388,54 @@ jobs:
 
       - name: Run check
         run: python scripts/notebook_text_checker.py demos/
+
+  shfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: "Run shfmt"
+        uses: docker://mvdan/shfmt:v2.6.4
+        with:
+          args: "-d -i 2 -ci -sr ."
+
+  dockerfile-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: "Install dockerfile-utils"
+        run: "npm install --global dockerfile-utils@0.0.16"
+
+      - name: "Run dockerfile-utils"
+        run: scripts/ci/format-dockerfiles.sh
+
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+
+      - name: "Install prettier"
+        run: "npm install --global prettier@1.19.1"
+
+      - name: "Run prettier"
+        run: |
+          set -o pipefail
+          msg="does not match prettier $(prettier --version); fix using \`prettier --write ...\`"
+
+          # meta.yaml is not valid YAML because of jinja templating
+          prettier --list-different "**/*.yml" "**/*.yaml" "!meta.yaml" \
+            | sed "s/\(.*\)/::error file=\1::formatting of \1 $msg/"
 
   check-demo-indexing:
     runs-on: ubuntu-latest

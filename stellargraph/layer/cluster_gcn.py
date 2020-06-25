@@ -26,7 +26,7 @@ import warnings
 
 class ClusterGraphConvolution(GraphConvolution):
     """
-    Deprecated: use :class:`GraphConvolution`.
+    Deprecated: use :class:`.GraphConvolution`.
     """
 
     def __init__(self, *args, **kwargs):

@@ -123,7 +123,9 @@ def test_APPNP_apply_sparse():
     adj = G.to_adjacency_matrix()
     features, adj = GCN_Aadj_feats_op(features, adj)
     adj = adj.tocoo()
-    A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
+    A_indices = np.expand_dims(
+        np.hstack((adj.row[:, None], adj.col[:, None])).astype(np.int64), 0
+    )
     A_values = np.expand_dims(adj.data, 0)
 
     generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
@@ -174,7 +176,9 @@ def test_APPNP_linkmodel_apply_sparse():
     adj = G.to_adjacency_matrix()
     features, adj = GCN_Aadj_feats_op(features, adj)
     adj = adj.tocoo()
-    A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
+    A_indices = np.expand_dims(
+        np.hstack((adj.row[:, None], adj.col[:, None])).astype(np.int64), 0
+    )
     A_values = np.expand_dims(adj.data, 0)
 
     generator = FullBatchLinkGenerator(G, sparse=True, method="gcn")
@@ -271,7 +275,9 @@ def test_APPNP_apply_propagate_model_sparse():
     adj = G.to_adjacency_matrix()
     features, adj = GCN_Aadj_feats_op(features, adj)
     adj = adj.tocoo()
-    A_indices = np.expand_dims(np.hstack((adj.row[:, None], adj.col[:, None])), 0)
+    A_indices = np.expand_dims(
+        np.hstack((adj.row[:, None], adj.col[:, None])).astype(np.int64), 0
+    )
     A_values = np.expand_dims(adj.data, 0)
 
     generator = FullBatchNodeGenerator(G, sparse=True, method="gcn")
