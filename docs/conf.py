@@ -8,6 +8,7 @@
 
 import urllib.parse
 import docutils
+import sphinx
 
 # -- Path setup --------------------------------------------------------------
 
@@ -63,6 +64,8 @@ extensions = [
     "sphinx_markdown_tables",
     "nbsphinx",
     "nbsphinx_link",
+    "notfound.extension",
+    "sphinxcontrib.spelling",
 ]
 
 # Add mappings
@@ -75,9 +78,7 @@ templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = [".txt", ".md"]
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
 master_doc = "index"
@@ -117,7 +118,10 @@ html_theme = "sphinx_rtd_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    # allow the sidebar ToC to be arbitrarily deep, good for demos
+    "navigation_depth": -1
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -134,6 +138,7 @@ html_static_path = ["_static"]
 #
 # html_sidebars = {}
 
+html_logo = "banner.png"
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -196,18 +201,26 @@ texinfo_documents = [
     ),
 ]
 
-
 # -- Extension configuration -------------------------------------------------
 
 # This is processed by Jinja2 and inserted before each notebook
+# We use internal readthedocs variables to get the git version if available. Note that this is undocumented, however it
+# is shown in our readthedocs build logs, and is generated from a template:
+# https://github.com/readthedocs/readthedocs.org/blob/master/readthedocs/doc_builder/templates/doc_builder/conf.py.tmpl
 nbsphinx_prolog = r"""
+{% if env.config.html_context.github_version is defined and env.config.html_context.current_version != "stable" %}
+    {% set git_revision = env.config.html_context.github_version %}
+{% else %}
+    {% set git_revision = "master" %}
+{% endif %}
+
 .. raw:: html
 
     <div class="admonition info">
       <p>
         Execute this notebook:
-        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/master?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
-        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/master/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
+        <a href="https://mybinder.org/v2/gh/stellargraph/stellargraph/{{ git_revision }}?urlpath=lab/tree/{{ env.docname }}.ipynb" alt="Open In Binder"><img src="https://mybinder.org/badge_logo.svg"/></a>
+        <a href="https://colab.research.google.com/github/stellargraph/stellargraph/blob/{{ git_revision }}/{{ env.docname }}.ipynb" alt="Open In Colab"><img src="https://colab.research.google.com/assets/colab-badge.svg"/></a>
         <a href="{{ env.docname.rsplit('/', 1).pop() }}.ipynb" class="btn">Download locally</a>
       </p>
     </div>
@@ -220,6 +233,11 @@ nbsphinx_epilog = nbsphinx_prolog  # also insert after each notebook
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# -- Options for spelling extension ------------------------------------------
+
+spelling_lang = "en_AU"
+tokenizer_lang = "en_AU"
+
 # -- StellarGraph customisation ----------------------------------------------
 
 
@@ -227,16 +245,88 @@ class RewriteLinks(docutils.transforms.Transform):
     # before NBSphinx's link processing
     default_priority = 300
 
+    RTD_PATH_RE = re.compile("^/(?P<lang>[^/]*)/(?P<version>[^/]*)/(?P<rest>.*)$")
+
+    def _rewrite_rtd_link(self, node, refuri, parsed):
+        """
+        Rewrite deep links to the Read the Docs documentation to point to the relevant page in this
+        build.
+
+        Having full URLs is good when viewing the docs without rendering, such as with `help(...)`
+        or `?...`, but internal links make for a more consistent experience (no jumping from
+        .../1.2/ or .../latest/ to .../stable/) as well as allowing checks for validity. The
+        rewriting done here gives the best of both worlds: full URLs without rendering, internal
+        links within Sphinx.
+        """
+        env = self.document.settings.env
+        match = self.RTD_PATH_RE.match(parsed.path)
+        if not match:
+            return
+
+        lang = match["lang"]
+        version = match["version"]
+        rest = match["rest"]
+        fragment = parsed.fragment
+
+        # validate that the links all have the same basic structure:
+        if lang != "en" or version != "stable" or not rest.endswith(".html"):
+            self.document.reporter.warning(
+                f"Links to stellargraph.readthedocs.io should always be to the stable english form <https://stellargraph.readthedocs.io/en/stable/...> and have the path end with a .html file extension, found language {lang!r}, version {version!r} and path ending with {rest[-8:]!r} in <{refuri}>"
+            )
+            return
+
+        if rest == "api.html" and fragment:
+            # a link to a Python element in the API: infer which one from the fragment. Examples:
+            # - https://stellargraph.readthedocs.io/en/stable/api.html#module-stellargraph
+            # - https://stellargraph.readthedocs.io/en/stable/api.html#stellargraph.StellarGraph
+            # - https://stellargraph.readthedocs.io/en/stable/api.html#stellargraph.StellarGraph.to_networkx
+            new_domain = "py"
+
+            module_prefix = "module-"
+            if fragment.startswith(module_prefix):
+                new_type = "mod"
+                new_target = fragment[len(module_prefix) :]
+            else:
+                new_type = "any"
+                new_target = fragment
+        else:
+            # a link to a file (e.g. a demo)
+            if fragment:
+                self.document.reporter.warning(
+                    f"Link <{refuri}> to stellargraph.readthedocs.io has a fragment {fragment!r} after #, which isn't yet supported for rewriting; remove the fragment, or search for this message in conf.py and extend it"
+                )
+                return
+
+            html_suffix = ".html"
+            new_domain = "std"
+            new_type = "doc"
+            new_target = "/" + rest[: -len(html_suffix)]
+
+        xref = sphinx.addnodes.pending_xref(
+            refdomain=new_domain,
+            reftype=new_type,
+            reftarget=new_target,
+            refwarn=True,
+            refexplicit=True,
+            refdoc=env.docname,
+        )
+
+        linktext = node.astext()
+        xref += docutils.nodes.Text(linktext, linktext)
+
+        node.replace_self(xref)
+
     def apply(self):
         env = self.document.settings.env
+
         for node in self.document.traverse(docutils.nodes.reference):
             refuri = node.get("refuri")
             parsed = urllib.parse.urlparse(refuri)
 
             if parsed.netloc == "" and parsed.path.endswith("README.md"):
                 # the notebooks include links to READMEs so that the links work locally and on
-                # Github, but on Read the Docs, the equivalent files are 'index', not 'README'.
-                new_path = parsed.path.replace("README.md", "index.txt")
+                # GitHub, but on Read the Docs, the equivalent files are 'index', not 'README'.
+                new_path = parsed.path.replace("README.md", "index.rst")
                 new_components = (
                     parsed.scheme,
                     parsed.netloc,
@@ -245,8 +335,10 @@ class RewriteLinks(docutils.transforms.Transform):
                     parsed.query,
                     parsed.fragment,
                 )
-
                 node["refuri"] = urllib.parse.urlunparse(new_components)
+
+            elif parsed.netloc == "stellargraph.readthedocs.io":
+                self._rewrite_rtd_link(node, refuri, parsed)
 
 
 def setup(app):

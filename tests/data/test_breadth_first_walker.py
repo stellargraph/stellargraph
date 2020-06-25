@@ -18,8 +18,13 @@ import pandas as pd
 import pytest
 import numpy as np
 from stellargraph.data.explorer import SampledBreadthFirstWalk
-from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph, tree_graph, example_graph_random
+from stellargraph.core.graph import StellarGraph, StellarDiGraph
+from ..test_utils.graphs import (
+    create_test_graph,
+    tree_graph,
+    example_graph_random,
+    weighted_tree,
+)
 
 
 def expected_bfw_size(n_size):
@@ -42,7 +47,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = ["0", 1]
+        nodes = g.node_ids_to_ilocs(["0", 1])
         n = 1
         n_size = [1]
 
@@ -325,7 +330,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = ["0"]
+        nodes = g.node_ids_to_ilocs(["0"])
         n = 1
         n_size = [0]
 
@@ -368,7 +373,7 @@ class TestBreadthFirstWalk(object):
         g = create_test_graph()
         bfw = SampledBreadthFirstWalk(g)
 
-        nodes = ["0", 2]
+        nodes = g.node_ids_to_ilocs(["0", 2])
         n = 1
         n_size = [0]
 
@@ -506,39 +511,41 @@ class TestBreadthFirstWalk(object):
     def test_fixed_random_seed(self):
 
         g = create_test_graph()
+        _conv = g.node_ids_to_ilocs
         bfw = SampledBreadthFirstWalk(g)
 
-        w0 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
-        w1 = bfw.run(nodes=[1], n=1, n_size=[7], seed=1010)
+        w0 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=42)
+        w1 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=1010)
 
         assert len(w0) == len(w1)
         assert w0 != w1
 
-        w0 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
-        w1 = bfw.run(nodes=[1], n=1, n_size=[7], seed=42)
+        w0 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=42)
+        w1 = bfw.run(nodes=_conv([1]), n=1, n_size=[7], seed=42)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-        w0 = bfw.run(nodes=[1], n=5, n_size=[12], seed=101)
-        w1 = bfw.run(nodes=[1], n=5, n_size=[12], seed=101)
+        w0 = bfw.run(nodes=_conv([1]), n=5, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=_conv([1]), n=5, n_size=[12], seed=101)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-        w0 = bfw.run(nodes=[9, "self loner"], n=1, n_size=[12], seed=101)
-        w1 = bfw.run(nodes=[9, "self loner"], n=1, n_size=[12], seed=101)
+        w0 = bfw.run(nodes=_conv([9, "self loner"]), n=1, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=_conv([9, "self loner"]), n=1, n_size=[12], seed=101)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-        w0 = bfw.run(nodes=[1, "self loner", 4], n=5, n_size=[12], seed=101)
-        w1 = bfw.run(nodes=[1, "self loner", 4], n=5, n_size=[12], seed=101)
+        w0 = bfw.run(nodes=_conv([1, "self loner", 4]), n=5, n_size=[12], seed=101)
+        w1 = bfw.run(nodes=_conv([1, "self loner", 4]), n=5, n_size=[12], seed=101)
 
         assert len(w0) == len(w1)
         assert w0 == w1
 
-    def test_benchmark_bfs_walk(self, benchmark):
+    @pytest.mark.parametrize("weighted", [False, True])
+    def test_benchmark_bfs_walk(self, benchmark, weighted):
         g = example_graph_random(n_nodes=100, n_edges=500)
         bfw = SampledBreadthFirstWalk(g)
 
@@ -546,4 +553,24 @@ class TestBreadthFirstWalk(object):
         n = 5
         n_size = [5, 5]
 
-        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))
+        benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size, weighted=weighted))
+
+    def test_weighted(self):
+        g, checker = weighted_tree()
+        bfw = SampledBreadthFirstWalk(g)
+        walks = bfw.run(nodes=[0], n=10, n_size=[20, 20], weighted=True)
+
+        checker(node_id for walk in walks for node_id in walk)
+
+    def test_weighted_all_zero(self):
+        edges = pd.DataFrame({"source": [0, 0], "target": [1, 2], "weight": [0.0, 0]})
+
+        g = StellarGraph(edges=edges)
+        bfw = SampledBreadthFirstWalk(g)
+        walks = bfw.run(nodes=[0], n=10, n_size=[20, 20], weighted=True)
+
+        assert len(walks) == 10
+        for walk in walks:
+            assert len(walk) == 1 + 20 + 20 * 20
+            assert walk[0] == 0
+            np.testing.assert_array_equal(walk[1:], -1)

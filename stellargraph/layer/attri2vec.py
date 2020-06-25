@@ -44,14 +44,25 @@ class Attri2Vec:
     Implementation of the attri2vec algorithm of Zhang et al. with Keras layers.
     see: https://arxiv.org/abs/1901.04095.
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer and a generator object.
+
+    .. seealso::
+
+       Examples using Attri2Vec:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
+
+       Appropriate data generators: :class:`.Attri2VecNodeGenerator`, :class:`.Attri2VecLinkGenerator`.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer.
         generator (Sequence): A NodeSequence or LinkSequence.
         bias (bool): If True a bias vector is learnt for each layer in the attri2vec model, default to False.
-        activation (str): The activation function of each layer in the attri2vec model, which takes values from "linear", "relu" and "sigmoid"(default).
+        activation (str): The activation function of each layer in the attri2vec model, which takes values from ``linear``, ``relu`` and ``sigmoid`` (default).
         normalize ("l2" or None): The normalization used after each layer, default to None.
         input_dim (int, optional): The dimensions of the node features used as input to the model.
         node_num (int, optional): The number of nodes in the given graph.
@@ -173,7 +184,7 @@ class Attri2Vec:
         Builds a Attri2Vec model for node representation prediction.
 
         Returns:
-            tuple: (x_inp, x_out) where ``x_inp`` is a Keras input tensor
+            tuple: ``(x_inp, x_out)`` where ``x_inp`` is a Keras input tensor
             for the Attri2Vec model and ``x_out`` is the Keras tensor
             for the Attri2Vec model output.
 
@@ -215,9 +226,9 @@ class Attri2Vec:
         the model (whether it is a node or link/node pair generator).
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified Attri2Vec model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1])
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras input tensors
+                for the specified Attri2Vec model (either node or link/node pair model) and ``x_out`` contains
+                model output tensor(s) of shape ``(batch_size, layer_sizes[-1])``
 
         """
         if multiplicity is None:

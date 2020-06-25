@@ -141,8 +141,8 @@ class Cora(
                 node features, one-hot encoded (the subjects are still also returned as a Series).
 
         Returns:
-            A tuple where the first element is the :class:`StellarGraph` object (or
-            :class:`StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
+            A tuple where the first element is the :class:`.StellarGraph` object (or
+            :class:`.StellarDiGraph`, if ``directed == True``) with the nodes, node feature vectors
             and edges, and the second element is a pandas Series of the node subject class labels.
         """
         nodes_dtype = str if str_node_ids else int
@@ -183,7 +183,7 @@ class CiteSeer(
                 component, not the whole graph.
 
         Returns:
-            A tuple where the first element is the :class:`StellarGraph` object with the nodes, node
+            A tuple where the first element is the :class:`.StellarGraph` object with the nodes, node
             feature vectors and edges, and the second element is a pandas Series of the node subject
             class labels.
         """
@@ -219,7 +219,7 @@ class PubMedDiabetes(
         Load this graph into an undirected homogeneous graph, downloading it if required.
 
         Returns:
-            A tuple where the first element is a :class:`StellarGraph` instance containing the graph
+            A tuple where the first element is a :class:`.StellarGraph` instance containing the graph
             data and features, and the second element is a pandas Series of node class labels.
         """
         self.download()
@@ -295,7 +295,7 @@ class BlogCatalog3(
         character 'g' to the integer ID for group nodes.
 
         Returns:
-            A :class:`StellarGraph` object.
+            A :class:`.StellarGraph` object.
         """
         self.download()
 
@@ -362,7 +362,7 @@ class MovieLens(
         features, and an ``age`` feature that is scaled to have mean = 0 and standard deviation = 1.
 
         Returns:
-            A tuple where the first element is a :class:`StellarGraph` instance containing the graph
+            A tuple where the first element is a :class:`.StellarGraph` instance containing the graph
             data and features, and the second element is a pandas DataFrame of edges, with columns
             ``user_id``, ``movie_id`` and ``rating`` (a label from 1 to 5).
         """
@@ -619,11 +619,11 @@ class MUTAG(
         Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
 
         Note: Edges in MUTAG are labelled as one of 4 values: aromatic, single, double, and triple indicated by integers
-        0, 1, 2, 3 respectively. The edge labels are included in the  :class:`StellarGraph` objects as edge weights in
+        0, 1, 2, 3 respectively. The edge labels are included in the  :class:`.StellarGraph` objects as edge weights in
         integer representation.
 
         Returns:
-            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
+            A tuple that is a list of :class:`.StellarGraph` objects and a Pandas Series of labels one for each graph.
         """
         return _load_graph_kernel_dataset(self)
 
@@ -656,7 +656,7 @@ class PROTEINS(
         Load this dataset into a list of StellarGraph objects with corresponding labels, downloading it if required.
 
         Returns:
-            A tuple that is a list of :class:`StellarGraph` objects and a Pandas Series of labels one for each graph.
+            A tuple that is a list of :class:`.StellarGraph` objects and a Pandas Series of labels one for each graph.
         """
         return _load_graph_kernel_dataset(self)
 
@@ -702,7 +702,7 @@ class WN18(
 
         Returns:
             A tuple ``(graph, train, test, validation)`` where ``graph`` is a
-            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            :class:`.StellarDiGraph` containing all the data, and the remaining three elements are
             DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
             (the relation type). The three DataFrames together make up the edges included in
             ``graph``.
@@ -729,7 +729,7 @@ class WN18RR(
 
         Returns:
             A tuple ``(graph, train, test, validation)`` where ``graph`` is a
-            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            :class:`.StellarDiGraph` containing all the data, and the remaining three elements are
             DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
             (the relation type). The three DataFrames together make up the edges included in
             ``graph``.
@@ -749,7 +749,7 @@ class FB15k(
         "freebase_mtr100_mte100-valid.txt",
     ],
     description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
-    "extracted from Freebase (http://www.freebase.com). There are 14,951 mids and 1,345 relation types among them. "
+    "extracted from Freebase (http://www.freebase.com). There are 14,951 nodes and 1,345 relation types among them. "
     "The training set contains 483142 triplets, the validation set 50000 and the test set 59071. "
     "Antoine Bordes, Nicolas Usunier, Alberto Garcia-Durán, Jason Weston and Oksana Yakhnenko “Translating Embeddings for Modeling Multi-relational Data” (2013).\n\n"
     "Note: this dataset contains many inverse relations, and so should only be used to compare against published results. Prefer FB15k_237. See: "
@@ -763,7 +763,7 @@ class FB15k(
 
         Returns:
             A tuple ``(graph, train, test, validation)`` where ``graph`` is a
-            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            :class:`.StellarDiGraph` containing all the data, and the remaining three elements are
             DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
             (the relation type). The three DataFrames together make up the edges included in
             ``graph``.
@@ -779,7 +779,7 @@ class FB15k_237(
     url_archive_format="zip",
     expected_files=["train.txt", "test.txt", "valid.txt"],
     description="This FREEBASE FB15k DATA consists of a collection of triplets (synset, relation_type, triplet)"
-    "extracted from Freebase (http://www.freebase.com). There are 14541 mids and 237 relation types among them. "
+    "extracted from Freebase (http://www.freebase.com). There are 14541 nodes and 237 relation types among them. "
     "The training set contains 272115 triplets, the validation set 17535 and the test set 20466."
     "It is a reduced version of FB15k where inverse relations have been removed."
     "Kristina Toutanova and Danqi Chen “Observed versus latent features for knowledge base and text inference” (2015).",
@@ -791,7 +791,7 @@ class FB15k_237(
 
         Returns:
             A tuple ``(graph, train, test, validation)`` where ``graph`` is a
-            :class:`StellarDiGraph` containing all the data, and the remaining three elements are
+            :class:`.StellarDiGraph` containing all the data, and the remaining three elements are
             DataFrames of triplets, with columns ``source`` & ``target`` (synsets) and ``label``
             (the relation type). The three DataFrames together make up the edges included in
             ``graph``.
@@ -820,7 +820,7 @@ class IAEnronEmployees(
         Returns:
             A tuple ``(graph, edges)``
 
-            ``graph`` is a :class:`StellarGraph` containing all the data. Timestamp information on
+            ``graph`` is a :class:`.StellarGraph` containing all the data. Timestamp information on
             edges are encoded as edge weights.
 
             ``edges`` are the original edges from the dataset which are sorted in ascending
@@ -865,7 +865,7 @@ class METR_LA(
         self.download()
         los_adj = pd.read_csv(self._resolve_path(self.expected_files[1]), header=None)
         adj = np.mat(los_adj)
-        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0]))
+        los_tf = pd.read_csv(self._resolve_path(self.expected_files[0])).transpose()
         return los_tf, adj
 
     def train_test_split(self, data, train_portion):

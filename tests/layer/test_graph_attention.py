@@ -54,11 +54,8 @@ class Test_GraphAttention:
             Input(batch_shape=(1, self.N, self.N)),
         ]
 
-        # For dense matrix, remove batch dimension
-        A_mat = keras.layers.Lambda(lambda A: K.squeeze(A, 0))(x_inp[1])
-        layer_inp = x_inp[:1] + [A_mat]
-
-        return x_inp, layer_inp
+        # duplicate input here for Test_GraphAttentionSparse to work
+        return x_inp, x_inp
 
     def get_matrix(self, edges=[]):
         # adjacency matrix with self-loops only
@@ -121,7 +118,7 @@ class Test_GraphAttention:
         expected = np.ones((self.N, self.F_out * self.attn_heads)) * self.F_in
         actual = model.predict([X] + As)
 
-        assert np.allclose(actual.squeeze(), expected)
+        np.testing.assert_allclose(actual.squeeze(), expected)
 
     def test_apply_average(self):
         gat = self.layer(
@@ -150,7 +147,7 @@ class Test_GraphAttention:
         expected = (X * self.F_in)[..., : self.F_out]
         actual = model.predict([X] + As)
 
-        assert np.allclose(actual.squeeze(), expected)
+        np.testing.assert_allclose(actual.squeeze(), expected.squeeze())
 
     def test_apply_average_with_neighbours(self):
         gat_saliency = self.layer(
@@ -196,8 +193,8 @@ class Test_GraphAttention:
         expected[:, :2] = self.F_in / 2
         actual_origin = model_origin.predict([X] + As)
         actual_saliency = model_saliency.predict([X] + As)
-        assert np.allclose(expected, actual_origin)
-        assert np.allclose(expected, actual_saliency)
+        np.testing.assert_allclose(expected, actual_origin)
+        np.testing.assert_allclose(expected, actual_saliency)
 
     def test_layer_config(self):
         layer = self.layer(
@@ -503,7 +500,7 @@ class Test_GAT:
             1.0 / G.number_of_nodes()
         )
 
-        assert np.allclose(expected, actual[0])
+        np.testing.assert_allclose(expected, actual[0])
 
     def test_gat_build_no_norm(self):
         G = example_graph(feature_size=self.F_in)
@@ -532,7 +529,7 @@ class Test_GAT:
             * self.attn_heads
             * np.max(G.node_features(G.nodes()))
         )
-        assert np.allclose(expected, actual[0])
+        np.testing.assert_allclose(expected, actual[0])
 
     def test_gat_build_wrong_norm(self):
         G = example_graph(feature_size=self.F_in)
@@ -585,7 +582,7 @@ class Test_GAT:
         expected = np.ones((G.number_of_nodes(), self.layer_sizes[-1])) * (
             1.0 / G.number_of_nodes()
         )
-        assert np.allclose(expected, actual[0])
+        np.testing.assert_allclose(expected, actual[0])
 
     def test_kernel_and_bias_defaults(self):
         graph = example_graph(feature_size=self.F_in)
@@ -611,6 +608,18 @@ class Test_GAT:
                 assert layer.kernel_constraint is None
                 assert layer.bias_constraint is None
                 assert layer.attn_kernel_constraint is None
+
+    def test_save_load(self, tmpdir):
+        graph = example_graph(feature_size=self.F_in)
+        gen = FullBatchNodeGenerator(graph, sparse=self.sparse, method=self.method)
+        gat = GAT(
+            layer_sizes=self.layer_sizes,
+            activations=self.activations,
+            attn_heads=self.attn_heads,
+            generator=gen,
+        )
+
+        test_utils.model_save_load(tmpdir, gat)
 
 
 def TestGATsparse(Test_GAT):

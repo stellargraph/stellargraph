@@ -1,0 +1,15 @@
+Ensemble learning
+=====================================================
+
+This folder contains two `Jupyter <http://jupyter.org/>`_ python notebooks demonstrating the use of ensemble learning
+for node attribute inference (``ensemble-node-classification.ipynb``) and
+link prediction (``ensemble-link-prediction.ipynb``) using ``StellarGraph``'s graph neural network algorithms.
+
+Table of contents
+-----------------
+
+.. toctree::
+    :titlesonly:
+    :glob:
+
+    ./*

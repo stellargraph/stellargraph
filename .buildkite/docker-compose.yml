@@ -16,6 +16,11 @@ services:
       # We need to manually bring in buildkite-agent
       # (https://github.com/buildkite-plugins/docker-compose-buildkite-plugin/issues/158)
       - ${BUILDKITE_AGENT_BINARY_PATH:-/usr/bin/buildkite-agent}:/usr/bin/buildkite-agent
+      # Needed for GPU g4dn.xlarge EC2 instance
+      - /usr/local/cuda-10.1/:/usr/local/cuda10.1/
+      - /var/lib/buildkite-agent/TensorRT-6.0.1.5/targets/x86_64-linux-gnu/lib/:/var/lib/buildkite-agent/TensorRT-6.0.1.5/targets/x86_64-linux-gnu/lib/
+      - /usr/lib64/libcublas.so.10:/usr/lib64/libcublas.so.10
+      - /usr/lib64/libcublasLt.so.10:/usr/lib64/libcublasLt.so.10
     environment: &runner-environment
       - PYTHONDONTWRITEBYTECODE=1
       # make sure that no new uses of the legacy constructor are added (see also: test in
@@ -41,6 +46,10 @@ services:
       - BUILDKITE_TAG
       - CODECOV_TOKEN
       - NEO4J_VERSION
+      - STELLARGRAPH_MUST_USE_GPU
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - LD_LIBRARY_PATH=/usr/local/cuda10.1/lib64/:/var/lib/buildkite-agent/TensorRT-6.0.1.5/targets/x86_64-linux-gnu/lib/:/usr/lib64/libcublas.so.10:/usr/lib64/libcublasLt.so.10
     depends_on:
       - ${RUNNER_DEPENDS_ON:-empty-service}
 
@@ -50,6 +59,14 @@ services:
       <<: *runner-build
       args:
         PYTHON_VERSION: "3.7"
+        PRERELEASE_VERSIONS: *prerelease
+
+  runner-3_8:
+    <<: *runner-config
+    build:
+      <<: *runner-build
+      args:
+        PYTHON_VERSION: "3.8"
         PRERELEASE_VERSIONS: *prerelease
 
   # a service that does nothing to use as a default depends_on for the runners

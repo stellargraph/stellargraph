@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import numpy as np
 from stellargraph.layer.rgcn import RelationalGraphConvolution, RGCN
 from stellargraph.mapper.full_batch_generators import RelationalFullBatchNodeGenerator
@@ -30,6 +31,7 @@ import pandas as pd
 from ..test_utils.graphs import (
     relational_create_graph_features as create_graph_features,
 )
+from .. import test_utils
 
 
 def test_RelationalGraphConvolution_config():
@@ -78,6 +80,7 @@ def test_RelationalGraphConvolution_init():
     assert rgcn_layer.get_config()["activation"] == "relu"
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_RelationalGraphConvolution_sparse():
     G, features = create_graph_features()
     n_edge_types = len(G.edge_types)
@@ -114,7 +117,8 @@ def test_RelationalGraphConvolution_sparse():
     As = [A.tocoo() for A in get_As(G)]
 
     A_indices = [
-        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0)
+        for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
@@ -175,13 +179,15 @@ def test_RGCN_init():
     assert rgcnModel.num_bases == 10
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_RGCN_apply_sparse():
     G, features = create_graph_features(is_directed=True)
 
     As = get_As(G)
     As = [A.tocoo() for A in As]
     A_indices = [
-        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0)
+        for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
@@ -227,6 +233,7 @@ def test_RGCN_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_RGCN_apply_sparse_directed():
     G, features = create_graph_features(is_directed=True)
 
@@ -234,7 +241,8 @@ def test_RGCN_apply_sparse_directed():
     As = [A.tocoo() for A in As]
 
     A_indices = [
-        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0)
+        for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
@@ -370,3 +378,14 @@ def test_kernel_and_bias_defaults():
             assert layer.bias_regularizer is None
             assert layer.kernel_constraint is None
             assert layer.bias_constraint is None
+
+
+@pytest.mark.parametrize("num_bases", [0, 10])
+@pytest.mark.parametrize(
+    "sparse", [False, pytest.param(True, marks=pytest.mark.xfail(reason="FIXME #1251"))]
+)
+def test_RGCN_save_load(tmpdir, num_bases, sparse):
+    graph, _ = create_graph_features()
+    generator = RelationalFullBatchNodeGenerator(graph, sparse=sparse)
+    rgcn = RGCN([2, 2], generator, num_bases=num_bases)
+    test_utils.model_save_load(tmpdir, rgcn)

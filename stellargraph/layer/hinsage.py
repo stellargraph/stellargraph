@@ -207,7 +207,7 @@ class MeanHinAggregator(HinSAGEAggregator):
         Assumes that the layer will be built to match that input shape provided.
 
         Args:
-            input_shape (tuple of ints)
+            input_shape (tuple of int)
                 Shape tuples can include `None` for free dimensions, instead of an integer.
 
         Returns:
@@ -231,8 +231,8 @@ class HinSAGE:
     Implementation of the GraphSAGE algorithm extended for heterogeneous graphs with Keras layers.
 
     To use this class as a Keras model, the features and graph should be supplied using the
-    :class:`HinSAGENodeGenerator` class for node inference models or the
-    :class:`HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
+    :class:`.HinSAGENodeGenerator` class for node inference models or the
+    :class:`.HinSAGELinkGenerator` class for link inference models.  The `.in_out_tensors` method should
     be used to create a Keras model from the `GraphSAGE` object.
 
     Currently the class supports node or link prediction models which are built depending on whether
@@ -246,7 +246,7 @@ class HinSAGE:
 
     Examples:
         Creating a two-level GrapSAGE node classification model on nodes of type 'A' with hidden node sizes of 8 and 4
-        and 10 neighbours sampled at each layer using an existing :class:`StellarGraph` object `G`
+        and 10 neighbours sampled at each layer using an existing :class:`.StellarGraph` object `G`
         containing the graph and node features::
 
             generator = HinSAGENodeGenerator(
@@ -275,7 +275,24 @@ class HinSAGE:
     Note that passing a `NodeSequence` or `LinkSequence` object from the `generator.flow(...)` method
     as the `generator=` argument is now deprecated and the base generator object should be passed instead.
 
-    For more details, please see `the HinSAGE demo notebooks <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`_.
+    .. seealso::
+
+       Examples using HinSAGE:
+
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+
+       Appropriate data generators: :class:`.HinSAGENodeGenerator`, :class:`.HinSAGELinkGenerator`.
+
+       Related models:
+
+       - :class:`.GraphSAGE` for homogeneous graphs
+       - :class:`.DirectedGraphSAGE` for homogeneous directed graphs
+       - :class:`.DeepGraphInfomax` for unsupervised training
+
+       Aggregators: :class:`.MeanHinAggregator`.
+
+       The `Heterogeneous GraphSAGE (HinSAGE) <https://stellargraph.readthedocs.io/en/stable/hinsage.html>`__ explanatory document has more theoretical details.
 
     Args:
         layer_sizes (list): Hidden feature dimensions for each layer
@@ -287,7 +304,7 @@ class HinSAGE:
         dropout (float): The dropout supplied to each layer; defaults to no dropout.
         normalize (str): The normalization used after each layer; defaults to L2 normalization.
         activations (list): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu', 'linear'].
+            defaults to ``['relu', ..., 'relu', 'linear']``.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
         kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
@@ -575,9 +592,9 @@ class HinSAGE:
         the model (whether it is a node or link/node pair generator).
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1]).
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras input tensors
+                for the specified HinSAGE model (either node or link/node pair model) and ``x_out`` contains
+                model output tensor(s) of shape (batch_size, layer_sizes[-1]).
 
         """
 

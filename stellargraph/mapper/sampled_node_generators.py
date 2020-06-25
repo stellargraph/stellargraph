@@ -22,6 +22,7 @@ __all__ = [
     "GraphSAGENodeGenerator",
     "HinSAGENodeGenerator",
     "Attri2VecNodeGenerator",
+    "Node2VecNodeGenerator",
     "DirectedGraphSAGENodeGenerator",
 ]
 
@@ -46,6 +47,7 @@ from ..data import (
 )
 from ..core.graph import StellarGraph, GraphSchema
 from ..core.utils import is_real_iterable
+from ..core.validation import comma_sep
 from . import NodeSequence, Generator
 from ..random import SeededPerBatch
 
@@ -54,7 +56,8 @@ class BatchedNodeGenerator(Generator):
     """
     Abstract base class for graph data generators.
 
-    The supplied graph should be a StellarGraph object with node features.
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning.
 
     Do not use this base class: use a subclass specific to the method.
 
@@ -64,7 +67,7 @@ class BatchedNodeGenerator(Generator):
         schema (GraphSchema): [Optional] Schema for the graph, for heterogeneous graphs.
     """
 
-    def __init__(self, G, batch_size, schema=None):
+    def __init__(self, G, batch_size, schema=None, use_node_features=True):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -73,9 +76,6 @@ class BatchedNodeGenerator(Generator):
 
         # This is a node generator and requries a model with one root nodes per query
         self.multiplicity = 1
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -90,6 +90,10 @@ class BatchedNodeGenerator(Generator):
 
         # Create sampler for GraphSAGE
         self.sampler = None
+
+        # Check if the graph has features
+        if use_node_features:
+            G.check_graph_for_ml()
 
     @abc.abstractmethod
     def sample_features(self, head_nodes, batch_num):
@@ -134,19 +138,16 @@ class BatchedNodeGenerator(Generator):
         else:
             expected_node_type = None
 
-        # Check all IDs are actually in the graph and are of expected type
-        for n in node_ids:
-            try:
-                node_type = self.graph.node_type(n)
-            except KeyError:
-                raise KeyError(f"Node ID {n} supplied to generator not found in graph")
-
-            if expected_node_type is not None and (node_type != expected_node_type):
-                raise ValueError(
-                    f"Node ID {n} not of expected type {expected_node_type}"
-                )
-
         node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
+        node_types = self.graph.node_type(node_ilocs, use_ilocs=True)
+        invalid = node_ilocs[node_types != expected_node_type]
+
+        if len(invalid) > 0:
+            raise ValueError(
+                f"node_ids: expected all nodes to be of type {expected_node_type}, "
+                f"found some nodes with wrong type: {comma_sep(invalid, stringify=format)}"
+            )
+
         return NodeSequence(
             self.sample_features,
             self.batch_size,
@@ -194,19 +195,40 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
         test_data_gen = G_generator.flow(test_node_ids)
 
+    .. seealso::
+
+       Model using this generator: :class:`.GraphSAGE`.
+
+       Some examples using this generator (see the model for more):
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/graphsage-node-classification.html>`__
+       - `unsupervised representation learning via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+
+       Related functionality:
+
+       - :class:`.Neo4jGraphSAGENodeGenerator` for using :class:`.GraphSAGE` with Neo4j
+       - :class:`.CorruptedGenerator` for unsupervised training using :class:`.DeepGraphInfomax`
+       - :class:`.GraphSAGELinkGenerator` for link prediction, unsupervised training using random walks and related tasks
+       - :class:`.DirectedGraphSAGENodeGenerator` for directed graphs
+       - :class:`.HinSAGENodeGenerator` for heterogeneous graphs
+
     Args:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
         seed (int): [Optional] Random seed for the node sampler.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(
+        self, G, batch_size, num_samples, seed=None, name=None, weighted=False
+    ):
         super().__init__(G, batch_size)
 
         self.num_samples = num_samples
         self.head_node_types = self.schema.node_types
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
@@ -236,11 +258,11 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of ``num_samples``
             for that layer.
         """
         node_samples = self._samplers[batch_num].run(
-            nodes=head_nodes, n=1, n_size=self.num_samples
+            nodes=head_nodes, n=1, n_size=self.num_samples, weighted=self.weighted
         )
 
         # The number of samples for each head node (not including itself)
@@ -297,15 +319,39 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         train_data_gen = G_generator.flow(train_node_ids, train_node_labels)
         test_data_gen = G_generator.flow(test_node_ids)
 
+    .. seealso::
+
+       Model using this generator: :class:`.DirectedGraphSAGE`.
+
+       Example using this generator: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/directed-graphsage-node-classification.html>`__.
+
+       Related functionality:
+
+       - :class:`.Neo4jDirectedGraphSAGENodeGenerator` for using :class:`.DirectedGraphSAGE` with Neo4j
+       - :class:`.CorruptedGenerator` for unsupervised training using :class:`.DeepGraphInfomax`
+       - :class:`.DirectedGraphSAGELinkGenerator` for link prediction and related tasks
+       - :class:`.GraphSAGENodeGenerator` for undirected graphs
+       - :class:`.HinSAGENodeGenerator` for heterogeneous graphs
+
     Args:
         G (StellarDiGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
         in_samples (list): The number of in-node samples per layer (hop) to take.
         out_samples (list): The number of out-node samples per layer (hop) to take.
         seed (int): [Optional] Random seed for the node sampler.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        in_samples,
+        out_samples,
+        seed=None,
+        name=None,
+        weighted=False,
+    ):
         super().__init__(G, batch_size)
 
         # TODO Add checks for in- and out-nodes sizes
@@ -313,6 +359,7 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         self.out_samples = out_samples
         self.head_node_types = self.schema.node_types
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.head_node_types) > 1:
@@ -344,12 +391,16 @@ class DirectedGraphSAGENodeGenerator(BatchedNodeGenerator):
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the total number (cumulative product)
+            where ``num_sampled_at_layer`` is the total number (cumulative product)
             of nodes sampled at the given number of hops from each head node,
             given the sequence of in/out directions.
         """
         node_samples = self.sampler.run(
-            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples
+            nodes=head_nodes,
+            n=1,
+            in_size=self.in_samples,
+            out_size=self.out_samples,
+            weighted=self.weighted,
         )
 
         # Reshape node samples to sensible format
@@ -392,6 +443,19 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
 
     Note that the shuffle argument should be True for training and
     False for prediction.
+
+    .. seealso::
+
+       Model using this generator: :class:`.HinSAGE`.
+
+       Example using this generator: `unsupervised representation learning via Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`_.
+
+       Related functionality:
+
+       - :class:`.CorruptedGenerator` for unsupervised training using :class:`.DeepGraphInfomax`
+       - :class:`.HinSAGELinkGenerator` for link prediction and related tasks
+       - :class:`.GraphSAGENodeGenerator` for homogeneous graphs
+       - :class:`.DirectedGraphSAGENodeGenerator` for directed homogeneous graphs
 
     Args:
         G (StellarGraph): The machine-learning ready graph
@@ -464,7 +528,7 @@ class HinSAGENodeGenerator(BatchedNodeGenerator):
             A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of ``num_samples``
             for that layer.
         """
         # Get sampled nodes
@@ -526,6 +590,14 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
         G_generator = Attri2VecNodeGenerator(G, 50)
         data_gen = G_generator.flow(node_ids)
 
+    .. seealso::
+
+       Model using this generator: :class:`.Attri2Vec`.
+
+       An example using this generator (see the model for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__.
+
+       Related functionality: :class:`.Attri2VecLinkGenerator` for training, link prediction and related tasks.
+
     Args:
         G (StellarGraph): The machine-learning ready graph.
         batch_size (int): Size of batch to return.
@@ -578,7 +650,7 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
     def flow_from_dataframe(self, node_ids):
         """
         Creates a generator/sequence object for node representation prediction
-        with the supplied node ids.
+        by using the index of the supplied dataframe as the node ids.
 
         Args:
             node_ids: a Pandas DataFrame of node_ids.
@@ -588,4 +660,99 @@ class Attri2VecNodeGenerator(BatchedNodeGenerator):
             in the Keras method ``predict``.
 
         """
-        return NodeSequence(self.sample_features, self.batch_size, node_ids.index)
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids.index)
+        return NodeSequence(
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
+        )
+
+
+class Node2VecNodeGenerator(BatchedNodeGenerator):
+    """
+    A data generator for node representation prediction with Node2Vec models.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model does not require node features for
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes to get an object
+    that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Node2VecNodeGenerator(G, 50)
+        data_gen = G_generator.flow(node_ids)
+
+    .. seealso::
+
+       Model using this generator: :class:`.Node2Vec`.
+
+       An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`_.
+
+       Related functionality: :class:`.Node2VecLinkGenerator` for training, link prediction, and related tasks.
+
+    Args:
+        G (StellarGraph): The machine-learning ready graph.
+        batch_size (int): Size of batch to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        super().__init__(G, batch_size, use_node_features=False)
+        self.name = name
+
+    def sample_features(self, head_nodes, batch_num):
+        """
+        Get the ids of the head nodes, and return these as a list of feature
+        arrays for the Node2Vec algorithm.
+
+        Args:
+            head_nodes: An iterable of head nodes to perform sampling on.
+
+        Returns:
+            A list of feature arrays, with each element being the id of each
+            head node.
+        """
+
+        return np.array(head_nodes)
+
+    def flow(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        with the supplied node ids. This should be used with a trained ``Node2Vec``
+        model in order to transform node ids to node embeddings. For training,
+        see ``Node2VecLinkGenerator`` instead.
+
+        The node IDs are the nodes to inference on: the embeddings
+        calculated for these nodes are passed to the downstream task. These
+        are a subset/all of the nodes in the graph.
+
+        Args:
+            node_ids: an iterable of node IDs.
+
+        Returns:
+            A NodeSequence object to use with the Node2Vec model
+            in the Keras method ``predict``.
+        """
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids)
+        return NodeSequence(
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
+        )
+
+    def flow_from_dataframe(self, node_ids):
+        """
+        Creates a generator/sequence object for node representation prediction
+        by using the index of the supplied dataframe as the node ids.
+
+        Args:
+            node_ids: a Pandas DataFrame of node_ids.
+
+        Returns:
+            A NodeSequence object to use with the Node2Vec model
+            in the Keras method ``predict``.
+        """
+        node_ilocs = self.graph.node_ids_to_ilocs(node_ids.index)
+        return NodeSequence(
+            self.sample_features, self.batch_size, node_ilocs, shuffle=False
+        )

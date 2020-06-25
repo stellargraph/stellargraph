@@ -37,17 +37,19 @@ class RelationalGraphConvolution(Layer):
           - There are 1 + R inputs required (where R is the number of relationships): the node features,
             and a normalized adjacency matrix for each relationship
 
+        .. seealso:: :class:`.RGCN` combines several of these layers.
+
         Args:
             units (int): dimensionality of output feature vectors
             num_relationships (int): the number of relationships in the graph
             num_bases (int): the number of basis matrices to use for parameterizing the weight matrices as described in
-                the paper; defaults to 0. num_bases < 0 triggers the default behaviour of num_bases = 0
+                the paper; defaults to 0. ``num_bases < 0`` triggers the default behaviour of ``num_bases = 0``
             activation (str or func): nonlinear activation applied to layer's output to obtain output features
             use_bias (bool): toggles an optional bias
-            final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
-            kernel_initializer (str or func): The initialiser to use for the self kernel and also relational kernels if num_bases=0.
-            kernel_regularizer (str or func): The regulariser to use for the self kernel and also relational kernels if num_bases=0.
-            kernel_constraint (str or func): The constraint to use for the self kernel and also relational kernels if num_bases=0.
+            final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
+            kernel_initializer (str or func): The initialiser to use for the self kernel and also relational kernels if ``num_bases=0``.
+            kernel_regularizer (str or func): The regulariser to use for the self kernel and also relational kernels if ``num_bases=0``.
+            kernel_constraint (str or func): The constraint to use for the self kernel and also relational kernels if ``num_bases=0``.
             basis_initializer (str or func): The initialiser to use for the basis matrices.
             basis_regularizer (str or func): The regulariser to use for the basis matrices.
             basis_constraint (str or func): The constraint to use for the basis matrices.
@@ -133,7 +135,7 @@ class RelationalGraphConvolution(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Used by Keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
@@ -173,7 +175,7 @@ class RelationalGraphConvolution(Layer):
         Computes the output shape of the layer.
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -237,6 +239,7 @@ class RelationalGraphConvolution(Layer):
             self.relational_kernels = [
                 self.add_weight(
                     shape=(input_dim, self.units),
+                    name="relational_kernels",
                     initializer=self.kernel_initializer,
                     regularizer=self.kernel_regularizer,
                     constraint=self.kernel_constraint,
@@ -246,6 +249,7 @@ class RelationalGraphConvolution(Layer):
 
         self.self_kernel = self.add_weight(
             shape=(input_dim, self.units),
+            name="self_kernel",
             initializer=self.kernel_initializer,
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
@@ -321,32 +325,30 @@ class RGCN:
     A stack of Relational Graph Convolutional layers that implement a relational graph
     convolution neural network model as in https://arxiv.org/pdf/1703.06103.pdf
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`RelationalFullBatchNodeGenerator` class.
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
+    should be supplied using the :class:`.RelationalFullBatchNodeGenerator` class.
     The generator object should be instantiated as follows::
 
         generator = RelationalFullBatchNodeGenerator(G)
 
     Note that currently the RGCN class is compatible with both sparse and dense adjacency
-    matrices and the :class:`RelationalFullBatchNodeGenerator` will default to sparse.
-
-    For more details, please see `the RGCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`_
+    matrices and the :class:`.RelationalFullBatchNodeGenerator` will default to sparse.
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`RelationalFullBatchNodeGenerator` object.
+        :class:`.RelationalFullBatchNodeGenerator` object.
 
-      - The nodes provided to the :class:`RelationalFullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.RelationalFullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
 
     Examples:
-        Creating a RGCN node classification model from an existing :class:`StellarGraph`
+        Creating a RGCN node classification model from an existing :class:`.StellarGraph`
         object ``G``::
 
             generator = RelationalFullBatchNodeGenerator(G)
@@ -359,20 +361,33 @@ class RGCN:
                 )
             x_inp, predictions = rgcn.in_out_tensors()
 
+    .. seealso::
+
+       Examples using RGCN:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+
+       Appropriate data generator: :class:`.RelationalFullBatchNodeGenerator`.
+
+       Related model: :class:`.GCN` is a specialisation for a single edge type.
+
+       :class:`.RelationalGraphConvolution` is the base layer out of which an RGCN model is built.
+
     Args:
         layer_sizes (list of int): Output sizes of RGCN layers in the stack.
         generator (RelationalFullBatchNodeGenerator): The generator instance.
-        num_bases (int): Specifies number of basis matrices to use for the weight matrics of the RGCN layer
+        num_bases (int): Specifies number of basis matrices to use for the weight matrices of the RGCN layer
             as in the paper. Defaults to 0 which specifies that no basis decomposition is used.
         bias (bool): If True, a bias vector is learnt for each layer in the RGCN model.
         dropout (float): Dropout rate applied to input features of each RGCN layer.
         activations (list of str or func): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu'].
+            defaults to ``['relu', ..., 'relu']``.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
         kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
         bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
-        bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
+        bias_regularizer (str or func, optionalx): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
     """
 
@@ -509,10 +524,10 @@ class RGCN:
         Builds a RGCN model for node prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where
-            `x_inp` is a list of Keras input tensors for the RGCN model (containing node features,
-             node indices, and the indices and values for the sparse adjacency matrices for each relationship),
-            and `x_out` is a Keras tensor for the RGCN model output.
+            tuple: ``(x_inp, x_out)``, where
+                ``x_inp`` is a list of Keras input tensors for the RGCN model (containing node features,
+                node indices, and the indices and values for the sparse adjacency matrices for each relationship),
+                and ``x_out`` is a Keras tensor for the RGCN model output.
         """
 
         # Inputs for features & target indices
@@ -554,9 +569,9 @@ class RGCN:
         Builds a RGCN model for node prediction. Link/node pair prediction will added in the future.
 
         Returns:
-            tuple: (x_inp, x_out), where ``x_inp`` is a list of Keras input tensors
-            for the specified RGCN model and ``x_out`` contains
-            model output tensor(s) of shape (batch_size, layer_sizes[-1])
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras input tensors
+                for the specified RGCN model and ``x_out`` contains
+                model output tensor(s) of shape ``(batch_size, layer_sizes[-1])``
 
         """
         if multiplicity is None:

@@ -20,7 +20,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, initializers, constraints, regularizers
 from tensorflow.keras.layers import Input, Layer, Lambda, Dropout, Reshape
 
-from ..mapper import FullBatchGenerator
+from ..mapper import FullBatchGenerator, ClusterNodeGenerator
 from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 from .preprocessing_layer import GraphPreProcessingLayer
 
@@ -29,7 +29,7 @@ class GraphConvolution(Layer):
 
     """
     Graph Convolution (GCN) Keras layer.
-    The implementation is based on the keras-gcn github repo https://github.com/tkipf/keras-gcn.
+    The implementation is based on https://github.com/tkipf/keras-gcn.
 
     Original paper: Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling,
     International Conference on Learning Representations (ICLR), 2017 https://github.com/tkipf/gcn
@@ -38,10 +38,10 @@ class GraphConvolution(Layer):
       - The batch axis represents independent graphs to be convolved with this GCN kernel (for
         instance, for full-batch node prediction on a single graph, its dimension should be 1).
 
-      - If the adjancency matrix is dense, both it and the features should have a batch axis, with
+      - If the adjacency matrix is dense, both it and the features should have a batch axis, with
         equal batch dimension.
 
-      - If the adjancency matrix is sparse, it should not have a batch axis, and the batch
+      - If the adjacency matrix is sparse, it should not have a batch axis, and the batch
         dimension of the features must be 1.
 
       - There are two inputs required, the node features,
@@ -50,11 +50,13 @@ class GraphConvolution(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
+    .. seealso:: :class:`.GCN` combines several of these layers.
+
     Args:
         units (int): dimensionality of output feature vectors
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         kernel_initializer (str or func, optional): The initialiser to use for the weights.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights.
         kernel_constraint (str or func, optional): The constraint to use for the weights.
@@ -101,7 +103,7 @@ class GraphConvolution(Layer):
     def get_config(self):
         """
         Gets class configuration for Keras serialization.
-        Used by keras model serialization.
+        Used by Keras model serialization.
 
         Returns:
             A dictionary that contains the config of the layer
@@ -128,7 +130,7 @@ class GraphConvolution(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -223,24 +225,25 @@ class GCN:
     A stack of Graph Convolutional layers that implement a graph convolution network model
     as in https://arxiv.org/abs/1609.02907
 
-    The model minimally requires specification of the layer sizes as a list of ints
+    The model minimally requires specification of the layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
-    or the :class:`FullBatchLinkGenerator` class for link inference.
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
+    should be supplied using:
 
-    To have the appropriate pre-processing the generator object should be instanciated
-    with the `method='gcn'` argument.
+    - the :class:`.FullBatchNodeGenerator` class for node inference
+    - the :class:`.ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`.FullBatchLinkGenerator` class for link inference
+
+    To have the appropriate preprocessing the generator object should be instantiated
+    with the ``method='gcn'`` argument.
 
     Note that currently the GCN class is compatible with both sparse and dense adjacency
-    matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
-
-    For more details, please see `the GCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_
+    matrices and the :class:`.FullBatchNodeGenerator` will default to sparse.
 
     Example:
-        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        Creating a GCN node classification model from an existing :class:`.StellarGraph`
         object ``G``::
 
             generator = FullBatchNodeGenerator(G, method="gcn")
@@ -254,16 +257,42 @@ class GCN:
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`FullBatchNodeGenerator` object.
+        :class:`.FullBatchNodeGenerator` object.
 
-      - This assumes that the normalized Lapalacian matrix is provided as input to
-        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
-        ``method='gcn'`` argument to do this pre-processing.
+      - This assumes that the normalized Laplacian matrix is provided as input to
+        Keras methods. When using the :class:`.FullBatchNodeGenerator` specify the
+        ``method='gcn'`` argument to do this preprocessing.
 
-      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
+
+    .. seealso::
+
+       Examples using GCN:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__
+       - `node classification trained with Cluster-GCN <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`__
+       - `node classification with Neo4j and Cluster-GCN <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`__
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - interpreting GCN predictions: `dense <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-node-link-importance.html>`__, `sparse <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-sparse-node-link-importance.html>`__
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
+
+       Appropriate data generators: :class:`.FullBatchNodeGenerator`, :class:`.FullBatchLinkGenerator`, :class:`.ClusterNodeGenerator`.
+
+       Related models:
+
+       - Other full-batch models: see the documentation of :class:`.FullBatchNodeGenerator` for a full list
+       - :class:`.RGCN` for a generalisation to multiple edge types
+       - :class:`.GCNSupervisedGraphClassification` for graph classification by pooling the output of GCN
+       - :class:`.GCN_LSTM` for time-series and sequence prediction, incorporating the graph structure via GCN
+       - :class:`.DeepGraphInfomax` for unsupervised training
+
+       :class:`.GraphConvolution` is the base layer out of which a GCN model is built.
 
     Args:
         layer_sizes (list of int): Output sizes of GCN layers in the stack.
@@ -271,13 +300,14 @@ class GCN:
         bias (bool): If True, a bias vector is learnt for each layer in the GCN model.
         dropout (float): Dropout rate applied to input features of each GCN layer.
         activations (list of str or func): Activations applied to each layer's output;
-            defaults to ['relu', ..., 'relu'].
+            defaults to ``['relu', ..., 'relu']``.
         kernel_initializer (str or func, optional): The initialiser to use for the weights of each layer.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights of each layer.
         kernel_constraint (str or func, optional): The constraint to use for the weights of each layer.
         bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
         bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        squeeze_output_batch (bool, optional): if True, remove the batch dimension when the batch size is 1. If False, leave the batch dimension.
     """
 
     def __init__(
@@ -293,10 +323,12 @@ class GCN:
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
+        squeeze_output_batch=True,
     ):
-        if not isinstance(generator, FullBatchGenerator):
+        if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
             raise TypeError(
-                "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                f"Generator should be a instance of FullBatchNodeGenerator, "
+                f"FullBatchLinkGenerator or ClusterNodeGenerator"
             )
 
         n_layers = len(layer_sizes)
@@ -304,15 +336,18 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
+        self.squeeze_output_batch = squeeze_output_batch
 
         # Copy required information from generator
         self.method = generator.method
         self.multiplicity = generator.multiplicity
-        self.n_nodes = generator.features.shape[0]
         self.n_features = generator.features.shape[1]
-
-        # Check if the generator is producing a sparse matrix
         self.use_sparse = generator.use_sparse
+        if isinstance(generator, FullBatchGenerator):
+            self.n_nodes = generator.features.shape[0]
+        else:
+            self.n_nodes = None
+
         if self.method == "none":
             self.graph_norm_layer = GraphPreProcessingLayer(num_of_nodes=self.n_nodes)
 
@@ -410,8 +445,8 @@ class GCN:
         Builds a GCN model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the GCN model and `x_out` is a tensor of the GCN model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the GCN model and ``x_out`` is a tensor of the GCN model output.
         """
         # Inputs for features
         x_t = Input(batch_shape=(1, self.n_nodes, self.n_features))
@@ -444,7 +479,7 @@ class GCN:
         x_out = self(x_inp)
 
         # Flatten output by removing singleton batch dimension
-        if x_out.shape[0] == 1:
+        if self.squeeze_output_batch and x_out.shape[0] == 1:
             self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
         else:
             self.x_out_flat = x_out

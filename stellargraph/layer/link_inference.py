@@ -92,22 +92,33 @@ class LinkEmbedding(Layer):
 
             li = LinkEmbedding(method="ip", activation="sigmoid")([x_src, x_dst])
 
+    .. seealso::
+
+       Examples using this class:
+
+       - `GCN link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
+
+       Related functions: :func:`.link_inference`, :func:`.link_classification`, :func:`.link_regression`.
+
     Args:
         axis (int): If a single tensor is supplied this is the axis that indexes the node
             embeddings so that the indices 0 and 1 give the node embeddings to be combined.
             This is ignored if two tensors are supplied as a list.
         activation (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
+        method (str), optional: Name of the method of combining ``(src,dst)`` node features or embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
-            For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
-            edge embedding to transform to a vector of size `output_dim`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            For all methods except ``ip`` or ``dot`` a dense layer is applied on top of the combined
+            edge embedding to transform to a vector of size ``output_dim``.
 
     """
 
@@ -213,26 +224,30 @@ def link_inference(
 
     Note that the output tensor is flattened before being returned.
 
+    .. seealso:: Related functionality: :class:`.LinkEmbedding`, :func:`.link_classification`, :func:`.link_regression`.
+
     Args:
         output_dim (int): Number of predictor's output units -- desired dimensionality of the output.
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features or embeddings into edge embeddings.
+        edge_embedding_method (str), optional: Name of the method of combining ``(src,dst)`` node features or embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            For all methods except ``ip`` or ``dot`` a dense layer is applied on top of the combined
+            edge embedding to transform to a vector of size ``output_dim``.
         clip_limits (Tuple[float]): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
         name (str): optional name of the defined function, used for error logging
-            For all methods except 'ip' or 'dot' a dense layer is applied on top of the combined
-            edge embedding to transform to a vector of size `output_dim`.
 
     Returns:
-        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with ``src``, ``dst`` node embeddings (i.e., pairs of ``(node_src, node_dst)`` tensors) and
         returning a vector of output_dim length (e.g., edge class probabilities, edge attribute prediction, etc.).
     """
 
@@ -288,21 +303,33 @@ def link_classification(
 
     Note that the output tensor is flattened before being returned.
 
+    .. seealso::
+
+       Examples using this function:
+
+       - Attri2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__ `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`__
+       - GraphSAGE: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`__
+       - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
+       - other link prediction: `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__, `ensembles <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-link-prediction-example.html>`__, `calibration <https://stellargraph.readthedocs.io/en/stable/demos/calibration/calibration-link-prediction.html>`__
+
+       Related functionality: :class:`.LinkEmbedding`, :func:`.link_inference`, :func:`.link_regression`.
+
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         output_act (str), optional: activation function applied to the output, one of "softmax", "sigmoid", etc.,
             or any activation function supported by Keras, see https://keras.io/activations/ for more information.
-        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
+        edge_embedding_method (str), optional: Name of the method of combining ``(src,dst)`` node features/embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
-        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with ``src``, ``dst`` node embeddings (i.e., pairs of ``(node_src, node_dst)`` tensors) and
         returning logits of output_dim length (e.g., edge class probabilities).
     """
 
@@ -334,21 +361,28 @@ def link_regression(
 
     Note that the output tensor is flattened before being returned.
 
+    .. seealso::
+
+       Example using this function: `HinSAGE link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__.
+
+       Related functionality: :class:`.LinkEmbedding`, :func:`.link_inference`, :func:`.link_classification`.
+
     Args:
         output_dim (int): Number of classifier's output units -- desired dimensionality of the output,
         clip_limits (tuple): lower and upper thresholds for LeakyClippedLinear unit on top. If None (not provided),
             the LeakyClippedLinear unit is not applied.
-        edge_embedding_method (str), optional: Name of the method of combining (src,dst) node features/embeddings into edge embeddings.
+        edge_embedding_method (str), optional: Name of the method of combining ``(src,dst)`` node features/embeddings into edge embeddings.
             One of:
-            * 'concat' -- concatenation,
-            * 'ip' or 'dot' -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
-            * 'mul' or 'hadamard' -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
-            * 'l1' -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
-            * 'l2' -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
-            * 'avg' -- average, :math:`avg(u,v) = (u+v)/2`.
+
+            * ``concat`` -- concatenation,
+            * ``ip`` or ``dot`` -- inner product, :math:`ip(u,v) = sum_{i=1..d}{u_i*v_i}`,
+            * ``mul`` or ``hadamard`` -- element-wise multiplication, :math:`h(u,v)_i = u_i*v_i`,
+            * ``l1`` -- L1 operator, :math:`l_1(u,v)_i = |u_i-v_i|`,
+            * ``l2`` -- L2 operator, :math:`l_2(u,v)_i = (u_i-v_i)^2`,
+            * ``avg`` -- average, :math:`avg(u,v) = (u+v)/2`.
 
     Returns:
-        Function taking edge tensors with src, dst node embeddings (i.e., pairs of (node_src, node_dst) tensors) and
+        Function taking edge tensors with ``src``, ``dst`` node embeddings (i.e., pairs of ``(node_src, node_dst)`` tensors) and
         returning a numeric value (e.g., edge attribute being predicted) constructed according to edge_embedding_method.
     """
 

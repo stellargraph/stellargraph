@@ -62,6 +62,7 @@ class FullBatchGenerator(Generator):
         sparse=True,
         transform=None,
         teleport_probability=0.1,
+        weighted=False,
     ):
         if self.multiplicity is None:
             raise TypeError(
@@ -89,7 +90,7 @@ class FullBatchGenerator(Generator):
         # Create sparse adjacency matrix:
         # Use the node orderings the same as in the graph features
         self.node_list = G.nodes()
-        self.Aadj = G.to_adjacency_matrix()
+        self.Aadj = G.to_adjacency_matrix(weighted=weighted)
 
         # Power-user feature: make the generator yield dense adjacency matrix instead
         # of the default sparse one.
@@ -149,7 +150,7 @@ class FullBatchGenerator(Generator):
     def num_batch_dims(self):
         return 2
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -159,6 +160,8 @@ class FullBatchGenerator(Generator):
                 (e.g., training, validation, or test set nodes)
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
+                otherwise node_ids need to be transformed into ilocs
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -178,10 +181,13 @@ class FullBatchGenerator(Generator):
         # find the indices of the nodes, handling both multiplicity 1 [node, node, ...] and 2
         # [(source, target), ...]
         node_ids = np.asarray(node_ids)
-        flat_node_ids = node_ids.reshape(-1)
-        flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
-        # back to the original shape
-        node_indices = flat_node_indices.reshape(node_ids.shape)
+        if use_ilocs:
+            node_indices = node_ids
+        else:
+            flat_node_ids = node_ids.reshape(-1)
+            flat_node_indices = self.graph.node_ids_to_ilocs(flat_node_ids)
+            # back to the original shape
+            node_indices = flat_node_indices.reshape(node_ids.shape)
         if self.use_sparse:
             return SparseFullBatchSequence(
                 self.features, self.Aadj, targets, node_indices
@@ -204,8 +210,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
     adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
     argument.
 
-    For these algorithms the adjacency matrix requires pre-processing and the
-    'method' option should be specified with the correct pre-processing for
+    For these algorithms the adjacency matrix requires preprocessing and the
+    'method' option should be specified with the correct preprocessing for
     each algorithm. The options are as follows:
 
     *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
@@ -234,26 +240,41 @@ class FullBatchNodeGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the `GCN, GAT, PPNP/APPNP and SGC demos <https://stellargraph.readthedocs.io/en/stable/demos/index.html>`_.
+
+    .. seealso::
+
+       Models using this generator: :class:`.GCN`, :class:`.GAT`, :class:`.APPNP`, :class:`.PPNP`.
+
+       Example using this generator (see individual models for more): `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__.
+
+       Related generators:
+
+       - :class:`.ClusterNodeGenerator` for scalable/inductive training
+       - :class:`.CorruptedGenerator` for unsupervised training with :class:`.DeepGraphInfomax`
+       - :class:`.FullBatchLinkGenerator` for link prediction and similar tasks
+       - :class:`.RelationalFullBatchNodeGenerator` for multiple edge types, with :class:`.RGCN`
+       - :class:`.PaddedGraphGenerator` for graph classification
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method. This should be positive
+        method (str): Method to preprocess adjacency matrix. One of ``gcn`` (default),
+            ``sgc``, ``self_loops``, or ``none``.
+        k (None or int): This is the smoothing order for the ``sgc`` method. This should be positive
             integer.
         transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
+            the function takes ``(features, Aadj)`` as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
         teleport_probability (float): teleport probability between 0.0 and 1.0.
             "probability" of returning to the starting node in the propagation step as in [4].
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
     """
 
     multiplicity = 1
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -263,6 +284,8 @@ class FullBatchNodeGenerator(FullBatchGenerator):
                 (e.g., training, validation, or test set nodes)
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
+                otherwise node_ids need to be transformed into ilocs
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -270,7 +293,7 @@ class FullBatchNodeGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
-        return super().flow(node_ids, targets)
+        return super().flow(node_ids, targets, use_ilocs)
 
     def default_corrupt_input_index_groups(self):
         return [[0]]
@@ -282,7 +305,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     e.g., GCN, GAT, SGC.
     The supplied graph G should be a StellarGraph object with node features.
 
-    Use the :meth:`flow` method supplying the links as a list of (src, dst) tuples
+    Use the :meth:`flow` method supplying the links as a list of ``(src, dst)`` tuples
     of node IDs and (optionally) targets.
 
     This generator will supply the features array and the adjacency matrix to a
@@ -290,8 +313,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
     adjacency matrix (the default) or a dense adjacency matrix, with the `sparse`
     argument.
 
-    For these algorithms the adjacency matrix requires pre-processing and the
-    'method' option should be specified with the correct pre-processing for
+    For these algorithms the adjacency matrix requires preprocessing and the
+    'method' option should be specified with the correct preprocessing for
     each algorithm. The options are as follows:
 
     *   ``method='gcn'``: Normalizes the adjacency matrix for the GCN algorithm.
@@ -320,26 +343,34 @@ class FullBatchLinkGenerator(FullBatchGenerator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_flow, epochs=num_epochs)
 
-    For more information, please see the `GCN, GAT, PPNP/APPNP and SGC demos <https://stellargraph.readthedocs.io/en/stable/demos/index.html>`_.
+    .. seealso::
+
+       Models using this generator: :class:`.GCN`, :class:`.GAT`, :class:`.APPNP`, :class:`.PPNP`.
+
+       Example using this generator: `link classification with GCN <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__.
+
+       Related generator: :class:`.FullBatchNodeGenerator` for node classification and similar tasks.
 
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
-        method (str): Method to pre-process adjacency matrix. One of 'gcn' (default),
-            'sgc', 'self_loops', or 'none'.
-        k (None or int): This is the smoothing order for the 'sgc' method. This should be positive
+        method (str): Method to preprocess adjacency matrix. One of ``gcn`` (default),
+            ``sgc``, ``self_loops``, or ``none``.
+        k (None or int): This is the smoothing order for the ``sgc`` method. This should be positive
             integer.
         transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
+            the function takes ``(features, Aadj)`` as arguments.
         sparse (bool): If True (default) a sparse adjacency matrix is used,
             if False a dense adjacency matrix is used.
         teleport_probability (float): teleport probability between 0.0 and 1.0. "probability"
             of returning to the starting node in the propagation step as in [4].
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
     """
 
     multiplicity = 2
 
-    def flow(self, link_ids, targets=None):
+    def flow(self, link_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -349,6 +380,8 @@ class FullBatchLinkGenerator(FullBatchGenerator):
                 or an array of shape (N_links, 2) specifying the links.
             targets: a 1D or 2D array of numeric node targets with shape ``(len(node_ids),)``
                 or ``(len(node_ids), target_size)``
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
+                otherwise node_ids need to be transformed into ilocs
 
         Returns:
             A NodeSequence object to use with GCN or GAT models
@@ -356,7 +389,7 @@ class FullBatchLinkGenerator(FullBatchGenerator):
             and :meth:`predict`
 
         """
-        return super().flow(link_ids, targets)
+        return super().flow(link_ids, targets, use_ilocs)
 
 
 class RelationalFullBatchNodeGenerator(Generator):
@@ -372,7 +405,7 @@ class RelationalFullBatchNodeGenerator(Generator):
     adjacency matrices (the default) or a list of dense adjacency matrices, with the `sparse`
     argument.
 
-    For these algorithms the adjacency matrices require pre-processing and the default option is to
+    For these algorithms the adjacency matrices require preprocessing and the default option is to
     normalize each row of the adjacency matrix so that it sums to 1.
     For customization a transformation (callable) can be passed that
     operates on the node features and adjacency matrix.
@@ -386,17 +419,32 @@ class RelationalFullBatchNodeGenerator(Generator):
         # Alternatively, use the generator itself with model.fit:
         model.fit(train_gen, epochs=num_epochs, ...)
 
+    .. seealso::
+
+       Model using this generator: :class:`.RGCN`.
+
+       Examples using this generator:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/rgcn-node-classification.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+
+       Related generators:
+
+       - :class:`.FullBatchNodeGenerator` for graphs with one edge type
+       - :class:`.CorruptedGenerator` for unsupervised training with :class:`.DeepGraphInfomax`
+
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         name (str): an optional name of the generator
         transform (callable): an optional function to apply on features and adjacency matrix
-            the function takes (features, Aadj) as arguments.
+            the function takes ``(features, Aadj)`` as arguments.
         sparse (bool): If True (default) a list of sparse adjacency matrices is used,
             if False a list of dense adjacency matrices is used.
-
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
     """
 
-    def __init__(self, G, name=None, sparse=True, transform=None):
+    def __init__(self, G, name=None, sparse=True, transform=None, weighted=False):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph object.")
@@ -425,7 +473,9 @@ class RelationalFullBatchNodeGenerator(Generator):
         for edge_type in G.edge_types:
             # note that A is the transpose of the standard adjacency matrix
             # this is to aggregate features from incoming nodes
-            A = G.to_adjacency_matrix(edge_type=edge_type).transpose()
+            A = G.to_adjacency_matrix(
+                edge_type=edge_type, weighted=weighted
+            ).transpose()
 
             if transform is None:
                 # normalize here and replace zero row sums with 1
@@ -474,3 +524,6 @@ class RelationalFullBatchNodeGenerator(Generator):
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
         )
+
+    def default_corrupt_input_index_groups(self):
+        return [[0]]

@@ -56,8 +56,19 @@ def _validate_indices(corrupt_index_groups):
 
 class CorruptedGenerator(Generator):
     """
-    Keras compatible data generator that wraps a :class:`Generator` and provides corrupted data for
+    Keras compatible data generator that wraps a :class:`.Generator` and provides corrupted data for
     training Deep Graph Infomax.
+
+    .. seealso::
+
+       Model using this generator: :class:`.DeepGraphInfomax`.
+
+       Examples using this generator:
+
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
+
+       Generators that support corruption natively: :class:`.FullBatchNodeGenerator`, :class:`.RelationalFullBatchNodeGenerator`, :class:`.GraphSAGENodeGenerator`, :class:`.DirectedGraphSAGENodeGenerator`, :class:`.HinSAGENodeGenerator`, :class:`.ClusterNodeGenerator`.
 
     Args:
         base_generator (Generator): the uncorrupted Generator object.
@@ -118,7 +129,7 @@ class CorruptedSequence(Sequence):
 
     Args:
         base_sequence: the uncorrupted Sequence object.
-        corrupt_index_groups: the groups among which nodes will be shuffled (see :class:`CorruptedGenerator` for more details)
+        corrupt_index_groups: the groups among which nodes will be shuffled (see :class:`.CorruptedGenerator` for more details)
         num_batch_dims: the number of axes that are "batch" dimensions
     """
 

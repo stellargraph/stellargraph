@@ -16,10 +16,16 @@
 
 import random
 import pytest
+import pandas as pd
 import numpy as np
 from stellargraph.data.explorer import DirectedBreadthFirstNeighbours
 from stellargraph.core.graph import StellarDiGraph
-from ..test_utils.graphs import create_test_graph, tree_graph, example_graph_random
+from ..test_utils.graphs import (
+    create_test_graph,
+    tree_graph,
+    example_graph_random,
+    weighted_tree,
+)
 
 
 class TestDirectedBreadthFirstNeighbours(object):
@@ -27,7 +33,7 @@ class TestDirectedBreadthFirstNeighbours(object):
         g = create_test_graph(is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
-        nodes = ["0", 1]
+        nodes = g.node_ids_to_ilocs(["0", 1])
         n = 1
         in_size = [1]
         out_size = [1]
@@ -229,7 +235,8 @@ class TestDirectedBreadthFirstNeighbours(object):
             assert len(subgraph[0][13]) == out_size[0] * out_size[1] * in_size[2]
             assert len(subgraph[0][14]) == out_size[0] * out_size[1] * out_size[2]
 
-    def test_benchmark_bfs_walk(self, benchmark):
+    @pytest.mark.parametrize("weighted", [False, True])
+    def test_benchmark_bfs_walk(self, benchmark, weighted):
         g = example_graph_random(n_nodes=100, n_edges=500, is_directed=True)
         bfw = DirectedBreadthFirstNeighbours(g)
 
@@ -238,4 +245,34 @@ class TestDirectedBreadthFirstNeighbours(object):
         in_size = [5, 5]
         out_size = [5, 5]
 
-        benchmark(lambda: bfw.run(nodes=nodes, n=n, in_size=in_size, out_size=out_size))
+        benchmark(
+            lambda: bfw.run(
+                nodes=nodes, n=n, in_size=in_size, out_size=out_size, weighted=weighted
+            )
+        )
+
+    def test_weighted(self):
+        g, checker = weighted_tree(is_directed=True)
+
+        bfw = DirectedBreadthFirstNeighbours(g)
+        walks = bfw.run(
+            nodes=[0], n=10, in_size=[20, 20], out_size=[20, 20], weighted=True
+        )
+
+        checker(node_id for walk in walks for hop in walk for node_id in hop)
+
+    def test_weighted_all_zero(self):
+        edges = pd.DataFrame({"source": [0, 0], "target": [1, 2], "weight": [0.0, 0]})
+
+        g = StellarDiGraph(edges=edges)
+        bfw = DirectedBreadthFirstNeighbours(g)
+        walks = bfw.run(
+            nodes=[0], n=10, in_size=[20, 20], out_size=[20, 20], weighted=True
+        )
+
+        assert len(walks) == 10
+        for walk in walks:
+            assert len(walk) == 7
+            assert walk[0] == [0]
+            for hop in walk:
+                np.testing.assert_array_equal(hop[1:], -1)

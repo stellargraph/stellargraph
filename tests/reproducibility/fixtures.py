@@ -21,10 +21,12 @@ import tensorflow as tf
 def models_equals(model1, model2):
     w1 = model1.get_weights()
     w2 = model2.get_weights()
-    return all(np.array_equal(w, w_new) for w, w_new in zip(w1, w2))
+    assert len(w1) == len(w2)
+    for w, w_new in zip(w1, w2):
+        np.testing.assert_array_equal(w, w_new)
 
 
-def assert_reproducible(func, num_iter=10):
+def assert_reproducible(func, num_iter=1):
     """
     Assert Keras models produced from calling ``func`` are reproducible.
 
@@ -36,10 +38,7 @@ def assert_reproducible(func, num_iter=10):
     model = func()
     for i in range(num_iter):
         model_new = func()
-        assert models_equals(model, model_new), (
-            model.get_weights(),
-            model_new.get_weights(),
-        )
+        models_equals(model, model_new)
 
     # clear the tensorflow session to free memory
     tf.keras.backend.clear_session()

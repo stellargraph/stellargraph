@@ -63,8 +63,8 @@ def set_seed(seed):
     RandomState object simply wraps the global random state for each external module.
 
     When trying to create a reproducible workflow using this function, please note that this seed
-    only controls the randomness of the non-tensorflow part of the library. Randomness within
-    Tensorflow layers is controlled via Tensorflow's own global random seed, which can be set using
+    only controls the randomness of the non-TensorFlow part of the library. Randomness within
+    TensorFlow layers is controlled via TensorFlow's own global random seed, which can be set using
     ``tensorflow.random.set_seed``.
 
     Args:

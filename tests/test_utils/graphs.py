@@ -15,7 +15,7 @@
 # limitations under the License.
 
 
-from stellargraph import StellarGraph, StellarDiGraph
+from stellargraph import StellarGraph, StellarDiGraph, IndexedArray
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -33,7 +33,7 @@ def create_graph_features():
     return StellarGraph(nodes, edges), features
 
 
-def relational_create_graph_features(is_directed=False):
+def relational_create_graph_features(is_directed=False, edge_weights=False):
     # RGCN, relational node mappers
     r1 = {"label": "r1"}
     r2 = {"label": "r2"}
@@ -43,6 +43,9 @@ def relational_create_graph_features(is_directed=False):
         "r1": pd.DataFrame([("a", "b"), ("b", "c")], columns=["source", "target"]),
         "r2": pd.DataFrame([("a", "c")], columns=["source", "target"], index=[2]),
     }
+    if edge_weights:
+        edges["r1"]["weight"] = [2.0, 0.5]
+
     SG = StellarDiGraph if is_directed else StellarGraph
     return SG(nodes, edges), features
 
@@ -65,10 +68,14 @@ def example_graph_nx(
 
 def repeated_features(values_to_repeat, width):
     if width is None:
-        return []
+        return None
 
-    column = np.expand_dims(values_to_repeat, axis=1)
-    return column.repeat(width, axis=1)
+    if isinstance(width, int):
+        width = (width,)
+
+    values = np.asarray(values_to_repeat, dtype=np.float32)
+    column = values.reshape(values.shape + (1,) * len(width))
+    return np.tile(column, width)
 
 
 def example_graph(
@@ -77,12 +84,20 @@ def example_graph(
     edge_label="default",
     feature_name="feature",
     is_directed=False,
+    edge_feature_size=None,
+    edge_weights=False,
 ):
     elist = pd.DataFrame([(1, 2), (2, 3), (1, 4), (4, 2)], columns=["source", "target"])
-    nodes = [1, 2, 3, 4]
-    features = repeated_features(nodes, feature_size)
+    if edge_feature_size is not None:
+        edge_features = repeated_features(-elist.index, edge_feature_size)
+        elist = elist.join(pd.DataFrame(edge_features))
+    if edge_weights:
+        elist["weight"] = [0.1, 1.0, 20.0, 1.3]
 
-    nodes = pd.DataFrame(features, index=nodes)
+    nodes = [1, 2, 3, 4]
+    node_features = repeated_features(nodes, feature_size)
+
+    nodes = IndexedArray(node_features, index=nodes)
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={node_label: nodes}, edges={edge_label: elist})
@@ -111,11 +126,15 @@ def example_hin_1_nx(feature_name=None, for_nodes=None, feature_sizes=None):
 
 
 def example_hin_1(
-    feature_sizes=None, is_directed=False, self_loop=False, reverse_order=False
+    feature_sizes=None,
+    is_directed=False,
+    self_loop=False,
+    reverse_order=False,
+    edge_features=False,
 ) -> StellarGraph:
     def features(label, ids):
         if feature_sizes is None:
-            return []
+            return None
         else:
             feature_size = feature_sizes.get(label, 10)
             return repeated_features(ids, feature_size)
@@ -123,12 +142,12 @@ def example_hin_1(
     a_ids = [0, 1, 2, 3]
     if reverse_order:
         a_ids = a_ids[::-1]
-    a = pd.DataFrame(features("A", a_ids), index=a_ids)
+    a = IndexedArray(features("A", a_ids), index=a_ids)
 
     b_ids = [4, 5, 6]
     if reverse_order:
         b_ids = b_ids[::-1]
-    b = pd.DataFrame(features("B", b_ids), index=b_ids)
+    b = IndexedArray(features("B", b_ids), index=b_ids)
 
     r_edges = [(4, 0), (1, 5), (1, 4), (2, 4), (5, 3)]
     f_edges, f_index = [(4, 5)], [100]
@@ -146,6 +165,10 @@ def example_hin_1(
         f_edges[i] = src_tgt + (10 + i,)
 
     f = pd.DataFrame(f_edges, columns=f_columns, index=f_index)
+
+    if edge_features:
+        r = r.join(pd.DataFrame(-features("R", r.index), index=r.index))
+        f = f.join(pd.DataFrame(-features("F", f.index), index=f.index))
 
     cls = StellarDiGraph if is_directed else StellarGraph
     return cls(nodes={"A": a, "B": b}, edges={"R": r, "F": f})
@@ -313,7 +336,10 @@ def tree_graph() -> StellarGraph:
 
 @pytest.fixture
 def barbell():
-    return StellarGraph.from_networkx(nx.barbell_graph(m1=10, m2=11))
+    graph = nx.barbell_graph(m1=10, m2=11)
+    for i, (src, tgt) in enumerate(graph.edges):
+        graph[src][tgt]["weight"] = (i + 1) / 5
+    return StellarGraph.from_networkx(graph)
 
 
 @pytest.fixture
@@ -349,3 +375,35 @@ def weighted_hin():
     )
 
     return StellarGraph(nodes={"A": a, "B": b}, edges={"R": r, "S": s, "T": t, "U": u})
+
+
+def weighted_tree(is_directed=False):
+    # a binary tree:
+    # 0---1--3
+    # |   |
+    # |   4
+    # 2--5
+    # |
+    # 6
+    nodes = repeated_features(range(7), 3)
+    edges = pd.DataFrame(
+        {
+            "source": [0, 0, 1, 1, 2, 2],
+            "target": [1, 2, 3, 4, 5, 6],
+            "weight": [1.0, 5, 20, 1, 1, 0],
+        }
+    )
+    cls = StellarDiGraph if is_directed else StellarGraph
+
+    def check_occurrence(sequence):
+        from collections import Counter
+
+        occurrence = Counter(sequence)
+        # 0--2 has higher weight than 0--1
+        assert occurrence[2] > occurrence[1]
+        # 1--3 has higher weight than 1--4
+        assert occurrence[3] > occurrence[4]
+        # 2--6 has 0 weight (i.e. should never be taken)
+        assert 6 not in occurrence
+
+    return cls(nodes, edges), check_occurrence

@@ -25,7 +25,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras import activations, constraints, initializers, regularizers
 from tensorflow.keras.layers import Input, Layer, Dropout, LeakyReLU, Lambda, Reshape
 
-from ..mapper import FullBatchNodeGenerator, FullBatchGenerator
+from ..mapper import FullBatchNodeGenerator, FullBatchGenerator, ClusterNodeGenerator
 from .misc import SqueezedSparseConversion, deprecated_model_function, GatherIndices
 
 
@@ -35,7 +35,7 @@ class GraphAttention(Layer):
     https://github.com/danielegrattarola/keras-gat,
     with some modifications added for ease of use.
 
-    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+    Based on the original paper: Graph Attention Networks. P. Veličković et al. ICLR 2018 https://arxiv.org/abs/1710.10903
 
     Notes:
       - The inputs are tensors with a batch dimension of 1:
@@ -48,15 +48,17 @@ class GraphAttention(Layer):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
+    .. seealso:: :class:`.GAT` combines several of these layers, and :class:`.GraphAttentionSparse` supports a sparse adjacency matrix.
+
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
-        attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
-            'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+        attn_heads_reduction (str): reduction applied to output features of each attention head, ``concat`` or ``average``.
+            ``average`` should be applied in the final prediction layer of the model (Eq. 6 of the paper).
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
@@ -177,7 +179,7 @@ class GraphAttention(Layer):
         Assumes the following inputs:
 
         Args:
-            input_shapes (tuple of ints)
+            input_shapes (tuple of int)
                 Shape tuples can include None for free dimensions, instead of an integer.
 
         Returns:
@@ -276,7 +278,7 @@ class GraphAttention(Layer):
                   M is the number of output nodes
         """
         X = inputs[0]  # Node features (1 x N x F)
-        A = inputs[1]  # Adjacency matrix (N x N)
+        A = inputs[1]  # Adjacency matrix (1 X N x N)
         N = K.int_shape(A)[-1]
 
         batch_dim, n_nodes, _ = K.int_shape(X)
@@ -288,6 +290,7 @@ class GraphAttention(Layer):
         else:
             # Remove singleton batch dimension
             X = K.squeeze(X, 0)
+            A = K.squeeze(A, 0)
 
         outputs = []
         for head in range(self.attn_heads):
@@ -371,7 +374,7 @@ class GraphAttentionSparse(GraphAttention):
     Graph Attention (GAT) layer, base implementation taken from https://github.com/danielegrattarola/keras-gat,
     some modifications added for ease of use.
 
-    Based on the original paper: Graph Attention Networks. P. Velickovic et al. ICLR 2018 https://arxiv.org/abs/1710.10903
+    Based on the original paper: Graph Attention Networks. P. Veličković et al. ICLR 2018 https://arxiv.org/abs/1710.10903
 
     Notes:
       - The inputs are tensors with a batch dimension of 1:
@@ -385,15 +388,17 @@ class GraphAttentionSparse(GraphAttention):
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops
 
+    .. seealso:: :class:`.GAT` combines several of these layers, and :class:`.GraphAttention` supports a dense adjacency matrix.
+
     Args:
         F_out (int): dimensionality of output feature vectors
         attn_heads (int or list of int): number of attention heads
-        attn_heads_reduction (str): reduction applied to output features of each attention head, 'concat' or 'average'.
-            'Average' should be applied in the final prediction layer of the model (Eq. 6 of the paper).
+        attn_heads_reduction (str): reduction applied to output features of each attention head, ``concat`` or ``average``.
+            ``average`` should be applied in the final prediction layer of the model (Eq. 6 of the paper).
         in_dropout_rate (float): dropout rate applied to features
         attn_dropout_rate (float): dropout rate applied to attention coefficients
         activation (str): nonlinear activation applied to layer's output to obtain output features (eq. 4 of the GAT paper)
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         use_bias (bool): toggles an optional bias
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
@@ -524,15 +529,18 @@ class GAT:
     A stack of Graph Attention (GAT) layers with aggregation of multiple attention heads,
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
-    or the :class:`FullBatchLinkGenerator` class for link inference.
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
+    should be supplied using:
 
-    To have the appropriate pre-processing the generator object should be instanciated
+    - the :class:`.FullBatchNodeGenerator` class for node inference
+    - the :class:`.ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`.FullBatchLinkGenerator` class for link inference
+
+    To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gat'` argument.
 
     Examples:
-        Creating a GAT node classification model from an existing :class:`StellarGraph` object `G`::
+        Creating a GAT node classification model from an existing :class:`.StellarGraph` object `G`::
 
             generator = FullBatchNodeGenerator(G, method="gat")
             gat = GAT(
@@ -545,20 +553,36 @@ class GAT:
                 )
             x_inp, predictions = gat.in_out_tensors()
 
-    For more details, please see `the GAT demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`_
-
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`FullBatchNodeGenerator` object.
+        :class:`.FullBatchNodeGenerator` object.
 
       - This does not add self loops to the adjacency matrix, you should preprocess
         the adjacency matrix to add self-loops, using the ``method='gat'`` argument
-        of the :class:`FullBatchNodeGenerator`.
+        of the :class:`.FullBatchNodeGenerator`.
 
-      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
+
+    .. seealso::
+
+       Examples using GAT:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gat-node-classification.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - `interpreting GAT predictions <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gat-node-link-importance.html>`__
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__
+
+       Appropriate data generators: :class:`.FullBatchNodeGenerator`, :class:`.FullBatchLinkGenerator`, :class:`.ClusterNodeGenerator`.
+
+       Related models:
+
+       - Other full-batch models: see the documentation of :class:`.FullBatchNodeGenerator` for a full list
+       - :class:`.DeepGraphInfomax` for unsupervised training
+
+       :class:`.GraphAttention` and :class:`.GraphAttentionSparse` are the base layers out of which a GAT model is built.
 
     Args:
         layer_sizes (list of int): list of output sizes of GAT layers in the stack. The length of this list defines
@@ -570,14 +594,14 @@ class GAT:
             - a list of integers: elements of the list define the number of attention heads in the corresponding layers in the stack.
 
         attn_heads_reduction (list of str or None): reductions applied to output features of each attention head,
-            for all layers in the stack. Valid entries in the list are {'concat', 'average'}.
-            If None is passed, the default reductions are applied: 'concat' reduction to all layers in the stack
-            except the final layer, 'average' reduction to the last layer (Eqs. 5-6 of the GAT paper).
+            for all layers in the stack. Valid entries in the list are: ``concat``, ``average``.
+            If None is passed, the default reductions are applied: ``concat`` reduction to all layers in the stack
+            except the final layer, ``average`` reduction to the last layer (Eqs. 5-6 of the GAT paper).
         bias (bool): toggles an optional bias in GAT layers
         in_dropout (float): dropout rate applied to input features of each GAT layer
         attn_dropout (float): dropout rate applied to attention maps
         normalize (str or None): normalization applied to the final output features of the GAT layers stack. Default is None.
-        activations (list of str): list of activations applied to each layer's output; defaults to ['elu', ..., 'elu'].
+        activations (list of str): list of activations applied to each layer's output; defaults to ``['elu', ..., 'elu']``.
         saliency_map_support (bool): If calculating saliency maps using the tools in
             stellargraph.interpretability.saliency_maps this should be True. Otherwise this should be False (default).
         multiplicity (int, optional): The number of nodes to process at a time. This is 1 for a node
@@ -739,23 +763,21 @@ class GAT:
             self.multiplicity = _require_without_generator(multiplicity, "multiplicity")
             self.n_nodes = _require_without_generator(num_nodes, "num_nodes")
             self.n_features = _require_without_generator(num_features, "num_features")
-
         else:
-            if not isinstance(generator, FullBatchGenerator):
+            if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
                 raise TypeError(
-                    "Generator should be a instance of FullBatchNodeGenerator or FullBatchLinkGenerator"
+                    f"Generator should be a instance of FullBatchNodeGenerator, "
+                    f"FullBatchLinkGenerator or ClusterNodeGenerator"
                 )
 
             # Copy required information from generator
             self.use_sparse = generator.use_sparse
             self.multiplicity = generator.multiplicity
-            self.n_nodes = generator.features.shape[0]
             self.n_features = generator.features.shape[1]
-
-        if self.n_nodes is None or self.n_features is None:
-            raise RuntimeError(
-                "node_model: if generator is not provided to object constructor, num_nodes and feature_size must be specified."
-            )
+            if isinstance(generator, FullBatchGenerator):
+                self.n_nodes = generator.features.shape[0]
+            else:
+                self.n_nodes = None
 
         # Set the normalization layer used in the model
         if normalize == "l2":
@@ -841,7 +863,7 @@ class GAT:
 
         # Otherwise, create dense matrix from input tensor
         else:
-            Ainput = [Lambda(lambda A: K.squeeze(A, 0))(A) for A in As]
+            Ainput = As
 
         # TODO: Support multiple matrices?
         if len(Ainput) != 1:
@@ -872,8 +894,8 @@ class GAT:
         Builds a GAT model for node or link prediction
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of Keras/TensorFlow
-            input tensors for the model and `x_out` is a tensor of the model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of Keras/TensorFlow
+                input tensors for the model and ``x_out`` is a tensor of the model output.
         """
 
         # Inputs for features

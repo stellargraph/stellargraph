@@ -28,12 +28,14 @@ class GraphWaveGenerator(Generator):
     Implementation of the GraphWave structural embedding algorithm from the paper: "Learning Structural Node Embeddings
     via Diffusion Wavelets" (https://arxiv.org/pdf/1710.10321.pdf)
 
-    This class is minimally with a StellarGraph object. Calling the flow function will return a tensorflow
+    This class is minimally with a StellarGraph object. Calling the flow function will return a TensorFlow
     DataSet that contains the GraphWave embeddings.
 
     This implementation differs from the paper by removing the automatic method of calculating scales. This method was
     found to not work well in practice, and replicating the results of the paper requires manually specifying much
     larger scales than those automatically calculated.
+
+    .. seealso:: Example using this generator: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphwave-embeddings.html>`__.
 
     Args:
         G (StellarGraph): the StellarGraph object.
@@ -104,7 +106,7 @@ class GraphWaveGenerator(Generator):
         num_parallel_calls=1,
     ):
         """
-        Creates a tensorflow DataSet object of GraphWave embeddings.
+        Creates a TensorFlow DataSet object of GraphWave embeddings.
 
         The dimension of the embeddings are `2 * len(scales) * len(sample_points)`.
 

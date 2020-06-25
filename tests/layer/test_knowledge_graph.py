@@ -22,13 +22,18 @@ import pandas as pd
 import numpy as np
 
 import tensorflow as tf
-from tensorflow.keras import Model, initializers, losses
+from tensorflow.keras import Model, initializers, losses as tf_losses, layers
 
-from stellargraph import StellarGraph, StellarDiGraph
+from stellargraph import StellarGraph, StellarDiGraph, losses as sg_losses
 from stellargraph.mapper.knowledge_graph import KGTripleGenerator
 from stellargraph.layer.knowledge_graph import (
+    KGModel,
+    KGScore,
     ComplEx,
     DistMult,
+    RotatE,
+    RotE,
+    RotH,
     _ranks_from_score_columns,
 )
 
@@ -48,7 +53,8 @@ def triple_df(*values):
     return pd.DataFrame(values, columns=["source", "label", "target"])
 
 
-def test_complex(knowledge_graph):
+@pytest.mark.parametrize("sample_strategy", ["uniform", "self-adversarial"])
+def test_complex(knowledge_graph, sample_strategy):
     # this test creates a random untrained model and predicts every possible edge in the graph, and
     # compares that to a direct implementation of the scoring method in the paper
     gen = KGTripleGenerator(knowledge_graph, 3)
@@ -59,7 +65,12 @@ def test_complex(knowledge_graph):
     x_inp, x_out = complex_model.in_out_tensors()
 
     model = Model(x_inp, x_out)
-    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+    if sample_strategy == "uniform":
+        loss = tf_losses.BinaryCrossentropy(from_logits=True)
+    else:
+        loss = sg_losses.SelfAdversarialNegativeSampling()
+
+    model.compile(loss=loss)
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
@@ -70,8 +81,10 @@ def test_complex(knowledge_graph):
 
     # check the model can be trained on a few (uneven) batches
     model.fit(
-        gen.flow(df.iloc[:7], negative_samples=2),
-        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+        gen.flow(df.iloc[:7], negative_samples=2, sample_strategy=sample_strategy),
+        validation_data=gen.flow(
+            df.iloc[7:14], negative_samples=3, sample_strategy=sample_strategy
+        ),
     )
 
     # compute the exact values based on the model by extracting the embeddings for each element and
@@ -91,13 +104,13 @@ def test_complex(knowledge_graph):
     prediction = model.predict(gen.flow(df))
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
-    assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-6)
+    np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-6)
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
     model2 = Model(*complex_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
-    assert np.array_equal(prediction, prediction2)
+    np.testing.assert_array_equal(prediction, prediction2)
 
 
 def test_distmult(knowledge_graph):
@@ -112,7 +125,7 @@ def test_distmult(knowledge_graph):
 
     model = Model(x_inp, x_out)
 
-    model.compile(loss=losses.BinaryCrossentropy(from_logits=True))
+    model.compile(loss=tf_losses.BinaryCrossentropy(from_logits=True))
 
     every_edge = itertools.product(
         knowledge_graph.nodes(),
@@ -144,16 +157,153 @@ def test_distmult(knowledge_graph):
     prediction = model.predict(gen.flow(df))
 
     # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
-    assert np.allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+    np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
 
     # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
     # 'build' should be the same as the original one
     model2 = Model(*distmult_model.in_out_tensors())
     prediction2 = model2.predict(gen.flow(df))
-    assert np.array_equal(prediction, prediction2)
+    np.testing.assert_array_equal(prediction, prediction2)
 
 
-@pytest.mark.parametrize("model_maker", [ComplEx, DistMult])
+@test_utils.flaky_xfail_mark(AssertionError, 1623)
+def test_rotate(knowledge_graph):
+    margin = 2.34
+    norm_order = 1.234
+
+    # this test creates a random untrained model and predicts every possible edge in the graph, and
+    # compares that to a direct implementation of the scoring method in the paper
+    gen = KGTripleGenerator(knowledge_graph, 3)
+
+    # use a random initializer with a large range, so that any differences are obvious
+    init = initializers.RandomUniform(-1, 1)
+    rotate_model = RotatE(
+        gen, 5, margin=margin, norm_order=norm_order, embeddings_initializer=init
+    )
+    x_inp, x_out = rotate_model.in_out_tensors()
+
+    model = Model(x_inp, x_out)
+
+    model.compile(loss=tf_losses.BinaryCrossentropy(from_logits=True))
+
+    every_edge = itertools.product(
+        knowledge_graph.nodes(),
+        knowledge_graph._edges.types.pandas_index,
+        knowledge_graph.nodes(),
+    )
+    df = triple_df(*every_edge)
+
+    # check the model can be trained on a few (uneven) batches
+    model.fit(
+        gen.flow(df.iloc[:7], negative_samples=2),
+        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+    )
+
+    # compute the exact values based on the model by extracting the embeddings for each element and
+    # doing the y_(e_1)^T M_r y_(e_2) = <e_1, w_r, e_2> inner product
+    s_idx = knowledge_graph.node_ids_to_ilocs(df.source)
+    r_idx = knowledge_graph._edges.types.to_iloc(df.label)
+    o_idx = knowledge_graph.node_ids_to_ilocs(df.target)
+
+    nodes, edge_types = rotate_model.embeddings()
+    # the rows correspond to the embeddings for the given edge, so we can do bulk operations
+    e_s = nodes[s_idx, :]
+    w_r = edge_types[r_idx, :]
+    e_o = nodes[o_idx, :]
+
+    # every edge-type embedding should be a unit rotation
+    np.testing.assert_allclose(np.abs(w_r), 1)
+
+    actual = margin - np.linalg.norm(e_s * w_r - e_o, ord=norm_order, axis=1)
+
+    # predict every edge using the model
+    prediction = model.predict(gen.flow(df))
+
+    # (use an absolute tolerance to allow for catastrophic cancellation around very small values)
+    np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*rotate_model.in_out_tensors())
+    prediction2 = model2.predict(gen.flow(df))
+    np.testing.assert_array_equal(prediction, prediction2)
+
+
+@pytest.mark.parametrize("model_class", [RotE, RotH])
+def test_rote_roth(knowledge_graph, model_class):
+    # this test creates a random untrained model and predicts every possible edge in the graph, and
+    # compares that to a direct implementation of the scoring method in the paper
+    gen = KGTripleGenerator(knowledge_graph, 3)
+
+    # use a random initializer with a large range, so that any differences are obvious
+    init = initializers.RandomUniform(-1, 1)
+    rot_model = model_class(gen, 6, embeddings_initializer=init)
+    x_inp, x_out = rot_model.in_out_tensors()
+
+    model = Model(x_inp, x_out)
+    model.summary()
+    model.compile(loss=tf_losses.BinaryCrossentropy(from_logits=True))
+
+    every_edge = itertools.product(
+        knowledge_graph.nodes(),
+        knowledge_graph._edges.types.pandas_index,
+        knowledge_graph.nodes(),
+    )
+    df = triple_df(*every_edge)
+
+    # check the model can be trained on a few (uneven) batches
+    model.fit(
+        gen.flow(df.iloc[:7], negative_samples=2),
+        validation_data=gen.flow(df.iloc[7:14], negative_samples=3),
+    )
+
+    # predict every edge using the model
+    prediction = model.predict(gen.flow(df))
+
+    (node_emb, node_bias), (et_emb, et_theta) = rot_model.embedding_arrays()
+
+    if model_class is RotE:
+        # compute the exact values based on the model, for RotationE (the RotationH model is too
+        # hard to test directly)
+        s_idx = knowledge_graph.node_ids_to_ilocs(df.source)
+        r_idx = knowledge_graph.edge_type_names_to_ilocs(df.label)
+        o_idx = knowledge_graph.node_ids_to_ilocs(df.target)
+
+        # the rows correspond to the embeddings for the given edge, so we can do bulk operations
+        e_s = node_emb[s_idx, :]
+        b_s = node_bias[s_idx, 0]
+
+        r_r = et_emb[r_idx, :]
+        theta_r = et_theta[r_idx, :]
+
+        e_o = node_emb[o_idx, :]
+        b_o = node_bias[o_idx, 0]
+
+        rot_r = np.cos(theta_r) + 1j * np.sin(theta_r)
+
+        assert e_s.dtype == np.float32
+        rotated = (e_s.view(np.complex64) * rot_r).view(np.float32)
+        actual = -np.linalg.norm(rotated + r_r - e_o, axis=-1) ** 2 + b_s + b_o
+
+        np.testing.assert_allclose(prediction[:, 0], actual, rtol=1e-3, atol=1e-14)
+
+    # the model is stateful (i.e. it holds the weights permanently) so the predictions with a second
+    # 'build' should be the same as the original one
+    model2 = Model(*rot_model.in_out_tensors())
+    prediction2 = model2.predict(gen.flow(df))
+    np.testing.assert_array_equal(prediction, prediction2)
+
+
+@pytest.mark.parametrize(
+    "model_maker",
+    [
+        ComplEx,
+        DistMult,
+        pytest.param(RotatE, marks=test_utils.flaky_xfail_mark(AssertionError, 1623)),
+        pytest.param(RotH, marks=test_utils.flaky_xfail_mark(AssertionError, 1675)),
+        RotE,
+    ],
+)
 def test_model_rankings(model_maker):
     nodes = pd.DataFrame(index=["a", "b", "c", "d"])
     rels = ["W", "X", "Y", "Z"]
@@ -187,7 +337,7 @@ def test_model_rankings(model_maker):
     )
 
     gen = KGTripleGenerator(all_edges, 3)
-    sg_model = model_maker(gen, embedding_dimension=5)
+    sg_model = model_maker(gen, embedding_dimension=6)
     x_inp, x_out = sg_model.in_out_tensors()
     model = Model(x_inp, x_out)
 
@@ -313,3 +463,47 @@ def test_tie_breaking(tie_breaking):
             raw_or_filtered = all_rankings[:, i, :]
             assert (raw_or_filtered != top_expected[:, i, :]).any()
             assert (raw_or_filtered != bottom_expected[:, i, :]).any()
+
+
+def test_embedding_validation(knowledge_graph):
+    class X(layers.Layer, KGScore):
+        def __init__(self, emb):
+            self.emb = emb
+
+        def embeddings(self, *args, **kwargs):
+            return self.emb
+
+        def bulk_scoring(self, *args, **kwargs):
+            raise NotImplementedError()
+
+    gen = KGTripleGenerator(knowledge_graph, 3)
+
+    e = layers.Embedding(5, 4)
+
+    kwargs = {
+        "embeddings_initializer": None,
+        "embeddings_regularizer": None,
+    }
+    with pytest.raises(ValueError, match="scoring: .* found a sequence of length 3"):
+        KGModel(gen, X((1, 2, 3)), 2, **kwargs)
+
+    with pytest.raises(
+        ValueError, match=r"scoring: .* found a pair with types \(Embedding, int\)"
+    ):
+        KGModel(gen, X((e, 2)), 2, **kwargs)
+
+    with pytest.raises(
+        ValueError,
+        match=r"scoring: .* found a pair of lists containing types \(\[Embedding, Embedding\], \[int\]\)",
+    ):
+        KGModel(gen, X(([e, e], [2])), 2, **kwargs)
+
+    # all good:
+    KGModel(gen, X(([e, e], [e, e, e])), 2, **kwargs)
+
+
+@pytest.mark.parametrize("model_maker", [ComplEx, DistMult, RotatE, RotH, RotE])
+def test_save_load(tmpdir, knowledge_graph, model_maker):
+    gen = KGTripleGenerator(knowledge_graph, 3)
+    sg_model = model_maker(gen, embedding_dimension=6)
+    test_utils.model_save_load(tmpdir, sg_model)

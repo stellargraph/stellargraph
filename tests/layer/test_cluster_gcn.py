@@ -30,6 +30,11 @@ from tensorflow import keras
 import tensorflow as tf
 import pytest
 from ..test_utils.graphs import create_graph_features
+from .. import test_utils
+
+pytestmark = pytest.mark.filterwarnings(
+    r"ignore:ClusterGCN has been replaced by GCN:DeprecationWarning"
+)
 
 
 def test_ClusterGCN_init():
@@ -86,11 +91,11 @@ def test_ClusterGCN_activations():
         # activations for layers must be specified
         ClusterGCN(layer_sizes=[2], generator=generator)
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         # More activations than layers
         ClusterGCN(layer_sizes=[2], generator=generator, activations=["relu", "linear"])
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError):
         # Fewer activations than layers
         ClusterGCN(layer_sizes=[2, 2], generator=generator, activations=["relu"])
 
@@ -156,3 +161,12 @@ def test_kernel_and_bias_defaults():
             assert layer.bias_regularizer is None
             assert layer.kernel_constraint is None
             assert layer.bias_constraint is None
+
+
+def test_ClusterGCN_save_load(tmpdir):
+    G, _ = create_graph_features()
+    generator = ClusterNodeGenerator(G)
+    cluster_gcn = ClusterGCN(
+        layer_sizes=[2, 3], activations=["relu", "relu"], generator=generator
+    )
+    test_utils.model_save_load(tmpdir, cluster_gcn)

@@ -23,6 +23,7 @@ __all__ = [
     "GraphSAGELinkGenerator",
     "HinSAGELinkGenerator",
     "Attri2VecLinkGenerator",
+    "Node2VecLinkGenerator",
     "DirectedGraphSAGELinkGenerator",
 ]
 
@@ -51,7 +52,7 @@ from .base import Generator
 
 
 class BatchedLinkGenerator(Generator):
-    def __init__(self, G, batch_size, schema=None):
+    def __init__(self, G, batch_size, schema=None, use_node_features=True):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -60,9 +61,6 @@ class BatchedLinkGenerator(Generator):
 
         # This is a link generator and requries a model with two root nodes per query
         self.multiplicity = 2
-
-        # Check if the graph has features
-        G.check_graph_for_ml()
 
         # We need a schema for compatibility with HinSAGE
         if schema is None:
@@ -77,6 +75,10 @@ class BatchedLinkGenerator(Generator):
 
         # Sampler (if required)
         self.sampler = None
+
+        # Check if the graph has features
+        if use_node_features:
+            G.check_graph_for_ml()
 
     @abc.abstractmethod
     def sample_features(self, head_links, batch_num):
@@ -214,18 +216,38 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         G_generator = GraphSageLinkGenerator(G, 50, [10,10])
         train_data_gen = G_generator.flow(edge_ids)
 
+    .. seealso::
+
+       Model using this generator: :class:`.GraphSAGE`.
+
+       Some examples using this generator (see the model for more):
+
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/graphsage-link-prediction.html>`__
+       - `unsupervised representation learning via random walks <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`__
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.GraphSAGENodeGenerator` for node classification and related tasks
+       - :class:`.DirectedGraphSAGELinkGenerator` for directed graphs
+       - :class:`.HinSAGELinkGenerator` for heterogeneous graphs
+
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
+    def __init__(
+        self, G, batch_size, num_samples, seed=None, name=None, weighted=False
+    ):
         super().__init__(G, batch_size)
 
         self.num_samples = num_samples
         self.name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -259,7 +281,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             A list of the same length as ``num_samples`` of collected features from
             the sampled nodes of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of `num_samples`
             for that layer.
         """
         node_type = self.head_node_types[0]
@@ -283,7 +305,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, n_size=self.num_samples
+                nodes=hns, n=1, n_size=self.num_samples, weighted=self.weighted
             )
 
             nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
@@ -319,11 +341,23 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
     to get an object that can be used as a Keras data generator.
 
-    The generator should be given the (src,dst) node types usng
+    The generator should be given the ``(src,dst)`` node types using
 
     * It's possible to do link prediction on a graph where that link type is completely removed from the graph
       (e.g., "same_as" links in ER)
 
+    .. seealso::
+
+       Model using this generator: :class:`.HinSAGE`.
+
+       Example using this generator: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/hinsage-link-prediction.html>`__.
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.HinSAGENodeGenerator` for node classification and related tasks
+       - :class:`.GraphSAGELinkGenerator` for homogeneous graphs
+       - :class:`.DirectedGraphSAGELinkGenerator` for directed homogeneous graphs
 
     Args:
         g (StellarGraph): A machine-learning ready graph.
@@ -417,7 +451,7 @@ class HinSAGELinkGenerator(BatchedLinkGenerator):
         Returns:
             A list of the same length as `num_samples` of collected features from
             the sampled nodes of shape: ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the cumulative product of `num_samples`
+            where ``num_sampled_at_layer`` is the cumulative product of `num_samples`
             for that layer.
         """
         nodes_by_type = []
@@ -475,6 +509,17 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         G_generator = Attri2VecLinkGenerator(G, 50)
         train_data_gen = G_generator.flow(edge_ids, edge_labels)
 
+    .. seealso::
+
+       Model using this generator: :class:`.Attri2Vec`.
+
+       An example using this generator (see the model for more): `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__.
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.Attri2VecNodeGenerator` for node classification and related tasks
+
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
@@ -509,6 +554,60 @@ class Attri2VecLinkGenerator(BatchedLinkGenerator):
         return batch_feats
 
 
+class Node2VecLinkGenerator(BatchedLinkGenerator):
+    """
+    A data generator for context node prediction with Node2Vec models.
+
+    At minimum, supply the StellarGraph and the batch size.
+
+    The supplied graph should be a StellarGraph object that is ready for
+    machine learning. Currently the model does not require node features for
+    nodes in the graph.
+
+    Use the :meth:`flow` method supplying the nodes and targets,
+    or an UnsupervisedSampler instance that generates node samples on demand,
+    to get an object that can be used as a Keras data generator.
+
+    Example::
+
+        G_generator = Node2VecLinkGenerator(G, 50)
+        data_gen = G_generator.flow(edge_ids, edge_labels)
+
+    .. seealso::
+
+       Model using this generator: :class:`.Node2Vec`.
+
+       An example using this generator (see the model for more): `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__.
+
+       Related functionality: :class:`.Node2VecNodeGenerator` for node classification and related tasks.
+
+    Args:
+        G (StellarGraph): A machine-learning ready graph.
+        batch_size (int): Size of batch of links to return.
+        name (str or None): Name of the generator (optional).
+    """
+
+    def __init__(self, G, batch_size, name=None):
+        super().__init__(G, batch_size, use_node_features=False)
+
+        self.name = name
+
+    def sample_features(self, head_links, batch_num):
+        """
+        Sample the ids of the target and context nodes.
+        and return these as a list of feature arrays for the Node2Vec algorithm.
+
+        Args:
+            head_links: An iterable of edges to perform sampling for.
+
+        Returns:
+            A list of feature arrays, with each element being the ids of
+            the sampled target and context node.
+        """
+
+        return [np.array(ids) for ids in zip(*head_links)]
+
+
 class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
     """
     A data generator for link prediction with directed Homogeneous GraphSAGE models
@@ -527,6 +626,17 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         G_generator = DirectedGraphSageLinkGenerator(G, 50, [10,10], [10,10])
         train_data_gen = G_generator.flow(edge_ids)
 
+    .. seealso::
+
+       Model using this generator: :class:`.GraphSAGE`.
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for unsupervised training using random walks
+       - :class:`.DirectedGraphSAGENodeGenerator` for node classification and related tasks
+       - :class:`.GraphSAGELinkGenerator` for undirected graphs
+       - :class:`.HinSAGELinkGenerator` for heterogeneous graphs
+
     Args:
         G (StellarGraph): A machine-learning ready graph.
         batch_size (int): Size of batch of links to return.
@@ -534,14 +644,25 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         out_samples (list): The number of out-node samples per layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
         name, optional: Name of generator.
+        weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
     """
 
-    def __init__(self, G, batch_size, in_samples, out_samples, seed=None, name=None):
+    def __init__(
+        self,
+        G,
+        batch_size,
+        in_samples,
+        out_samples,
+        seed=None,
+        name=None,
+        weighted=False,
+    ):
         super().__init__(G, batch_size)
 
         self.in_samples = in_samples
         self.out_samples = out_samples
         self._name = name
+        self.weighted = weighted
 
         # Check that there is only a single node type for GraphSAGE
         if len(self.schema.node_types) > 1:
@@ -574,7 +695,7 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         Returns:
             A list of feature tensors from the sampled nodes at each layer, each of shape:
             ``(len(head_nodes), num_sampled_at_layer, feature_size)``
-            where num_sampled_at_layer is the total number (cumulative product)
+            where ``num_sampled_at_layer`` is the total number (cumulative product)
             of nodes sampled at the given number of hops from each head node,
             given the sequence of in/out directions.
         """
@@ -583,7 +704,11 @@ class DirectedGraphSAGELinkGenerator(BatchedLinkGenerator):
         for hns in zip(*head_links):
 
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, in_size=self.in_samples, out_size=self.out_samples
+                nodes=hns,
+                n=1,
+                in_size=self.in_samples,
+                out_size=self.out_samples,
+                weighted=self.weighted,
             )
 
             # Reshape node samples to sensible format

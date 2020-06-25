@@ -39,10 +39,21 @@ class UnsupervisedSampler:
         and returning positive and negative samples w.r.t. those walks, on demand.
 
         The positive samples are all the (target, context) pairs from the walks and the negative
-        samples are contexts generated for each target based on a sampling distribtution.
+        samples are contexts generated for each target based on a sampling distribution.
 
         By default, a UniformRandomWalk is used, but a custom `walker` can be specified instead. An
         error will be raised if other parameters are specified along with a custom `walker`.
+
+        .. seealso::
+
+           Examples using this sampler:
+
+           - Attri2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/attri2vec-node-classification.html>`__ `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/attri2vec-link-prediction.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/attri2vec-embeddings.html>`__
+           - GraphSAGE: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphsage-unsupervised-sampler-embeddings.html>`__
+           - Node2Vec: `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
+           - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
+
+           Built-in classes for ``walker``: :class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.UniformRandomMetaPathWalk`.
 
         Args:
             G (StellarGraph): A stellargraph with features.
@@ -87,7 +98,7 @@ class UnsupervisedSampler:
         elif is_real_iterable(nodes):  # check whether the nodes provided are valid.
             self.nodes = list(nodes)
         else:
-            raise ValueError("nodes parameter should be an iterableof node IDs.")
+            raise ValueError("nodes parameter should be an iterable of node IDs.")
 
         # Require walks of at lease length two because to create a sample pair we need at least two nodes.
         if length < 2:

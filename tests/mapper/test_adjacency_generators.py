@@ -95,18 +95,24 @@ def test_flow_batch_size(barbell, num_powers):
 
 
 @pytest.mark.parametrize("num_powers", [2, 4, 8])
-def test_partial_powers(barbell, num_powers):
+@pytest.mark.parametrize("weighted", [False, True])
+def test_partial_powers(barbell, num_powers, weighted):
 
-    Aadj = normalize_adj(barbell.to_adjacency_matrix(), symmetric=False).todense()
+    raw_adj = barbell.to_adjacency_matrix(weighted=weighted)
+    Aadj = normalize_adj(raw_adj, symmetric=False).todense()
     actual_powers = [Aadj]
     for _ in range(num_powers - 1):
         actual_powers.append(actual_powers[-1].dot(Aadj))
 
-    generator = AdjacencyPowerGenerator(barbell, num_powers=num_powers)
+    generator = AdjacencyPowerGenerator(
+        barbell, num_powers=num_powers, weighted=weighted
+    )
     dataset = generator.flow(batch_size=1)
     for i, (x, y) in enumerate(dataset.take(barbell.number_of_nodes())):
 
         partial_powers = x[1].numpy()
         for j in range(num_powers):
             print(i, j)
-            assert np.allclose(partial_powers[0, j, :], actual_powers[j][i, :])
+            np.testing.assert_allclose(
+                partial_powers[:, j, :], actual_powers[j][i, :], rtol=1e-5, atol=1e-8
+            )

@@ -25,19 +25,19 @@ from tensorflow.keras.layers import Input, Dropout, GlobalAveragePooling1D
 
 class GCNSupervisedGraphClassification:
     """
-    A stack of :class:`GraphConvolution` layers together with a Keras `GlobalAveragePooling1D` layer (by default)
+    A stack of :class:`.GraphConvolution` layers together with a Keras `GlobalAveragePooling1D` layer (by default)
     that implement a supervised graph classification network using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
-    The model minimally requires specification of the GCN layer sizes as a list of ints
+    The model minimally requires specification of the GCN layer sizes as a list of int
     corresponding to the feature dimensions for each hidden layer,
     activation functions for each hidden layers, and a generator object.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix
-    should be supplied using the :class:`PaddedGraphGenerator` class.
+    To use this class as a Keras model, the features and preprocessed adjacency matrix
+    should be supplied using the :class:`.PaddedGraphGenerator` class.
 
     Examples:
-        Creating a graph classification model from a list of :class:`StellarGraph`
+        Creating a graph classification model from a list of :class:`.StellarGraph`
         objects (``graphs``). We also add two fully connected dense layers using the last one for binary classification
         with `softmax` activation::
 
@@ -52,10 +52,24 @@ class GCNSupervisedGraphClassification:
             predictions = Dense(units=8, activation='relu')(x_out)
             predictions = Dense(units=2, activation='softmax')(predictions)
 
+    .. seealso::
+
+       Examples using GCN graph classification:
+
+       - `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`__
+       - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/gcn-unsupervised-graph-embeddings.html>`__
+
+       Appropriate data generator: :class:`.PaddedGraphGenerator`.
+
+       Related models:
+
+       - :class:`.DeepGraphCNN` for a specialisation using :class:`.SortPooling`
+       - :class:`.GCN` for predictions for individual nodes or links
+
     Args:
         layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.
         activations (list of str): list of activations applied to each GCN layer's output.
-        generator (PaddedGraphGenerator): an instance of :class:`PaddedGraphGenerator` class constructed on the graphs used for
+        generator (PaddedGraphGenerator): an instance of :class:`.PaddedGraphGenerator` class constructed on the graphs used for
             training.
         bias (bool, optional): toggles an optional bias in graph convolutional layers.
         dropout (float, optional): dropout rate applied to input features of each GCN layer.
@@ -156,7 +170,7 @@ class GCNSupervisedGraphClassification:
 
     def __call__(self, x):
         """
-        Apply a stack of :class:`GraphConvolution` layers to the inputs.
+        Apply a stack of :class:`.GraphConvolution` layers to the inputs.
         The input tensors are expected to be a list of the following:
         [
             Node features shape (batch size, N, F),
@@ -197,9 +211,9 @@ class GCNSupervisedGraphClassification:
         Builds a Graph Classification model.
 
         Returns:
-            tuple: `(x_inp, x_out)`, where `x_inp` is a list of two input tensors for the
-            Graph Classification model (containing node features and normalized adjacency matrix),
-            and `x_out` is a tensor for the Graph Classification model output.
+            tuple: ``(x_inp, x_out)``, where ``x_inp`` is a list of two input tensors for the
+                Graph Classification model (containing node features and normalized adjacency matrix),
+                and ``x_out`` is a tensor for the Graph Classification model output.
         """
         x_t = Input(shape=(None, self.generator.node_features_size))
         mask = Input(shape=(None,), dtype=tf.bool)
@@ -215,22 +229,22 @@ class GCNSupervisedGraphClassification:
 
 class DeepGraphCNN(GCNSupervisedGraphClassification):
     """
-    A stack of :class:`GraphConvolution` layers together with a `SortPooling` layer
+    A stack of :class:`.GraphConvolution` layers together with a `SortPooling` layer
     that implement a supervised graph classification network (DGCNN) using the GCN convolution operator
     (https://arxiv.org/abs/1609.02907).
 
     The DGCNN model was introduced in the paper, "An End-to-End Deep Learning Architecture for Graph Classification" by
     M. Zhang, Z. Cui, M. Neumann, and Y. Chen, AAAI 2018, https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf
 
-    The model minimally requires specification of the GCN layer sizes as a list of ints corresponding to the feature
+    The model minimally requires specification of the GCN layer sizes as a list of int corresponding to the feature
     dimensions for each hidden layer, activation functions for each hidden layer, a generator object, and the number of
     output nodes for the class:`SortPooling` layer.
 
-    To use this class as a Keras model, the features and pre-processed adjacency matrix should be supplied using the
-    :class:`PaddedGraphGenerator` class.
+    To use this class as a Keras model, the features and preprocessed adjacency matrix should be supplied using the
+    :class:`.PaddedGraphGenerator` class.
 
     Examples:
-        Creating a graph classification model from a list of :class:`StellarGraph`
+        Creating a graph classification model from a list of :class:`.StellarGraph`
         objects (``graphs``). We also add two one-dimensional convolutional layers, a max pooling layer, and two fully
         connected dense layers one with dropout one used for binary classification::
 
@@ -254,11 +268,22 @@ class DeepGraphCNN(GCNSupervisedGraphClassification):
             model = Model(inputs=x_inp, outputs=predictions)
 
 
+    .. seealso::
+
+       Example using DGCNN: `graph classification <https://stellargraph.readthedocs.io/en/stable/demos/graph-classification/gcn-supervised-graph-classification.html>`__.
+
+       Appropriate data generator: :class:`.PaddedGraphGenerator`.
+
+       Related models:
+
+       - :class:`.GCNSupervisedGraphClassification` for the general form, supporting more customisation
+       - :class:`.GCN` for predictions for individual nodes or links
+
     Args:
         layer_sizes (list of int): list of output sizes of the graph GCN layers in the stack.
         activations (list of str): list of activations applied to each GCN layer's output.
         k (int): size (number of rows) of output tensor.
-        generator (GraphGenerator): an instance of :class:`GraphGenerator` class constructed on the graphs used for
+        generator (GraphGenerator): an instance of :class:`.GraphGenerator` class constructed on the graphs used for
             training.
         bias (bool, optional): toggles an optional bias in graph convolutional layers.
         dropout (float, optional): dropout rate applied to input features of each GCN layer.

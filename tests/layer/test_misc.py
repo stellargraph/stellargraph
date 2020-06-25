@@ -56,7 +56,7 @@ def test_squeezedsparseconversion():
 
     z = model.predict([x, np.expand_dims(A_indices, 0), np.expand_dims(A_values, 0)])
 
-    assert np.allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7)
+    np.testing.assert_allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7, rtol=1e-5)
 
 
 def test_squeezedsparseconversion_dtype():
@@ -79,7 +79,7 @@ def test_squeezedsparseconversion_dtype():
     z = model.predict([x, np.expand_dims(A_indices, 0), np.expand_dims(A_values, 0)])
 
     assert A_mat.dtype == tf.dtypes.float64
-    assert np.allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7)
+    np.testing.assert_allclose(z.squeeze(), A.dot(x.squeeze()), atol=1e-7, rtol=1e-5)
 
 
 def test_squeezedsparseconversion_axis():
@@ -104,7 +104,7 @@ def test_squeezedsparseconversion_axis():
     model = keras.Model(inputs=[A_ind, A_val], outputs=x_out)
     z = model.predict([A_indices, A_values])
 
-    assert np.allclose(z, A.sum(axis=1), atol=1e-7)
+    np.testing.assert_allclose(z, A.sum(axis=1), atol=1e-7, rtol=1e-5)
 
 
 def test_gather_indices():

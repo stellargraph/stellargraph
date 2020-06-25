@@ -64,7 +64,7 @@ EXTRAS_REQUIRES = {
 
 # Long description
 try:
-    with open("README.md", "r") as fh:
+    with open("README.md", "r", encoding="utf8") as fh:
         LONG_DESCRIPTION = fh.read()
 except FileNotFoundError:
     # can't find the README (e.g. building the docker image), so skip it
@@ -88,7 +88,7 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     include_package_data=True,
-    python_requires=">=3.6.0, <3.8.0",
+    python_requires=">=3.6.0, <3.9.0",
     install_requires=REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     packages=setuptools.find_packages(exclude=("tests",)),

@@ -21,6 +21,7 @@ from stellargraph.layer import SortPooling
 from stellargraph.mapper import PaddedGraphGenerator, FullBatchNodeGenerator
 import pytest
 from ..test_utils.graphs import example_graph_random
+from .. import test_utils
 
 
 graphs = [
@@ -113,7 +114,7 @@ def test_stateful():
     embeddings_1 = model_1.predict(train_gen)
     embeddings_2 = model_2.predict(train_gen)
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_1.compile(loss=tf.nn.softmax_cross_entropy_with_logits, optimizer="Adam")
     model_1.fit(train_gen)
@@ -122,7 +123,7 @@ def test_stateful():
     embeddings_1 = model_1.predict(train_gen)
     embeddings_2 = model_2.predict(train_gen)
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
     model_2.compile(loss=tf.nn.softmax_cross_entropy_with_logits, optimizer="Adam")
     model_2.fit(train_gen)
@@ -131,7 +132,7 @@ def test_stateful():
     embeddings_1 = model_1.predict(train_gen)
     embeddings_2 = model_2.predict(train_gen)
 
-    assert np.array_equal(embeddings_1, embeddings_2)
+    np.testing.assert_array_equal(embeddings_1, embeddings_2)
 
 
 @pytest.mark.parametrize("pooling", ["default", "custom"])
@@ -217,3 +218,13 @@ def test_dgcnn_smoke():
 
     preds = model.predict(generator.flow([0, 1, 2]))
     assert preds.shape == (3, (2 + 3 + 4) * 5, 1)
+
+
+def test_save_load(tmpdir):
+    layer_sizes = [16, 8]
+    activations = ["relu", "relu"]
+
+    model = GCNSupervisedGraphClassification(
+        layer_sizes=layer_sizes, activations=activations, generator=generator
+    )
+    test_utils.model_save_load(tmpdir, model)

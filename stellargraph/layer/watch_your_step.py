@@ -36,7 +36,7 @@ class AttentiveWalk(Layer):
         attention_initializer (str or func, optional): The initialiser to use for the attention weights.
         attention_regularizer (str or func, optional): The regulariser to use for the attention weights.
         attention_constraint (str or func, optional): The constraint to use for the attention weights.
-        input_dim (tuple of ints, optional): The shape of the input to the layer.
+        input_dim (tuple of int, optional): The shape of the input to the layer.
     """
 
     def __init__(
@@ -113,6 +113,14 @@ class WatchYourStep:
 
     This model requires specification of the number of random walks starting from each node, and the embedding dimension
     to use for the node embeddings.
+
+    .. seealso::
+
+       Example using Watch Your Step: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`__
+
+       Appropriate data generator: :class:`.AdjacencyPowerGenerator`.
+
+       Appropriate loss function: :func:`.graph_log_likelihood`.
 
     Args:
         generator (AdjacencyPowerGenerator): the generator

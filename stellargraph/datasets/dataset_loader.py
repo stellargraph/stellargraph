@@ -88,7 +88,18 @@ class DatasetLoader:
             raise ValueError(
                 "DatasetLoader docs are automatically generated and should be empty"
             )
-        cls.__doc__ = f"{cls.description}\n\nFurther details at: {cls.source}"
+        cls.__doc__ = f"""\
+{cls.description}
+
+.. seealso::
+
+   For more information about loading data for graph machine learning:
+
+   - :class:`.StellarGraph`
+   - `Examples of loading data <https://stellargraph.readthedocs.io/en/stable/demos/basics/index.html>`__
+
+   The source of this dataset: {cls.source}\
+"""
 
         super().__init_subclass__(**kwargs)  # type: ignore
 

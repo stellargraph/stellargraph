@@ -52,7 +52,7 @@ class SqueezedSparseConversion(Layer):
         # Check backend
         if K.backend() != "tensorflow":
             raise RuntimeError(
-                "SqueezedSparseConversion only supports the Tensorflow backend"
+                "SqueezedSparseConversion only supports the TensorFlow backend"
             )
 
     def get_config(self):
@@ -64,7 +64,7 @@ class SqueezedSparseConversion(Layer):
 
     def call(self, inputs):
         """
-        Creates a Tensorflow `SparseTensor` from the inputs
+        Creates a TensorFlow `SparseTensor` from the inputs
 
         Args:
             inputs (list): Two input tensors contining
@@ -73,7 +73,7 @@ class SqueezedSparseConversion(Layer):
                 where E is the number of non-zero entries in the matrix.
 
         Returns:
-            Tensorflow SparseTensor that represents the converted sparse matrix.
+            TensorFlow SparseTensor that represents the converted sparse matrix.
         """
         # Here we squeeze the specified axis
         if self.axis is not None:

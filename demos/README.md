@@ -30,7 +30,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><span title='Graph Convolutional Network (GCN)'>GCN</span></td>
     <td>see RGCN</td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td>see T-GCN</td>
     <td>yes</td>
     <td><a href='node-classification/gcn-node-classification.ipynb'>demo</a></td>
@@ -39,19 +39,19 @@ These demos are displayed with detailed descriptions in the documentation: https
       <span title='UnsupervisedSampler'>US</span>
       <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td>see Cluster-GCN</td>
+    <td>via Cluster-GCN</td>
     <td><a href='graph-classification/gcn-supervised-graph-classification.ipynb'>demo</a></td>
   </tr>
   <tr>
     <td>Cluster-GCN</td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/cluster-gcn-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
-    <td></td>
+    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span></td>
     <td>yes</td>
     <td></td>
   </tr>
@@ -59,12 +59,12 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><span title='Relational GCN (RGCN)'>RGCN</span></td>
     <td><span title='multiple edges types'>yes, edges</span></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/rgcn-node-classification.ipynb'>demo</a></td>
     <td>yes</td>
-    <td></td>
+    <td><span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span></td>
     <td></td>
     <td></td>
   </tr>
@@ -85,7 +85,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><span title='Graph ATtention Network (GAT)'>GAT</span></td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/gat-node-classification.ipynb'>demo</a></td>
@@ -94,14 +94,14 @@ These demos are displayed with detailed descriptions in the documentation: https
       <span title='UnsupervisedSampler'>US</span>
       <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td></td>
+    <td>via Cluster-GCN</td>
     <td></td>
   </tr>
   <tr>
     <td><span title='Simplified Graph Convolution (SGC)'>SGC</span></td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/sgc-node-classification.ipynb'>demo</a></td>
@@ -114,7 +114,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><span title='Personalized Propagation of Neural Predictions (PPNP)'>PPNP</span></td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/ppnp-node-classification.ipynb'>demo</a></td>
@@ -130,7 +130,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><span title='Approximate PPNP (APPNP)'>APPNP</span></td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/ppnp-node-classification.ipynb'>demo</a></td>
@@ -139,7 +139,7 @@ These demos are displayed with detailed descriptions in the documentation: https
       <span title='UnsupervisedSampler'>US</span>
       <span title='DeepGraphInfomax'><a href='embeddings/deep-graph-infomax-embeddings.ipynb'>DGI</a></span>
     </td>
-    <td></td>
+    <td>via Cluster-GCN</td>
     <td></td>
   </tr>
   <tr>
@@ -165,14 +165,14 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><a href='node-classification/attri2vec-node-classification.ipynb'>demo</a></td>
     <td><a href='link-prediction/attri2vec-link-prediction.ipynb'>demo</a></td>
     <td><a href='embeddings/attri2vec-embeddings.ipynb'>demo</a></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
   </tr>
   <tr>
     <td>GraphSAGE</td>
     <td>see HinSAGE</td>
     <td><a href='node-classification/directed-graphsage-node-classification.ipynb'>demo</a></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td><a href='node-classification/graphsage-node-classification.ipynb'>demo</a></td>
@@ -204,9 +204,16 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><a href='node-classification/node2vec-weighted-node-classification.ipynb'>demo</a></td>
     <td></td>
     <td></td>
-    <td><span title='via embedding vectors'><a href='node-classification/node2vec-node-classification.ipynb'>via unsup.</a></span></td>
+    <td>
+      <span title='via embedding vectors'>via</span>
+      <span title='keras layer'><a href='node-classification/keras-node2vec-node-classification.ipynb'>keras</a></span>
+      <a href='node-classification/node2vec-node-classification.ipynb'>gensim</a>
+    </td>
     <td><span title='via embedding vectors'><a href='link-prediction/node2vec-link-prediction.ipynb'>via unsup.</a></span></td>
-    <td><a href='embeddings/node2vec-embeddings.ipynb'>demo</a></td>
+    <td>
+      <span title='keras layer'><a href='embeddings/keras-node2vec-embeddings.ipynb'>keras</a></span>
+      <a href='embeddings/node2vec-embeddings.ipynb'>gensim</a>
+    </td>
     <td></td>
     <td></td>
   </tr>
@@ -218,7 +225,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'>via unsup.</span></td>
-    <td><span title='via embedding vectors'>via unsup.</span></td>
+    <td><span title='via embedding vectors'><a href='link-prediction/metapath2vec-link-prediction.ipynb'>via unsup.</a></span></td>
     <td><a href='embeddings/metapath2vec-embeddings.ipynb'>demo</a></td>
     <td></td>
     <td></td>
@@ -240,7 +247,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td>Watch Your Step</td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td></td>
     <td><span title='via embedding vectors'><a href='embeddings/watch-your-step-embeddings.ipynb'>via unsup.</a></span></td>
@@ -279,7 +286,7 @@ These demos are displayed with detailed descriptions in the documentation: https
     <td><span title='Deep Graph CNN'>DGCNN</span></td>
     <td></td>
     <td></td>
-    <td></td>
+    <td>yes</td>
     <td></td>
     <td>yes</td>
     <td></td>

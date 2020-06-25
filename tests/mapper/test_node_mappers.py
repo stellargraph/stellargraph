@@ -34,6 +34,7 @@ from ..test_utils.graphs import (
     example_hin_1,
     create_graph_features,
     repeated_features,
+    weighted_tree,
 )
 from .. import test_utils
 
@@ -296,8 +297,9 @@ def test_nodemapper_isolated_nodes():
     n_feat = 4
     n_batch = 2
 
-    # test graph
-    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=20)
+    # test graph (a lot of edges between the 5 non-isolated nodes, to ensure they're a single
+    # connected component)
+    G = example_graph_random(feature_size=n_feat, n_nodes=6, n_isolates=1, n_edges=1000)
 
     # Check connectedness
     Gnx = G.to_networkx()
@@ -351,6 +353,15 @@ def test_nodemapper_incorrect_targets():
         GraphSAGENodeGenerator(G, batch_size=n_batch, num_samples=[0]).flow(
             list(G.nodes()), targets=[]
         )
+
+
+def test_nodemapper_weighted():
+    g, checker = weighted_tree()
+
+    gen = GraphSAGENodeGenerator(g, 7, [10, 6], weighted=True)
+    samples = gen.flow([0] * 10)
+
+    checker(node_id for array in samples[0][0] for node_id in array.ravel())
 
 
 def test_hinnodemapper_constructor():
@@ -736,6 +747,80 @@ def test_attri2vec_nodemapper_2():
         assert all(np.ravel(nf) == expected_node_batches[ii])
 
 
+def test_node2vec_nodemapper_constructor_nx():
+    """
+    Node2VecNodeGenerator requires a StellarGraph object
+    """
+    G = nx.Graph()
+    G.add_nodes_from(range(4))
+
+    with pytest.raises(TypeError):
+        Node2VecNodeGenerator(G, batch_size=2)
+
+
+def test_node2vec_nodemapper_constructor():
+
+    G = example_graph()
+
+    generator = Node2VecNodeGenerator(G, batch_size=2)
+
+    mapper = generator.flow(list(G.nodes()))
+
+    assert generator.batch_size == 2
+    assert mapper.data_size == 4
+    assert len(mapper.ids) == 4
+
+
+def test_node2vec_nodemapper_1():
+
+    n_batch = 2
+
+    # test graph
+    G1 = example_graph()
+
+    mapper1 = Node2VecNodeGenerator(G1, batch_size=n_batch).flow(G1.nodes())
+    assert len(mapper1) == 2
+
+    G2 = example_graph_2()
+
+    mapper2 = Node2VecNodeGenerator(G2, batch_size=n_batch).flow(G2.nodes())
+    assert len(mapper2) == 3
+
+    for mapper in [mapper1, mapper2]:
+        for ii in range(2):
+            nf, nl = mapper[ii]
+            assert nf.shape == (n_batch,)
+            assert nl is None
+
+    # Check beyond the graph lengh
+    with pytest.raises(IndexError):
+        nf, nl = mapper1[len(mapper1)]
+
+    # Check the last batch
+    nf, nl = mapper2[len(mapper2) - 1]
+    assert nf.shape == (1,)
+
+
+def test_node2vec_nodemapper_2():
+
+    n_batch = 2
+
+    G = example_graph_2()
+    nodes = list(G.nodes())
+
+    # With no shuffle
+    mapper = Node2VecNodeGenerator(G, batch_size=n_batch).flow(nodes)
+    expected_node_batches = [
+        G.node_ids_to_ilocs([1, 2]),
+        G.node_ids_to_ilocs([3, 4]),
+        G.node_ids_to_ilocs([5]),
+    ]
+    assert len(mapper) == 3
+    for ii in range(len(mapper)):
+        nf, nl = mapper[ii]
+        assert all(np.ravel(nf) == expected_node_batches[ii])
+
+
 class Test_FullBatchNodeGenerator:
     """
     Tests of FullBatchNodeGenerator class
@@ -796,15 +881,15 @@ class Test_FullBatchNodeGenerator:
             [X, tind, A], y = gen[0]
             A_dense = A[0]
 
-        assert np.allclose(X, gen.features)  # X should be equal to gen.features
+        np.testing.assert_allclose(X, gen.features)  # X should be equal to gen.features
         assert tind.shape[1] == len(node_ids)
 
         if node_targets is not None:
-            assert np.allclose(y, node_targets)
+            np.testing.assert_allclose(y.squeeze(), node_targets)
 
         # Check that the diagonals are one
         if method == "self_loops":
-            assert np.allclose(A_dense.diagonal(), 1)
+            np.testing.assert_allclose(A_dense.diagonal(), 1)
 
         return A_dense, tind, y
 
@@ -813,31 +898,31 @@ class Test_FullBatchNodeGenerator:
         _, tind, y = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="none"
         )
-        assert np.allclose(tind, range(3))
+        np.testing.assert_allclose(tind.squeeze(), range(3))
         _, tind, y = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="none"
         )
-        assert np.allclose(tind, range(3))
+        np.testing.assert_allclose(tind.squeeze(), range(3))
 
         node_ids = list(self.G.nodes())
         _, tind, y = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="none"
         )
-        assert np.allclose(tind, range(len(node_ids)))
+        np.testing.assert_allclose(tind.squeeze(), range(len(node_ids)))
         _, tind, y = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="none"
         )
-        assert np.allclose(tind, range(len(node_ids)))
+        np.testing.assert_allclose(tind.squeeze(), range(len(node_ids)))
 
     def test_generator_flow_withtargets(self):
         node_ids = list(self.G.nodes())[:3]
         node_targets = np.ones((len(node_ids), self.target_dim)) * np.arange(3)[:, None]
         _, tind, y = self.generator_flow(self.G, node_ids, node_targets, sparse=True)
-        assert np.allclose(tind, range(3))
-        assert np.allclose(y, node_targets[:3])
+        np.testing.assert_allclose(tind.squeeze(), range(3))
+        np.testing.assert_allclose(y.squeeze(), node_targets[:3])
         _, tind, y = self.generator_flow(self.G, node_ids, node_targets, sparse=False)
-        assert np.allclose(tind, range(3))
-        assert np.allclose(y, node_targets[:3])
+        np.testing.assert_allclose(tind.squeeze(), range(3))
+        np.testing.assert_allclose(y.squeeze(), node_targets[:3])
 
         node_ids = list(self.G.nodes())[::-1]
         node_targets = (
@@ -845,8 +930,8 @@ class Test_FullBatchNodeGenerator:
             * np.arange(len(node_ids))[:, None]
         )
         _, tind, y = self.generator_flow(self.G, node_ids, node_targets)
-        assert np.allclose(tind, range(len(node_ids))[::-1])
-        assert np.allclose(y, node_targets)
+        np.testing.assert_allclose(tind.squeeze(), range(len(node_ids))[::-1])
+        np.testing.assert_allclose(y.squeeze(), node_targets)
 
     def test_generator_flow_targets_as_list(self):
         generator = FullBatchNodeGenerator(self.G)
@@ -868,7 +953,7 @@ class Test_FullBatchNodeGenerator:
     def test_fullbatch_generator_init_1(self):
         G, feats = create_graph_features()
         generator = FullBatchNodeGenerator(G, method=None)
-        assert np.array_equal(feats, generator.features)
+        np.testing.assert_array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
         G, _ = create_graph_features()
@@ -887,7 +972,7 @@ class Test_FullBatchNodeGenerator:
         assert generator.name == "test"
 
         A = G.to_adjacency_matrix().toarray()
-        assert np.array_equal(A.dot(A), generator.Aadj.toarray())
+        np.testing.assert_array_equal(A.dot(A), generator.Aadj.toarray())
 
     def test_generator_methods(self):
         node_ids = list(self.G.nodes())
@@ -900,48 +985,48 @@ class Test_FullBatchNodeGenerator:
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="none"
         )
-        assert np.allclose(A_dense, Aadj)
+        np.testing.assert_allclose(A_dense, Aadj)
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="none"
         )
-        assert np.allclose(A_dense, Aadj)
+        np.testing.assert_allclose(A_dense, Aadj)
 
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="self_loops"
         )
-        assert np.allclose(A_dense, Aadj_selfloops)
+        np.testing.assert_allclose(A_dense, Aadj_selfloops)
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="self_loops"
         )
-        assert np.allclose(A_dense, Aadj_selfloops)
+        np.testing.assert_allclose(A_dense, Aadj_selfloops)
 
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="gat"
         )
-        assert np.allclose(A_dense, Aadj_selfloops)
+        np.testing.assert_allclose(A_dense, Aadj_selfloops)
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="gat"
         )
-        assert np.allclose(A_dense, Aadj_selfloops)
+        np.testing.assert_allclose(A_dense, Aadj_selfloops)
 
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="gcn"
         )
-        assert np.allclose(A_dense, Agcn)
+        np.testing.assert_allclose(A_dense, Agcn)
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="gcn"
         )
-        assert np.allclose(A_dense, Agcn)
+        np.testing.assert_allclose(A_dense, Agcn)
 
-        # Check other pre-processing options
+        # Check other preprocessing options
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=True, method="sgc", k=2
         )
-        assert np.allclose(A_dense, Agcn.dot(Agcn))
+        np.testing.assert_allclose(A_dense, Agcn.dot(Agcn))
         A_dense, _, _ = self.generator_flow(
             self.G, node_ids, None, sparse=False, method="sgc", k=2
         )
-        assert np.allclose(A_dense, Agcn.dot(Agcn))
+        np.testing.assert_allclose(A_dense, Agcn.dot(Agcn))
 
         A_dense, _, _ = self.generator_flow(
             self.G,
@@ -951,7 +1036,7 @@ class Test_FullBatchNodeGenerator:
             method="ppnp",
             teleport_probability=0.1,
         )
-        assert np.allclose(A_dense, Appnp)
+        np.testing.assert_allclose(A_dense, Appnp)
 
         ppnp_sparse_failed = False
         try:

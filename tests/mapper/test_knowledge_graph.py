@@ -35,6 +35,7 @@ def check_sequence_output(
     source_ilocs=None,
     rel_ilocs=None,
     target_ilocs=None,
+    sample_strategy="uniform",
 ):
     s, r, o = output[0]
     l = output[1] if len(output) == 2 else None
@@ -53,7 +54,14 @@ def check_sequence_output(
     else:
         assert len(l) == expected_length
         assert set(l[:batch_size]) == {1}
-        assert set(l[batch_size:]) == {0}
+
+        negative_labels = l[batch_size:]
+        if sample_strategy == "uniform":
+            assert set(negative_labels) == {0}
+        if sample_strategy == "self-adversarial":
+            for i in range(batch_size):
+                # every batch_size'th element corresponds to the i'th positive example
+                assert set(negative_labels[i::batch_size]) == {-i}
 
         if max_node_iloc is not None:
             assert np.all((0 <= s) & (s <= max_node_iloc))
@@ -98,6 +106,18 @@ def test_kg_triple_generator_errors(knowledge_graph):
     with pytest.raises(ValueError, match="negative_samples: expected.*found -1"):
         gen.flow(triple_df(), negative_samples=-1)
 
+    with pytest.raises(
+        ValueError,
+        match="sample_strategy: expected one of 'uniform', 'self-adversarial', found None",
+    ):
+        gen.flow(triple_df(), sample_strategy=None)
+
+    with pytest.raises(
+        ValueError, match="sample_strategy: expected .* found 'UNIFORM'"
+    ):
+        # case-sensitive
+        gen.flow(triple_df(), sample_strategy="UNIFORM")
+
 
 @pytest.mark.parametrize("negative_samples", [None, 1, 10])
 def test_kg_triple_sequence_batches(negative_samples):
@@ -112,6 +132,7 @@ def test_kg_triple_sequence_batches(negative_samples):
         batch_size=3,
         shuffle=False,
         negative_samples=negative_samples,
+        sample_strategy="uniform",
         seed=None,
     )
     assert len(seq) == 2
@@ -133,6 +154,7 @@ def test_kg_triple_sequence_shuffle(shuffle):
         batch_size=5,
         shuffle=shuffle,
         negative_samples=None,
+        sample_strategy="uniform",
         seed=None,
     )
     assert len(seq) == 1
@@ -150,7 +172,8 @@ def test_kg_triple_sequence_shuffle(shuffle):
     assert all(epoch_sample_equal(first, r) for r in rest) == should_be_equal
 
 
-def test_kg_triple_sequence_negative_samples():
+@pytest.mark.parametrize("sample_strategy", ["uniform", "self-adversarial"])
+def test_kg_triple_sequence_negative_samples(sample_strategy):
     max_node_iloc = 1234567
     negative_sampless = 100
     s = [0, 1]
@@ -164,11 +187,21 @@ def test_kg_triple_sequence_negative_samples():
         batch_size=2,
         shuffle=False,
         negative_samples=negative_sampless,
+        sample_strategy=sample_strategy,
         seed=None,
     )
 
     sample = seq[0]
-    check_sequence_output(sample, 2, negative_sampless, max_node_iloc, s, r, t)
+    check_sequence_output(
+        sample,
+        2,
+        negative_sampless,
+        max_node_iloc,
+        s,
+        r,
+        t,
+        sample_strategy=sample_strategy,
+    )
 
 
 def test_kg_triple_sequence_seed_shuffle_negative_samples():
@@ -181,6 +214,7 @@ def test_kg_triple_sequence_seed_shuffle_negative_samples():
             batch_size=1,
             shuffle=True,
             negative_samples=5,
+            sample_strategy="uniform",
             seed=seed,
         )
 

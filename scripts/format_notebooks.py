@@ -61,7 +61,7 @@ class ClearWarningsPreprocessor(preprocessors.Preprocessor):
                 # Search for tensorflow warning and remove warnings in outputs
                 if "WARNING:tensorflow" in output.get("text", ""):
                     print(
-                        f"Removing Tensorflow warning in code cell {cell.execution_count}"
+                        f"Removing TensorFlow warning in code cell {cell.execution_count}"
                     )
                     output["text"] = self.sub_warn.sub("", output.get("text", ""))
 
@@ -179,7 +179,7 @@ if 'google.colab' in sys.modules:
         return f"https://colab.research.google.com/github/stellargraph/stellargraph/blob/{self.git_branch}/{notebook_path}"
 
     def _binder_badge(self, notebook_path):
-        # html needed to add the target="_parent" so that the links work from Github rendered notebooks
+        # html needed to add the target="_parent" so that the links work from GitHub rendered notebooks
         return f'<a href="{self._binder_url(notebook_path)}" alt="Open In Binder" target="_parent"><img src="https://mybinder.org/badge_logo.svg"/></a>'
 
     def _colab_badge(self, notebook_path):
@@ -298,7 +298,7 @@ RESET = "\033[0m"
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        description="Format and clean Jupyter notebooks by removing Tensorflow warnings "
+        description="Format and clean Jupyter notebooks by removing TensorFlow warnings "
         "and stderr outputs, formatting and numbering the code cells, and setting the kernel. "
         "See the options below to select which of these operations is performed."
     )
@@ -311,7 +311,7 @@ if __name__ == "__main__":
         "-w",
         "--clear_warnings",
         action="store_true",
-        help="Clear Tensorflow  warnings and stderr in output",
+        help="Clear TensorFlow  warnings and stderr in output",
     )
     parser.add_argument(
         "-c",
@@ -531,6 +531,13 @@ if __name__ == "__main__":
                             )
                         )
 
+                        if "GITHUB_ACTIONS" in os.environ:
+                            # special annotations for github actions
+                            print(
+                                f"::error file={file_loc}::Notebook failed format check. Fix by running:%0A"
+                                f"python ./scripts/format_notebooks.py --default --overwrite {file_loc}"
+                            )
+
                 tempdir.cleanup()
 
         if write_html:
@@ -562,14 +569,18 @@ Fix by running:
         print(f"\n{LIGHT_RED_BOLD}Error:{RESET} {message}")
 
         if on_ci:
-            subprocess.run(
-                [
-                    "buildkite-agent",
-                    "annotate",
-                    "--style=error",
-                    "--context=format_notebooks",
-                    message,
-                ]
-            )
+            try:
+                subprocess.run(
+                    [
+                        "buildkite-agent",
+                        "annotate",
+                        "--style=error",
+                        "--context=format_notebooks",
+                        message,
+                    ]
+                )
+            except FileNotFoundError:
+                # no agent, so probably not on buildkite, and so silently continue without an annotation
+                pass
 
         sys.exit(1)

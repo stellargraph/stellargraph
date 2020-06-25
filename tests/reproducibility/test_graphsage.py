@@ -25,8 +25,10 @@ from stellargraph.mapper.sampled_link_generators import GraphSAGELinkGenerator
 from stellargraph.layer.graphsage import GraphSAGE
 from stellargraph.layer.link_inference import link_classification
 from stellargraph.random import set_seed
+from ..test_utils import flaky_xfail_mark
 from ..test_utils.graphs import petersen_graph
 from .fixtures import assert_reproducible
+from .. import require_gpu
 
 
 def unsup_gs_model(num_samples, generator, optimizer, bias, dropout, normalize):
@@ -207,6 +209,7 @@ def gs_link_prediction(
 
 
 @pytest.mark.parametrize("shuffle", [True, False])
+@flaky_xfail_mark(AssertionError, 1115)
 def test_unsupervised(petersen_graph, shuffle):
     assert_reproducible(
         lambda: unsup_gs(
@@ -222,6 +225,8 @@ def test_unsupervised(petersen_graph, shuffle):
 
 
 @pytest.mark.parametrize("shuffle", [True, False])
+@flaky_xfail_mark(AssertionError, 1115)
+@pytest.mark.skipif(require_gpu, reason="tf on GPU is non-deterministic")
 def test_nai(petersen_graph, shuffle):
     target_size = 10
     targets = np.random.rand(len(petersen_graph.nodes()), target_size)
@@ -232,8 +237,8 @@ def test_nai(petersen_graph, shuffle):
     )
 
 
-# FIXME (#970): This test fails intermittently with shuffle=True
-@pytest.mark.parametrize("shuffle", [False])
+@flaky_xfail_mark(AssertionError, [970, 990])
+@pytest.mark.parametrize("shuffle", [True, False])
 def test_link_prediction(petersen_graph, shuffle):
     num_examples = 10
     edge_ids = np.random.choice(petersen_graph.nodes(), size=(num_examples, 2))

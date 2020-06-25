@@ -76,38 +76,38 @@ class Test_RelationalFullBatchNodeGenerator:
             [X, tind, *As], y = gen[0]
             As_dense = As
 
-        assert np.allclose(X, gen.features)  # X should be equal to gen.features
+        np.testing.assert_allclose(X, gen.features)  # X should be equal to gen.features
         assert tind.shape[1] == len(node_ids)
 
         if node_targets is not None:
-            assert np.allclose(y, node_targets)
+            np.testing.assert_allclose(y.squeeze(), node_targets)
 
         return As_dense, tind, y
 
     def test_generator_flow_notargets(self):
         node_ids = list(self.G.nodes())[:3]
         _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=False)
-        assert np.allclose(tind, range(3))
+        np.testing.assert_allclose(tind.squeeze(), range(3))
 
         _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=True)
-        assert np.allclose(tind, range(3))
+        np.testing.assert_allclose(tind.squeeze(), range(3))
 
         node_ids = list(self.G.nodes())
         _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=False)
-        assert np.allclose(tind, range(len(node_ids)))
+        np.testing.assert_allclose(tind.squeeze(), range(len(node_ids)))
 
         _, tind, y = self.generator_flow(self.G, node_ids, None, sparse=True)
-        assert np.allclose(tind, range(len(node_ids)))
+        np.testing.assert_allclose(tind.squeeze(), range(len(node_ids)))
 
     def test_generator_flow_withtargets(self):
         node_ids = list(self.G.nodes())[:3]
         node_targets = np.ones((len(node_ids), self.target_dim)) * np.arange(3)[:, None]
         _, tind, y = self.generator_flow(self.G, node_ids, node_targets, sparse=True)
-        assert np.allclose(tind, range(3))
-        assert np.allclose(y, node_targets[:3])
+        np.testing.assert_allclose(tind.squeeze(), range(3))
+        np.testing.assert_allclose(y.squeeze(), node_targets[:3])
         _, tind, y = self.generator_flow(self.G, node_ids, node_targets, sparse=False)
-        assert np.allclose(tind, range(3))
-        assert np.allclose(y, node_targets[:3])
+        np.testing.assert_allclose(tind.squeeze(), range(3))
+        np.testing.assert_allclose(y.squeeze(), node_targets[:3])
 
         node_ids = list(self.G.nodes())[::-1]
         node_targets = (
@@ -115,8 +115,8 @@ class Test_RelationalFullBatchNodeGenerator:
             * np.arange(len(node_ids))[:, None]
         )
         _, tind, y = self.generator_flow(self.G, node_ids, node_targets)
-        assert np.allclose(tind, range(len(node_ids))[::-1])
-        assert np.allclose(y, node_targets)
+        np.testing.assert_allclose(tind.squeeze(), range(len(node_ids))[::-1])
+        np.testing.assert_allclose(y.squeeze(), node_targets)
 
     def test_generator_flow_targets_as_list(self):
         generator = RelationalFullBatchNodeGenerator(self.G)
@@ -140,7 +140,7 @@ class Test_RelationalFullBatchNodeGenerator:
 
         generator = RelationalFullBatchNodeGenerator(G, name="test")
         assert generator.name == "test"
-        assert np.array_equal(feats, generator.features)
+        np.testing.assert_array_equal(feats, generator.features)
 
     def test_fullbatch_generator_init_3(self):
         G, _ = create_graph_features()
@@ -189,7 +189,17 @@ class Test_RelationalFullBatchNodeGenerator:
 
             As.append(A)
 
-        assert all(
-            np.array_equal(A_1.dot(A_1).todense(), A_2.todense())
-            for A_1, A_2 in zip(As, generator.As)
+        for A_1, A_2 in zip(As, generator.As):
+            np.testing.assert_array_equal(A_1.dot(A_1).todense(), A_2.todense())
+
+    def test_weighted(self):
+        G, _ = create_graph_features(edge_weights=True)
+        generator = RelationalFullBatchNodeGenerator(
+            G, weighted=True, transform=lambda f, A: (f, A)
+        )
+        np.testing.assert_array_equal(
+            generator.As[0].todense(), [[0, 2.0, 0], [2.0, 0, 0.5], [0, 0.5, 0]]
+        )
+        np.testing.assert_array_equal(
+            generator.As[1].todense(), [[0, 0.0, 1.0], [0.0, 0, 0.0], [1.0, 0.0, 0]]
         )

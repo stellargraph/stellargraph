@@ -72,11 +72,10 @@ class RandomWalk(ABC):
         """
         if seed is None:
             # Restore the random state
-            return self._random_state
+            return self._random_state, self._np_random_state
         # seed the random number generator
         require_integer_in_range(seed, "seed", min_val=0)
-        rs, _ = random_state(seed)
-        return rs
+        return random_state(seed)
 
     @staticmethod
     def _validate_walk_params(nodes, n, length):
@@ -154,13 +153,12 @@ class GraphWalk(object):
         """
         if seed is None:
             # Use the class's random state
-            return self._random_state
-        # seed the random number generator
-        rs, _ = random_state(seed)
-        return rs
+            return self._random_state, self._np_random_state
+        # seed the random number generators
+        return random_state(seed)
 
     def neighbors(self, node):
-        return self.graph.neighbors(node, use_ilocs=True)
+        return self.graph.neighbor_arrays(node, use_ilocs=True)
 
     def run(self, *args, **kwargs):
         """
@@ -233,10 +231,48 @@ class GraphWalk(object):
             if type(d) != int or d < 0:
                 self._raise_error(err_msg)
 
+    def _sample_neighbours_untyped(
+        self, neigh_func, py_and_np_rs, cur_node, size, weighted
+    ):
+        """
+        Sample ``size`` neighbours of ``cur_node`` without checking node types or edge types, optionally
+        using edge weights.
+        """
+        if cur_node != -1:
+            neighbours = neigh_func(
+                cur_node, use_ilocs=True, include_edge_weight=weighted
+            )
+
+            if weighted:
+                neighbours, weights = neighbours
+        else:
+            neighbours = []
+
+        if len(neighbours) > 0:
+            if weighted:
+                # sample following the edge weights
+                idx = naive_weighted_choices(py_and_np_rs[1], weights, size=size)
+                if idx is not None:
+                    return neighbours[idx]
+            else:
+                # uniform sample; for small-to-moderate `size`s (< 100 is typical for GraphSAGE), random
+                # has less overhead than np.random
+                return np.array(py_and_np_rs[0].choices(neighbours, k=size))
+
+        # no neighbours (e.g. isolated node, cur_node == -1 or all weights 0), so propagate the -1 sentinel
+        return np.full(size, -1)
+
 
 class UniformRandomWalk(RandomWalk):
     """
     Performs uniform random walks on the given graph
+
+    .. seealso::
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`.BiasedRandomWalk`, :class:`.UniformRandomMetaPathWalk`, :class:`.TemporalRandomWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -269,7 +305,7 @@ class UniformRandomWalk(RandomWalk):
         n = _default_if_none(n, self.n, "n")
         length = _default_if_none(length, self.length, "length")
         self._validate_walk_params(nodes, n, length)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
@@ -280,8 +316,8 @@ class UniformRandomWalk(RandomWalk):
         walk = [start_node]
         current_node = start_node
         for _ in range(length - 1):
-            neighbours = self.graph.neighbors(current_node, use_ilocs=True)
-            if not neighbours:
+            neighbours = self.graph.neighbor_arrays(current_node, use_ilocs=True)
+            if len(neighbours) == 0:
                 # dead end, so stop
                 break
             else:
@@ -292,9 +328,9 @@ class UniformRandomWalk(RandomWalk):
         return list(self.graph.node_ilocs_to_ids(walk))
 
 
-def naive_weighted_choices(rs, weights):
+def naive_weighted_choices(rs, weights, size=None):
     """
-    Select an index at random, weighted by the iterator `weights` of
+    Select indices at random, weighted by the iterator `weights` of
     arbitrary (non-negative) floats. That is, `x` will be returned
     with probability `weights[x]/sum(weights)`.
 
@@ -303,26 +339,14 @@ def naive_weighted_choices(rs, weights):
     requires a lot of preprocessing (normalized probabilties), and
     does a lot of conversions/checks/preprocessing internally.
     """
+    probs = np.cumsum(weights)
+    total = probs[-1]
+    if total == 0:
+        # all weights were zero (probably), so we shouldn't choose anything
+        return None
 
-    # divide the interval [0, sum(weights)) into len(weights)
-    # subintervals [x_i, x_{i+1}), where the width x_{i+1} - x_i ==
-    # weights[i]
-    subinterval_ends = []
-    running_total = 0
-    for w in weights:
-        if w < 0:
-            raise ValueError("Detected negative weight: {}".format(w))
-        running_total += w
-        subinterval_ends.append(running_total)
-
-    # pick a place in the overall interval
-    x = rs.random() * running_total
-
-    # find the subinterval that contains the place, by looking for the
-    # first subinterval where the end is (strictly) after it
-    for idx, end in enumerate(subinterval_ends):
-        if x < end:
-            break
+    thresholds = rs.random() if size is None else rs.random(size)
+    idx = np.searchsorted(probs, thresholds * total, side="left")
 
     return idx
 
@@ -331,6 +355,20 @@ class BiasedRandomWalk(RandomWalk):
     """
     Performs biased second order random walks (like those used in Node2Vec algorithm
     https://snap.stanford.edu/node2vec/) controlled by the values of two parameters p and q.
+
+    .. seealso::
+
+       Examples using this random walk:
+
+       - unsupervised representation learning: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/node2vec-embeddings.html>`__, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/keras-node2vec-embeddings.html>`__
+       - node classification: `Node2Vec using Gensim Word2Vec <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-node-classification.html>`__, `Node2Vec using StellarGraph <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/keras-node2vec-node-classification.html>`__, `Node2Vec with edge weights <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/node2vec-weighted-node-classification.html>`__
+       - link prediction: `Node2Vec <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html>`__, `comparison to CTDNE (TemporalRandomWalk) <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`__, `comparison of algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - :class:`.Node2Vec`, :class:`.Node2VecNodeGenerator` and :class:`.Node2VecLinkGenerator` for training a Node2Vec using only StellarGraph
+       - Other random walks: :class:`.UniformRandomWalk`, :class:`.UniformRandomMetaPathWalk`, :class:`.TemporalRandomWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -364,12 +402,15 @@ class BiasedRandomWalk(RandomWalk):
             return
 
         # Check that all edge weights are greater than or equal to 0.
-        edges, weights = self.graph.edges(include_edge_weight=True, use_ilocs=True)
+        source, target, _, weights = self.graph.edge_arrays(
+            include_edge_weight=True, use_ilocs=True
+        )
         (invalid,) = np.where((weights < 0) | ~np.isfinite(weights))
         if len(invalid) > 0:
 
             def format(idx):
-                s, t = edges[idx]
+                s = source[idx]
+                t = target[idx]
                 w = weights[idx]
                 return f"{s!r} to {t!r} (weight = {w})"
 
@@ -407,37 +448,26 @@ class BiasedRandomWalk(RandomWalk):
         weighted = _default_if_none(weighted, self.weighted, "weighted")
         self._validate_walk_params(nodes, n, length)
         self._check_weights(p, q, weighted)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
         if weighted:
             self._check_weights_valid()
 
-            # calculate the appropriate unnormalised transition probability, given the history of
-            # the walk
-            def transition_probability(nn):
-                nn, weight = nn
+        weight_dtype = self.graph._edges.weights.dtype
+        cast_func = np.cast[weight_dtype]
+        ip = cast_func(1.0 / p)
+        iq = cast_func(1.0 / q)
 
-                if nn == previous_node:  # d_tx = 0
-                    return ip * weight
-                elif any(nn == pn for pn, _ in previous_node_neighbours):  # d_tx = 1
-                    return weight
-                else:  # d_tx = 2
-                    return iq * weight
-
-        else:
-            # without weights
-            def transition_probability(nn):
-                if nn == previous_node:  ## d_tx = 0
-                    return ip
-                elif nn in previous_node_neighbours:  # d_tx = 1
-                    return 1.0
-                else:  # d_tx = 2
-                    return iq
-
-        ip = 1.0 / p
-        iq = 1.0 / q
+        if np.isinf(ip):
+            raise ValueError(
+                f"p: value ({p}) is too small. It must be possible to represent 1/p in {weight_dtype}, but this value overflows to infinity."
+            )
+        if np.isinf(iq):
+            raise ValueError(
+                f"q: value ({q}) is too small. It must be possible to represent 1/q in {weight_dtype}, but this value overflows to infinity."
+            )
 
         walks = []
         for node in nodes:  # iterate over root nodes
@@ -451,24 +481,32 @@ class BiasedRandomWalk(RandomWalk):
                 current_node = node
 
                 for _ in range(length - 1):
-                    neighbours = self.graph.neighbors(
-                        current_node, use_ilocs=True, include_edge_weight=weighted
-                    )
-
-                    if not neighbours:
-                        break
-
                     # select one of the neighbours using the
                     # appropriate transition probabilities
-                    choice = naive_weighted_choices(
-                        rs, (transition_probability(nn) for nn in neighbours),
-                    )
+                    if weighted:
+                        neighbours, weights = self.graph.neighbor_arrays(
+                            current_node, include_edge_weight=True, use_ilocs=True
+                        )
+                    else:
+                        neighbours = self.graph.neighbor_arrays(
+                            current_node, use_ilocs=True
+                        )
+                        weights = np.ones(neighbours.shape, dtype=weight_dtype)
+                    if len(neighbours) == 0:
+                        break
+
+                    mask = neighbours == previous_node
+                    weights[mask] *= ip
+                    mask |= np.isin(neighbours, previous_node_neighbours)
+                    weights[~mask] *= iq
+
+                    choice = naive_weighted_choices(rs, weights)
+                    if choice is None:
+                        break
 
                     previous_node = current_node
                     previous_node_neighbours = neighbours
                     current_node = neighbours[choice]
-                    if weighted:
-                        current_node = current_node.node
 
                     walk.append(current_node)
 
@@ -500,6 +538,19 @@ class UniformRandomMetaPathWalk(RandomWalk):
     """
     For heterogeneous graphs, it performs uniform random walks based on given metapaths. Optional
     parameters default to using the values passed in during construction.
+
+    .. seealso::
+
+       Examples using this random walk:
+
+       - `Metapath2Vec link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html>`__
+       - `Metapath2Vec unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/metapath2vec-embeddings.html>`__
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.TemporalRandomWalk`.
+
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -541,7 +592,7 @@ class UniformRandomMetaPathWalk(RandomWalk):
         metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
         self._validate_walk_params(nodes, n, length)
         self._check_metapath_values(metapaths)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         nodes = self.graph.node_ids_to_ilocs(nodes)
 
@@ -572,14 +623,19 @@ class UniformRandomMetaPathWalk(RandomWalk):
                     for d in range(length):
                         walk.append(current_node)
                         # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
-                        neighbours = self.graph.neighbors(current_node, use_ilocs=True)
+                        neighbours = self.graph.neighbor_arrays(
+                            current_node, use_ilocs=True
+                        )
                         # filter these by node type
+                        neighbour_types = self.graph.node_type(
+                            neighbours, use_ilocs=True
+                        )
                         neighbours = [
-                            n_node
-                            for n_node in neighbours
-                            if self.graph.node_type(n_node, use_ilocs=True)
-                            == metapath[d]
+                            neigh
+                            for neigh, neigh_type in zip(neighbours, neighbour_types)
+                            if neigh_type == metapath[d]
                         ]
+
                         if len(neighbours) == 0:
                             # if no neighbours of the required type as dictated by the metapath exist, then stop.
                             break
@@ -631,7 +687,7 @@ class SampledBreadthFirstWalk(GraphWalk):
     It can be used to extract a random sub-graph starting from a set of initial nodes.
     """
 
-    def run(self, nodes, n_size, n=1, seed=None):
+    def run(self, nodes, n_size, n=1, seed=None, weighted=False):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
 
@@ -644,13 +700,14 @@ class SampledBreadthFirstWalk(GraphWalk):
                 number of neighbours requested.
             n (int): Number of walks per node id.
             seed (int, optional): Random number generator seed; Default is None.
+            weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
 
         Returns:
             A list of lists such that each list element is a sequence of ids corresponding to a BFW.
         """
         self._check_sizes(n_size)
         self._check_common_parameters(nodes, n, len(n_size), seed)
-        rs = self._get_random_state(seed)
+        py_and_np_rs = self._get_random_state(seed)
 
         walks = []
         max_hops = len(n_size)  # depth of search
@@ -673,16 +730,13 @@ class SampledBreadthFirstWalk(GraphWalk):
                     if depth > max_hops:
                         continue
 
-                    neighbours = (
-                        self.neighbors(cur_node) if cur_node is not None else []
+                    neighbours = self._sample_neighbours_untyped(
+                        self.graph.neighbor_arrays,
+                        py_and_np_rs,
+                        cur_node,
+                        n_size[cur_depth],
+                        weighted,
                     )
-                    if len(neighbours) == 0:
-                        # Either node is unconnected or is in directed graph with no out-nodes.
-                        _size = n_size[cur_depth]
-                        neighbours = [-1] * _size
-                    else:
-                        # sample with replacement
-                        neighbours = rs.choices(neighbours, k=n_size[cur_depth])
 
                     # add them to the back of the queue
                     q.extend((sampled_node, depth) for sampled_node in neighbours)
@@ -717,7 +771,7 @@ class SampledHeterogeneousBreadthFirstWalk(GraphWalk):
         """
         self._check_sizes(n_size)
         self._check_common_parameters(nodes, n, len(n_size), seed)
-        rs = self._get_random_state(seed)
+        rs, _ = self._get_random_state(seed)
 
         adj = self.get_adjacency_types()
 
@@ -786,7 +840,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         if not graph.is_directed():
             self._raise_error("Graph must be directed")
 
-    def run(self, nodes, in_size, out_size, n=1, seed=None):
+    def run(self, nodes, in_size, out_size, n=1, seed=None, weighted=False):
         """
         Performs a sampled breadth-first walk starting from the root nodes.
 
@@ -797,6 +851,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
             out_size (int): The number of out-directed nodes to sample with replacement at each depth of the walk.
             n (int, default 1): Number of walks per node id.
             seed (int, optional): Random number generator seed; default is None
+            weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
 
 
         Returns:
@@ -816,7 +871,7 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         """
         self._check_neighbourhood_sizes(in_size, out_size)
         self._check_common_parameters(nodes, n, len(in_size), seed)
-        rs = self._get_random_state(seed)
+        py_and_np_rs = self._get_random_state(seed)
 
         max_hops = len(in_size)
         # A binary tree is a graph of nodes; however, we wish to avoid overusing the term 'node'.
@@ -847,8 +902,12 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
                     if depth > max_hops:
                         continue
                     # get in-nodes
-                    neighbours = self._sample_neighbours(
-                        rs, cur_node, 0, in_size[cur_depth]
+                    neighbours = self._sample_neighbours_untyped(
+                        self.graph.in_node_arrays,
+                        py_and_np_rs,
+                        cur_node,
+                        in_size[cur_depth],
+                        weighted,
                     )
                     # add them to the back of the queue
                     slot = 2 * cur_slot + 1
@@ -856,8 +915,12 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
                         [(sampled_node, depth, slot) for sampled_node in neighbours]
                     )
                     # get out-nodes
-                    neighbours = self._sample_neighbours(
-                        rs, cur_node, 1, out_size[cur_depth]
+                    neighbours = self._sample_neighbours_untyped(
+                        self.graph.out_node_arrays,
+                        py_and_np_rs,
+                        cur_node,
+                        out_size[cur_depth],
+                        weighted,
                     )
                     # add them to the back of the queue
                     slot = slot + 1
@@ -869,37 +932,6 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
                 samples.append(sample)
 
         return samples
-
-    def _sample_neighbours(self, rs, node, idx, size):
-        """
-        Samples (with replacement) the specified number of nodes
-        from the directed neighbourhood of the given starting node.
-        If the neighbourhood is empty, then the result will contain
-        only None values.
-        Args:
-            rs: The random state used for sampling.
-            node: The starting node.
-            idx: <int> The index specifying the direction of the
-                neighbourhood to be sampled: 0 => in-nodes;
-                1 => out-nodes.
-            size: <int> The number of nodes to sample.
-        Returns:
-            The fixed-length list of neighbouring nodes (or None values
-            if the neighbourhood is empty).
-        """
-        if node is None:
-            # Non-node, e.g. previously sampled from empty neighbourhood
-            return [-1] * size
-        neighbours = list(
-            self.graph.in_nodes(node, use_ilocs=True)
-            if idx == 0
-            else self.graph.out_nodes(node, use_ilocs=True)
-        )
-        if len(neighbours) == 0:
-            # Sampling from empty neighbourhood
-            return [-1] * size
-        # Sample with replacement
-        return rs.choices(neighbours, k=size)
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
@@ -925,6 +957,12 @@ class TemporalRandomWalk(GraphWalk):
     Performs temporal random walks on the given graph. The graph should contain numerical edge
     weights that correspond to the time at which the edge was created. Exact units are not relevant
     for the algorithm, only the relative differences (e.g. seconds, days, etc).
+
+    .. seealso::
+
+       Example using this random walk: `link prediction with CTDNE <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/ctdne-link-prediction.html>`__
+
+       Related functionality: other random walks: :class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.UniformRandomMetaPathWalk`.
 
     Args:
         graph (StellarGraph): Graph to traverse
@@ -1047,11 +1085,11 @@ class TemporalRandomWalk(GraphWalk):
                 f"max_walk_length: maximum walk length should not be less than the context window size, found {max_walk_length}"
             )
 
-        np_rs = self._np_random_state if seed is None else np.random.RandomState(seed)
+        _, np_rs = self._get_random_state(seed)
         walks = []
         num_cw_curr = 0
 
-        edges, times = self.graph.edges(include_edge_weight=True)
+        sources, targets, _, times = self.graph.edge_arrays(include_edge_weight=True)
         edge_biases = self._temporal_biases(
             times, None, bias_type=initial_edge_bias, is_forward=False,
         )
@@ -1068,8 +1106,9 @@ class TemporalRandomWalk(GraphWalk):
 
         # loop runs until we have enough context windows in total
         while num_cw_curr < num_cw:
-            first_edge_index = self._sample(len(edges), edge_biases, np_rs)
-            src, dst = edges[first_edge_index]
+            first_edge_index = self._sample(len(times), edge_biases, np_rs)
+            src = sources[first_edge_index]
+            dst = targets[first_edge_index]
             t = times[first_edge_index]
 
             remaining_length = num_cw - num_cw_curr + cw_size - 1
@@ -1122,18 +1161,17 @@ class TemporalRandomWalk(GraphWalk):
         Perform 1 temporal step from a node. Returns None if a dead-end is reached.
 
         """
+        neighbours, times = self.graph.neighbor_arrays(node, include_edge_weight=True)
+        neighbours = neighbours[times > time]
+        times = times[times > time]
 
-        neighbours = [
-            (neighbour, t)
-            for neighbour, t in self.graph.neighbors(node, include_edge_weight=True)
-            if t > time
-        ]
-
-        if neighbours:
-            times = [t for _, t in neighbours]
+        if len(neighbours) > 0:
             biases = self._temporal_biases(times, time, bias_type, is_forward=True)
             chosen_neighbour_index = self._sample(len(neighbours), biases, np_rs)
-            next_node, next_time = neighbours[chosen_neighbour_index]
+            assert chosen_neighbour_index is not None, "biases should never be all zero"
+
+            next_node = neighbours[chosen_neighbour_index]
+            next_time = times[chosen_neighbour_index]
             return next_node, next_time
         else:
             return None
