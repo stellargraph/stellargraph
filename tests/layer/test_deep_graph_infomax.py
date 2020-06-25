@@ -168,7 +168,7 @@ def test_dgi_deprecated_no_generator():
         )
 
 
-@pytest.mark.parametrize("model_type", [GCN, GraphSAGE, HinSAGE])
+@pytest.mark.parametrize("model_type", [GCN, GraphSAGE])
 def test_dgi_save_load(tmpdir, model_type):
     base_generator, base_model, nodes = _model_data(model_type, sparse=False)
     corrupted_generator = CorruptedGenerator(base_generator)

@@ -1,12 +1,12 @@
 recommonmark==0.6.0
-sphinx-markdown-tables==0.0.12
-nbsphinx==0.6.1
+sphinx-markdown-tables==0.0.15
+nbsphinx==0.7.1
 nbsphinx-link==1.3.0
 # needed for Pygments highlighting in notebooks
 ipython==7.13.0
 
 sphinx-notfound-page==0.4
-sphinxcontrib-spelling==5.1.0
+sphinxcontrib-spelling==5.1.2
 
 # dependencies used by RtD, fixed here so that our CI and RtD use the same (newer) versions.
 # https://github.com/readthedocs/readthedocs.org/blob/35b5ca286dff9d3fbcfdf1351e570375cd0c2bd3/readthedocs/doc_builder/python_environments.py#L335-L365
@@ -17,6 +17,6 @@ mock==4.0.2
 pillow==7.1.2
 alabaster==0.7.12
 commonmark==0.9.1
-sphinx==3.0.3
-sphinx-rtd-theme==0.4.3
-readthedocs-sphinx-ext==1.0.3
+sphinx==3.1.1
+sphinx-rtd-theme==0.5.0
+readthedocs-sphinx-ext==2.0.0

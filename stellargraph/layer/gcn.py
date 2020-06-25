@@ -50,11 +50,13 @@ class GraphConvolution(Layer):
       - This class assumes that the normalized Laplacian matrix is passed as
         input to the Keras methods.
 
+    .. seealso:: :class:`.GCN` combines several of these layers.
+
     Args:
         units (int): dimensionality of output feature vectors
         activation (str or func): nonlinear activation applied to layer's output to obtain output features
         use_bias (bool): toggles an optional bias
-        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`GatherIndices`
+        final_layer (bool): Deprecated, use ``tf.gather`` or :class:`.GatherIndices`
         kernel_initializer (str or func, optional): The initialiser to use for the weights.
         kernel_regularizer (str or func, optional): The regulariser to use for the weights.
         kernel_constraint (str or func, optional): The constraint to use for the weights.
@@ -228,19 +230,20 @@ class GCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using either the :class:`FullBatchNodeGenerator` class for node inference
-    or the :class:`FullBatchLinkGenerator` class for link inference.
+    should be supplied using:
+
+    - the :class:`.FullBatchNodeGenerator` class for node inference
+    - the :class:`.ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`.FullBatchLinkGenerator` class for link inference
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the ``method='gcn'`` argument.
 
     Note that currently the GCN class is compatible with both sparse and dense adjacency
-    matrices and the :class:`FullBatchNodeGenerator` will default to sparse.
-
-    For more details, please see `the GCN demo notebook <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`_
+    matrices and the :class:`.FullBatchNodeGenerator` will default to sparse.
 
     Example:
-        Creating a GCN node classification model from an existing :class:`StellarGraph`
+        Creating a GCN node classification model from an existing :class:`.StellarGraph`
         object ``G``::
 
             generator = FullBatchNodeGenerator(G, method="gcn")
@@ -254,16 +257,42 @@ class GCN:
 
     Notes:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
-        :class:`FullBatchNodeGenerator` object.
+        :class:`.FullBatchNodeGenerator` object.
 
       - This assumes that the normalized Laplacian matrix is provided as input to
-        Keras methods. When using the :class:`FullBatchNodeGenerator` specify the
+        Keras methods. When using the :class:`.FullBatchNodeGenerator` specify the
         ``method='gcn'`` argument to do this preprocessing.
 
-      - The nodes provided to the :class:`FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :class:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
+
+    .. seealso::
+
+       Examples using GCN:
+
+       - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__
+       - `node classification trained with Cluster-GCN <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`__
+       - `node classification with Neo4j and Cluster-GCN <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`__
+       - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
+       - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
+       - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
+       - interpreting GCN predictions: `dense <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-node-link-importance.html>`__, `sparse <https://stellargraph.readthedocs.io/en/stable/demos/interpretability/gcn-sparse-node-link-importance.html>`__
+       - `ensemble model for node classification <https://stellargraph.readthedocs.io/en/stable/demos/ensembles/ensemble-node-classification-example.html>`__
+       - `comparison of link prediction algorithms <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html>`__
+
+       Appropriate data generators: :class:`.FullBatchNodeGenerator`, :class:`.FullBatchLinkGenerator`, :class:`.ClusterNodeGenerator`.
+
+       Related models:
+
+       - Other full-batch models: see the documentation of :class:`.FullBatchNodeGenerator` for a full list
+       - :class:`.RGCN` for a generalisation to multiple edge types
+       - :class:`.GCNSupervisedGraphClassification` for graph classification by pooling the output of GCN
+       - :class:`.GCN_LSTM` for time-series and sequence prediction, incorporating the graph structure via GCN
+       - :class:`.DeepGraphInfomax` for unsupervised training
+
+       :class:`.GraphConvolution` is the base layer out of which a GCN model is built.
 
     Args:
         layer_sizes (list of int): Output sizes of GCN layers in the stack.
@@ -278,6 +307,7 @@ class GCN:
         bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
         bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        squeeze_output_batch (bool, optional): if True, remove the batch dimension when the batch size is 1. If False, leave the batch dimension.
     """
 
     def __init__(
@@ -293,6 +323,7 @@ class GCN:
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
+        squeeze_output_batch=True,
     ):
         if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
             raise TypeError(
@@ -305,6 +336,7 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
+        self.squeeze_output_batch = squeeze_output_batch
 
         # Copy required information from generator
         self.method = generator.method
@@ -447,7 +479,7 @@ class GCN:
         x_out = self(x_inp)
 
         # Flatten output by removing singleton batch dimension
-        if x_out.shape[0] == 1:
+        if self.squeeze_output_batch and x_out.shape[0] == 1:
             self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
         else:
             self.x_out_flat = x_out

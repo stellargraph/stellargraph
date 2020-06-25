@@ -28,34 +28,42 @@ class AdjacencyPowerGenerator(Generator):
     A data generator for use with the Watch Your Step algorithm [1]. It calculates and returns the first ``num_powers``
     of the adjacency matrix row by row.
 
+    .. seealso::
+
+       Model using this generator: :class:`.WatchYourStep`.
+
+       Example using this generator: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/watch-your-step-embeddings.html>`__
+
     Args:
         G (StellarGraph): a machine-learning StellarGraph-type graph
         num_powers (int): the number of adjacency powers to calculate. Defaults
             to 10 as this value was found to perform well by the authors of the paper.
+        weighted (bool, optional): if True, use the edge weights from ``G``; if False, treat the
+            graph as unweighted.
 
     """
 
-    def __init__(self, G, num_powers=10):
+    def __init__(self, G, num_powers=10, weighted=False):
 
         if not isinstance(G, StellarGraph):
             raise TypeError("G must be a StellarGraph object.")
 
         require_integer_in_range(num_powers, "num_powers", min_val=1)
 
-        Aadj = G.to_adjacency_matrix().tocoo()
-        indices = np.column_stack((Aadj.col, Aadj.row))
+        Aadj = G.to_adjacency_matrix(weighted=weighted)
 
-        self.Aadj_T = tf.sparse.SparseTensor(
-            indices=indices,
-            values=Aadj.data.astype(np.float32),
-            dense_shape=Aadj.shape,
-        )
+        def tfify(matrix):
+            matrix = matrix.tocoo(copy=False)
+            return tf.sparse.SparseTensor(
+                # construct the transpose
+                indices=np.column_stack([matrix.col, matrix.row]),
+                values=matrix.data.astype(np.float32),
+                dense_shape=matrix.shape,
+            )
 
-        self.transition_matrix_T = tf.sparse.SparseTensor(
-            indices=indices,
-            values=normalize_adj(Aadj, symmetric=False).data.astype(np.float32),
-            dense_shape=Aadj.shape,
-        )
+        self.Aadj_T = tfify(Aadj)
+
+        self.transition_matrix_T = tfify(normalize_adj(Aadj, symmetric=False))
 
         self.num_powers = num_powers
 

@@ -117,7 +117,8 @@ def test_RelationalGraphConvolution_sparse():
     As = [A.tocoo() for A in get_As(G)]
 
     A_indices = [
-        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0)
+        for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
@@ -185,7 +186,8 @@ def test_RGCN_apply_sparse():
     As = get_As(G)
     As = [A.tocoo() for A in As]
     A_indices = [
-        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0)
+        for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
@@ -239,7 +241,8 @@ def test_RGCN_apply_sparse_directed():
     As = [A.tocoo() for A in As]
 
     A_indices = [
-        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])), 0) for A in As
+        np.expand_dims(np.hstack((A.row[:, None], A.col[:, None])).astype(np.int64), 0)
+        for A in As
     ]
     A_values = [np.expand_dims(A.data, 0) for A in As]
 
