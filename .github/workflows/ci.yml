@@ -458,7 +458,5 @@ jobs:
         working-directory: ./docs
 
       - name: Checking spelling
-        run: |
-          exit_code=0
-          make spelling SPHINXOPTS=$sphinx_opts
+        run: make spelling SPHINXOPTS=$sphinx_opts
         working-directory: ./docs
