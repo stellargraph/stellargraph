@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
 import numpy as np
 from stellargraph.layer.rgcn import RelationalGraphConvolution, RGCN
 from stellargraph.mapper.full_batch_generators import RelationalFullBatchNodeGenerator
@@ -79,6 +80,7 @@ def test_RelationalGraphConvolution_init():
     assert rgcn_layer.get_config()["activation"] == "relu"
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_RelationalGraphConvolution_sparse():
     G, features = create_graph_features()
     n_edge_types = len(G.edge_types)
@@ -176,6 +178,7 @@ def test_RGCN_init():
     assert rgcnModel.num_bases == 10
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_RGCN_apply_sparse():
     G, features = create_graph_features(is_directed=True)
 
@@ -228,6 +231,7 @@ def test_RGCN_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_RGCN_apply_sparse_directed():
     G, features = create_graph_features(is_directed=True)
 

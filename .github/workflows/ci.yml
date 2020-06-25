@@ -1,5 +1,6 @@
 ---
-name: Continuous Integration
+# Continuous Integration is too long for the GitHub view
+name: CI
 
 "on":
   push:
@@ -9,11 +10,15 @@ name: Continuous Integration
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      JUNIT_NAME: pytest-results-${{ matrix.python-version }}-${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v2
@@ -36,6 +41,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[test,demos]
 
+      - name: List dependency versions
+        run: "pip freeze"
+
       - name: Run pytest tests
         run: |
           # benchmarks on shared infrastructure like the CI machines are usually unreliable (high
@@ -43,14 +51,16 @@ jobs:
           # just runs them once (as a test)
           py.test -ra tests/ --doctest-modules \
               --cov=stellargraph --cov-report=xml \
-              -p no:cacheprovider --junitxml="pytest-results-${{ matrix.python-version }}.xml" \
+              -p no:cacheprovider --junitxml="${{ env.JUNIT_NAME }}.xml" \
               --benchmark-disable
+        # explicitly use bash on windows, for consistent command parsing
+        shell: bash
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@v1
         with:
-          name: pytest-results-${{ matrix.python-version }}
-          path: pytest-results-${{ matrix.python-version }}.xml
+          name: ${{ env.JUNIT_NAME }}
+          path: ${{ env.JUNIT_NAME }}.xml
         if: ${{ always() }}
 
       - name: Upload coverage to Codecov
@@ -62,6 +72,10 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      # Each notebook is mostly independent, unlike testing on (for instance) different Python
+      # versions
+      fail-fast: false
+
       matrix:
         # MARKER: list of all notebooks
         notebook:
@@ -164,6 +178,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[test,demos]
 
+      - name: List dependency versions
+        run: "pip freeze"
+
       - name: Run notebook
         id: run_notebook
         run: scripts/ci/run_notebook.sh ${{ matrix.notebook }}
@@ -183,6 +200,107 @@ jobs:
       - name: Run check
         run: python3 scripts/ci/ci_workflow_notebook_list.py
 
+  neo4j-notebooks:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        neo4j_version: ["3.5", "4.0"]
+
+    env:
+      STELLARGRAPH_NEO4J_HOST: localhost
+      PYTHON_VERSION: 3.6
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Start Neo4j
+        run: |
+          docker-compose -f scripts/ci/actions-docker-compose.yml --project-directory . \
+            up --detach neo4j
+        env:
+          NEO4J_VERSION: ${{ matrix.neo4j_version }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Restore cache
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-${{ hashFiles('setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.PYTHON_VERSION }}-pip-neo4j-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[test,neo4j]
+
+      - name: List dependency versions
+        run: "pip freeze"
+
+      # Run each Neo4j notebook, and upload it as an artifact
+
+      - name: Run loading-saving-neo4j.ipynb
+        run: "scripts/ci/run_notebook.sh demos/basics/loading-saving-neo4j.ipynb"
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: loading-saving-neo4j.ipynb
+          path: "demos/basics/loading-saving-neo4j.ipynb"
+
+      - name: Run load-cora-into-neo4j.ipynb
+        run: "scripts/ci/run_notebook.sh demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: load-cora-into-neo4j.ipynb
+          path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
+
+      - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
+        run: |
+          scripts/ci/run_notebook.sh \
+            demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: directed-graphsage-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
+
+      - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
+        run: |
+          scripts/ci/run_notebook.sh \
+            demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: undirected-graphsage-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
+
+      - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
+        run: |
+          scripts/ci/run_notebook.sh demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb
+      - name: Upload notebook
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cluster-gcn-on-cora-neo4j-example.ipynb
+          path: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
+
+      # Clean up
+
+      - name: Stop Neo4j
+        run: |
+          docker-compose -f scripts/ci/actions-docker-compose.yml --project-directory . down
+        if: always()
+
   black:
     name: "Format Python"
     runs-on: ubuntu-latest
@@ -195,7 +313,12 @@ jobs:
           echo ::add-path::$HOME/.local/bin
       - name: Check formatting
         run: |
-          black --check --diff .
+          if ! black --check --diff . ; then
+              msg="file formatting does not match $(black --version); fix using \`black .\`"
+              # convert the black output to syntax understood by GitHub Actions
+              black --check . 2>&1 | sed "s/would reformat \(.*\)/::error file=\1::$msg/"
+              exit 1
+          fi
 
   check-linters:
     runs-on: ubuntu-latest
@@ -211,3 +334,81 @@ jobs:
         with:
           github_token: ${{ github.token }}
           filter_mode: file
+
+  copyright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check that files have copyright headers
+        run: scripts/ci/check-copyright-headers.sh
+
+  whitespace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Check whitespace
+        run: scripts/whitespace.sh --github-ci
+
+  conda:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: s-weigand/setup-conda@v1
+
+      - name: Install conda build tools
+        run: |
+          conda install conda-build
+          conda install conda-verify
+
+      - name: Conda build StellarGraph
+        run: conda build . --no-anaconda-upload
+
+      - name: Get conda package details
+        id: get_package
+        run: |
+          package_path=$(conda build . --output)
+          package_name=$(basename $package_path)
+          echo "::set-output name=package_path::${package_path}"
+          echo "::set-output name=package_name::${package_name}"
+
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.get_package.outputs.package_name }}
+          path: ${{ steps.get_package.outputs.package_path }}
+
+  check-notebook-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install requirements
+        run: |
+          pip install --upgrade pip
+          pip install nbconvert nbformat black==19.10b0
+
+      - name: Run check
+        run: python scripts/format_notebooks.py --default --ci demos/
+
+  check-notebook-text:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install requirements
+        run: |
+          pip install --upgrade pip
+          pip install nbformat commonmark
+
+      - name: Run check
+        run: python scripts/notebook_text_checker.py demos/

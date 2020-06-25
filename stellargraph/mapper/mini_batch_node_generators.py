@@ -35,7 +35,7 @@ from .base import Generator
 
 class ClusterNodeGenerator(Generator):
     """
-    A data generator for use with ClusterGCN models on homogeneous graphs, see [1].
+    A data generator for use with GCN, GAT and APPNP models on homogeneous graphs, see [1].
 
     The supplied graph G should be a StellarGraph object with node features.
     Use the :meth:`flow` method supplying the nodes and (optionally) targets
@@ -173,7 +173,7 @@ class ClusterNodeGenerator(Generator):
             name (str, optional): An optional name for the returned generator object.
 
         Returns:
-            A :class:`.ClusterNodeSequence` object to use with :class:`.ClusterGCN` in Keras
+            A :class:`ClusterNodeSequence` object to use with :class:`.GCN`, :class:`.GAT` or :class:`.APPNP` in Keras
             methods :meth:`fit`, :meth:`evaluate`, and :meth:`predict`.
 
         """

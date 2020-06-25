@@ -19,6 +19,7 @@ from stellargraph.mapper import FullBatchNodeGenerator, FullBatchLinkGenerator
 from stellargraph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
+import sys
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -115,6 +116,7 @@ def test_APPNP_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_APPNP_apply_sparse():
 
     G, features = create_graph_features()
@@ -165,6 +167,7 @@ def test_APPNP_linkmodel_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_APPNP_linkmodel_apply_sparse():
 
     G, features = create_graph_features()
@@ -261,6 +264,7 @@ def test_APPNP_propagate_model_matches_manual(model_type):
     np.testing.assert_allclose(preds_1, manual_preds)
 
 
+@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_APPNP_apply_propagate_model_sparse():
 
     G, features = create_graph_features()

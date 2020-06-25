@@ -230,8 +230,11 @@ class GCN:
     activation functions for each hidden layers, and a generator object.
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using either the :class:`.FullBatchNodeGenerator` class for node inference
-    or the :class:`.FullBatchLinkGenerator` class for link inference.
+    should be supplied using:
+
+    - the :class:`.FullBatchNodeGenerator` class for node inference
+    - the :class:`.ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`.FullBatchLinkGenerator` class for link inference
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the ``method='gcn'`` argument.
@@ -270,6 +273,8 @@ class GCN:
        Examples using GCN:
 
        - `node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-node-classification.html>`__
+       - `node classification trained with Cluster-GCN <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/cluster-gcn-node-classification.html>`__
+       - `node classification with Neo4j and Cluster-GCN <https://stellargraph.readthedocs.io/en/stable/demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.html>`__
        - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
        - `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/gcn-link-prediction.html>`__
        - `unsupervised representation learning with Deep Graph Infomax <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
@@ -302,6 +307,7 @@ class GCN:
         bias_initializer (str or func, optional): The initialiser to use for the bias of each layer.
         bias_regularizer (str or func, optional): The regulariser to use for the bias of each layer.
         bias_constraint (str or func, optional): The constraint to use for the bias of each layer.
+        squeeze_output_batch (bool, optional): if True, remove the batch dimension when the batch size is 1. If False, leave the batch dimension.
     """
 
     def __init__(
@@ -317,6 +323,7 @@ class GCN:
         bias_initializer="zeros",
         bias_regularizer=None,
         bias_constraint=None,
+        squeeze_output_batch=True,
     ):
         if not isinstance(generator, (FullBatchGenerator, ClusterNodeGenerator)):
             raise TypeError(
@@ -329,6 +336,7 @@ class GCN:
         self.activations = activations
         self.bias = bias
         self.dropout = dropout
+        self.squeeze_output_batch = squeeze_output_batch
 
         # Copy required information from generator
         self.method = generator.method
@@ -471,7 +479,7 @@ class GCN:
         x_out = self(x_inp)
 
         # Flatten output by removing singleton batch dimension
-        if x_out.shape[0] == 1:
+        if self.squeeze_output_batch and x_out.shape[0] == 1:
             self.x_out_flat = Lambda(lambda x: K.squeeze(x, 0))(x_out)
         else:
             self.x_out_flat = x_out

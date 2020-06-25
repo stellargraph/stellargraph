@@ -530,8 +530,11 @@ class GAT:
     Eqs 5-6 of the GAT paper https://arxiv.org/abs/1710.10903
 
     To use this class as a Keras model, the features and preprocessed adjacency matrix
-    should be supplied using either the :class:`.FullBatchNodeGenerator` class for node inference
-    or the :class:`.FullBatchLinkGenerator` class for link inference.
+    should be supplied using:
+
+    - the :class:`.FullBatchNodeGenerator` class for node inference
+    - the :class:`.ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`.FullBatchLinkGenerator` class for link inference
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gat'` argument.
