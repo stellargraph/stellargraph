@@ -442,3 +442,51 @@ jobs:
           # meta.yaml is not valid YAML because of jinja templating
           prettier --list-different "**/*.yml" "**/*.yaml" "!meta.yaml" \
             | sed "s/\(.*\)/::error file=\1::formatting of \1 $msg/"
+
+  check-demo-indexing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install requirements
+        run: |
+          pip install --upgrade pip
+          pip install nbformat
+
+      - name: Check demo indexing
+        run: python scripts/demo_indexing.py --action=compare
+
+  check-documentation:
+    runs-on: ubuntu-latest
+    env:
+      sphinx_opts: "-W --keep-going"
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      - name: Install pandoc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pandoc enchant
+
+      - name: Install python requirements
+        run: |
+          pip install --upgrade pip
+          pip install .
+          pip install -r docs/requirements.txt
+
+      - name: Listing dependency versions
+        run: pip freeze
+
+      - name: Building docs
+        run: make html SPHINXOPTS=$sphinx_opts
+        working-directory: ./docs
+
+      - name: Checking spelling
+        run: make spelling SPHINXOPTS=$sphinx_opts
+        working-directory: ./docs
