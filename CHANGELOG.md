@@ -15,7 +15,7 @@ Jump in to this release, with the new and improved [demos and examples][demos-1.
 
 ### Major features and improvements
 
-- Better Windows support: StellarGraph previously worked on Windows, but now has all tests running ([\#1696](https://github.com/stellargraph/stellargraph/pull/1696)) along with several small fixes ([\#1671](https://github.com/stellargraph/stellargraph/pull/1671), [\#1704](https://github.com/stellargraph/stellargraph/pull/1704), [\#1705](https://github.com/stellargraph/stellargraph/pull/1705)).
+- Better Windows support: StellarGraph's existing ability to run on Windows has been improved, with all tests running on CI ([\#1696](https://github.com/stellargraph/stellargraph/pull/1696)) and several small fixes ([\#1671](https://github.com/stellargraph/stellargraph/pull/1671), [\#1704](https://github.com/stellargraph/stellargraph/pull/1704), [\#1705](https://github.com/stellargraph/stellargraph/pull/1705)).
 - Edge weights are supported in GraphSAGE ([\#1667](https://github.com/stellargraph/stellargraph/pull/1667)) and Watch Your Step ([\#1604](https://github.com/stellargraph/stellargraph/pull/1604)). This is in addition to the existing support for edge weights in GCN, GAT, APPNP, PPNP, RGCN, GCN graph classification, DeepGraphCNN and Node2Vec sampling.
 - Better and more demonstration notebooks and documentation to make the library more accessible to new and existing users:
   - [A demo notebook][lp-comparison-1.2.0] for a comparison of link prediction with random walks based node embedding, showing Node2Vec, Attri2Vec, GraphSAGE and GCN [\#1658](https://github.com/stellargraph/stellargraph/pull/1658)
