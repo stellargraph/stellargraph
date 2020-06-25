@@ -5,6 +5,7 @@ Core
 ----------------
 
 .. automodule:: stellargraph
+  :member-order: bysource
   :members: StellarGraph, StellarDiGraph, GraphSchema, IndexedArray
 
 .. autodata:: custom_keras_layers
