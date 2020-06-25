@@ -93,10 +93,13 @@ class SelfAdversarialNegativeSampling(tf.keras.losses.Loss):
 
         denoms = tf.gather(sums, tf.maximum(flipped_labels, 0))
 
+        # adversarial sampling shouldn't influence the gradient/update
+        negative_weights = tf.stop_gradient(exp_scores / denoms)
+
         loss_elems = tf.where(
             labels > 0,
             -tf.math.log_sigmoid(logit_scores),
-            -tf.math.log_sigmoid(-logit_scores) * exp_scores / denoms,
+            -tf.math.log_sigmoid(-logit_scores) * negative_weights,
         )
 
         return tf.reduce_mean(loss_elems, axis=-1)
