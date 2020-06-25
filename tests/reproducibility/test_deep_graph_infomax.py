@@ -55,4 +55,4 @@ def test_dgi(model_type, sparse):
     corrupted_generator = CorruptedGenerator(generator)
     gen = corrupted_generator.flow(G.nodes())
 
-    assert_reproducible(lambda: dgi(generator, gen, model_type), num_iter=3)
+    assert_reproducible(lambda: dgi(generator, gen, model_type))
