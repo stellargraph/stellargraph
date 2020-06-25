@@ -497,7 +497,6 @@ jobs:
       # MARKER: list of all jobs
       - build
       - notebooks
-      - validate-notebooks-list
       - neo4j-notebooks
       - black
       - check-linters
@@ -511,6 +510,7 @@ jobs:
       - prettier
       - check-demo-indexing
       - check-documentation
+      - validate-this-workflow
 
     runs-on: ubuntu-latest
     steps:
