@@ -513,4 +513,5 @@ jobs:
       - check-documentation
 
     runs-on: ubuntu-latest
-    steps: []
+    steps:
+      - run: true # the 'needs' is the real testing here
