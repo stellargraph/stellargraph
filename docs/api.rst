@@ -144,27 +144,32 @@ Knowledge Graph models
 
 .. autoclass:: ComplEx
   :members:
+  :inherited-members:
 
 .. autoclass:: ComplExScore
   :members:
 
 .. autoclass:: DistMult
   :members:
+  :inherited-members:
 
 .. autoclass:: DistMultScore
   :members:
 
 .. autoclass:: RotatE
   :members:
+  :inherited-members:
 
 .. autoclass:: RotatEScore
   :members:
 
 .. autoclass:: RotE
   :members:
+  :inherited-members:
 
 .. autoclass:: RotH
   :members:
+  :inherited-members:
 
 GCN Supervised Graph Classification
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
