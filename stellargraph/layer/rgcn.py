@@ -342,7 +342,7 @@ class RGCN:
       - The inputs are tensors with a batch dimension of 1. These are provided by the \
         :class:`.RelationalFullBatchNodeGenerator` object.
 
-      - The nodes provided to the :class:`.RelationalFullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.RelationalFullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
