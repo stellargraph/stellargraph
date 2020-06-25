@@ -1,5 +1,52 @@
 # Change Log
 
+## [1.2.0](https://github.com/stellargraph/stellargraph/tree/v1.2.0)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v1.1.0...v1.2.0)
+
+Jump in to this release, with the new and improved [demos and examples][demos-1.2.0]:
+
+- [Comparison of link prediction with random walks based node embedding][lp-comparison-1.2.0]
+- [Unsupervised training of a Cluster-GCN model with Deep Graph Infomax][dgi-1.2.0]
+
+[demos-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/demos/index.html
+[lp-comparison-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/demos/link-prediction/homogeneous-comparison-link-prediction.html
+[dgi-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/demos/embeddings/deep-graph-infomax-embeddings.html
+
+### Major features and improvements
+
+- Better Windows support: StellarGraph previously worked on Windows, but now has all tests running ([\#1696](https://github.com/stellargraph/stellargraph/pull/1696)) along with several small fixes ([\#1671](https://github.com/stellargraph/stellargraph/pull/1671), [\#1704](https://github.com/stellargraph/stellargraph/pull/1704), [\#1705](https://github.com/stellargraph/stellargraph/pull/1705)).
+- Edge weights are supported in GraphSAGE ([\#1667](https://github.com/stellargraph/stellargraph/pull/1667)) and Watch Your Step ([\#1604](https://github.com/stellargraph/stellargraph/pull/1604)). This is in addition to the existing support for edge weights in GCN, GAT, APPNP, PPNP, RGCN, GCN graph classification, DeepGraphCNN and Node2Vec sampling.
+- Better and more demonstration notebooks and documentation to make the library more accessible to new and existing users:
+  - [A demo notebook][lp-comparison-1.2.0] for a comparison of link prediction with random walks based node embedding, showing Node2Vec, Attri2Vec, GraphSAGE and GCN [\#1658](https://github.com/stellargraph/stellargraph/pull/1658)
+  - [The demo notebook][dgi-1.2.0] for unsupervised training with Deep Graph Infomax has been expanded with more explanation and links [\#1257](https://github.com/stellargraph/stellargraph/pull/1257)
+  - The documentation for models, generators and other elements now has many more links to other relevant items in a "See also" box, making it easier to fit pieces together (examples: [`GraphSAGE`][gs-docs-1.2.0], [`GraphSAGENodeGenerator`][gs-gen-docs-1.2.0], [`BiasedRandomWalk`][brw-docs-1.2.0]) [\#1718](https://github.com/stellargraph/stellargraph/pull/1718)
+- The Cluster-GCN training procedure supports unsupervised training via Deep Graph Infomax; this allows for scalable training of GCN, APPNP and GAT models, and includes connecting to Neo4j for large graphs [demo][dgi-1.2.0] ([\#1257](https://github.com/stellargraph/stellargraph/pull/1257))
+- `KGTripleGenerator` now supports the self-adversarial negative sampling training procedure for knowledge graph algorithms (from RotatE), via `generator.flow(..., sample_strategy="self-adversarial")` [docs][self-adv-1.2.0]
+
+[self-adv-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/api.html#stellargraph.mapper.KGTripleGenerator.flow
+[gs-docs-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/api.html#stellargraph.layer.GraphSAGE
+[gs-gen-docs-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/api.html#stellargraph.mapper.GraphSAGENodeGenerator
+[brw-docs-1.2.0]: https://stellargraph.readthedocs.io/en/v1.2.0/api.html#stellargraph.data.BiasedRandomWalk
+
+### Deprecations
+
+- The `ClusterGCN` model has been replaced with the `GCN` class. In the previous 1.1.0 release, GCN, APPNP and GAT were generalised to support the Cluster-GCN training procedure via `ClusterNodeGenerator` (which includes Neo4j support). The `ClusterGCN` model is now redundant and thus is deprecated: however, it still works without behaviour change.
+
+### Experimental features
+
+Some new algorithms and features are still under active development, and are available as an experimental preview. However, they may not be easy to use: their documentation or testing may be incomplete, and they may change dramatically from release to release. The experimental status is noted in the documentation and at runtime via prominent warnings.
+
+- `RotE`, `RotH`: knowledge graph link prediction algorithms that combine TransE and RotatE in Euclidean or hyperbolic space, respectively [\#1539](https://github.com/stellargraph/stellargraph/pull/1539)
+
+### Bug fixes and other changes
+
+- There are now tests for saving and loading a Keras `Model` constructed every model in StellarGraph [\#1676](https://github.com/stellargraph/stellargraph/pull/1676). This includes fixes for some models ([\#1677](https://github.com/stellargraph/stellargraph/pull/1677), [\#1682](https://github.com/stellargraph/stellargraph/pull/1682)). Known issues: sparse models such as GCN and RGCN (see [\#1251](https://github.com/stellargraph/stellargraph/issues/1251) for more info and a work-around using `tf-nightly`), experimental GCN-LSTM ([#1681](https://github.com/stellargraph/stellargraph/issues/1681)).
+- Various documentation, demo and error message fixes and improvements: better internal linking [\#1404](https://github.com/stellargraph/stellargraph/pull/1404), automated spell checking [\#1583](https://github.com/stellargraph/stellargraph/pull/1583), [\#1663](https://github.com/stellargraph/stellargraph/pull/1663), [\#1665](https://github.com/stellargraph/stellargraph/pull/1665), [\#1684](https://github.com/stellargraph/stellargraph/pull/1684), improved rendering [\#1722](https://github.com/stellargraph/stellargraph/pull/1722) including a better sidebar [\#1512](https://github.com/stellargraph/stellargraph/pull/1512), [\#1729](https://github.com/stellargraph/stellargraph/pull/1729), [\#1730](https://github.com/stellargraph/stellargraph/pull/1730)
+- DevOps changes:
+  - CI has been moved from Buildkite to GitHub Actions ([\#1688](https://github.com/stellargraph/stellargraph/pull/1688), [\#1692](https://github.com/stellargraph/stellargraph/pull/1692), [\#1690](https://github.com/stellargraph/stellargraph/pull/1690), [\#1691](https://github.com/stellargraph/stellargraph/pull/1691), [\#1693](https://github.com/stellargraph/stellargraph/pull/1693), [\#1694](https://github.com/stellargraph/stellargraph/pull/1694), [\#1701](https://github.com/stellargraph/stellargraph/pull/1701), [\#1707](https://github.com/stellargraph/stellargraph/pull/1707), [\#1712](https://github.com/stellargraph/stellargraph/pull/1712), [\#1714](https://github.com/stellargraph/stellargraph/pull/1714), [\#1715](https://github.com/stellargraph/stellargraph/pull/1715), [\#1717](https://github.com/stellargraph/stellargraph/pull/1717), [\#1719](https://github.com/stellargraph/stellargraph/pull/1719))
+  - CI: [\#1655](https://github.com/stellargraph/stellargraph/pull/1655), [\#1672](https://github.com/stellargraph/stellargraph/pull/1672), [\#1673](https://github.com/stellargraph/stellargraph/pull/1673), [\#1679](https://github.com/stellargraph/stellargraph/pull/1679), [\#1710](https://github.com/stellargraph/stellargraph/pull/1710), [\#1721](https://github.com/stellargraph/stellargraph/pull/1721), [\#1724](https://github.com/stellargraph/stellargraph/pull/1724)
+
 ## [1.1.0](https://github.com/stellargraph/stellargraph/tree/v1.1.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v1.0.0...v1.1.0)
