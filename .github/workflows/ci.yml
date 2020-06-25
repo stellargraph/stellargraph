@@ -431,6 +431,8 @@ jobs:
 
   check-documentation:
     runs-on: ubuntu-latest
+    env:
+      sphinx_opts: "-W --keep-going"
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
@@ -452,9 +454,16 @@ jobs:
         run: pip freeze
 
       - name: Building docs
-        run: make html SPHINXOPTS="-W --keep-going"
+        run: make html SPHINXOPTS=$sphinx_opts
         working-directory: ./docs
 
       - name: Checking spelling
-        run: make spelling SPHINXOPTS="-W --keep-going"
+        run: |
+          exit_code=0
+          make spelling SPHINXOPTS=$sphinx_opts || exit_code="$?"
+          if [ "$exit_code" -ne 0 ]; then
+            echo "::warning::Documentation failled spelling check, please check Github Actions log"
+            exit 1
+          fi
         working-directory: ./docs
+        if: ${{ always() }}
