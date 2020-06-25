@@ -24,6 +24,7 @@ from tensorflow.keras.utils import Sequence
 from ..globalvar import SOURCE, TARGET, TYPE_ATTR_NAME
 from ..random import random_state, SeededPerBatch
 from .base import Generator
+from ..core.validation import comma_sep, require_integer_in_range
 
 
 class KGTripleGenerator(Generator):
@@ -59,7 +60,14 @@ class KGTripleGenerator(Generator):
     def num_batch_dims(self):
         return 1
 
-    def flow(self, edges, negative_samples=None, shuffle=False, seed=None):
+    def flow(
+        self,
+        edges,
+        negative_samples=None,
+        sample_strategy="uniform",
+        shuffle=False,
+        seed=None,
+    ):
         """
         Create a Keras Sequence yielding the edges/triples in ``edges``, potentially with some negative
         edges.
@@ -70,6 +78,27 @@ class KGTripleGenerator(Generator):
         Args:
             edges: the edges/triples to feed into a knowledge graph model.
             negative_samples (int, optional): the number of negative samples to generate for each positive edge.
+
+            sample_strategy (str, optional): the sampling strategy to use for negative sampling, if ``negative_samples`` is not None. Supported values:
+
+                ``uniform``
+
+                  Uniform sampling, where a negative edge is created from a positive edge in
+                  ``edges`` by replacing the source or destination entity with a uniformly sampled
+                  random entity in the graph (without verifying if the edge exists in the graph: for
+                  sparse graphs, this is unlikely). Each element in a batch is labelled as 1
+                  (positive) or 0 (negative). An appropriate loss function is
+                  :class:`tensorflow.keras.losses.BinaryCrossentropy` (probably with
+                  ``from_logits=True``).
+
+                ``self-adversarial``
+
+                  Self-adversarial sampling from [1], where each edge is sampled in the same manner
+                  as ``uniform`` sampling. Each element in a batch is labelled as 1 (positive) or an
+                  integer in ``[0, -batch_size)`` (negative). An appropriate loss function is
+                  :class:`stellargraph.losses.SelfAdversarialNegativeSampling`.
+
+                  [1] Z. Sun, Z.-H. Deng, J.-Y. Nie, and J. Tang, “RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space,” `arXiv:1902.10197 <http://arxiv.org/abs/1902.10197>`_, Feb. 2019.
 
         Returns:
             A Keras sequence that can be passed to the ``fit`` and ``predict`` method of knowledge-graph models.
@@ -84,14 +113,13 @@ class KGTripleGenerator(Generator):
             )
 
         if negative_samples is not None:
-            if not isinstance(negative_samples, int):
-                raise TypeError(
-                    f"negative_samples: expected int or None, found {type(negative_samples).__name__}"
-                )
-            if negative_samples < 0:
-                raise ValueError(
-                    f"negative_samples: expected non-negative integer, found {negative_samples}"
-                )
+            require_integer_in_range(negative_samples, "negative_samples", min_val=0)
+
+        supported_strategies = ["uniform", "self-adversarial"]
+        if sample_strategy not in supported_strategies:
+            raise ValueError(
+                f"sample_strategy: expected one of {comma_sep(supported_strategies)}, found {sample_strategy!r}"
+            )
 
         source_ilocs = self.G.node_ids_to_ilocs(sources)
         rel_ilocs = self.G.edge_type_names_to_ilocs(rels)
@@ -105,6 +133,7 @@ class KGTripleGenerator(Generator):
             batch_size=self.batch_size,
             shuffle=shuffle,
             negative_samples=negative_samples,
+            sample_strategy=sample_strategy,
             seed=seed,
         )
 
@@ -120,6 +149,7 @@ class KGTripleSequence(Sequence):
         batch_size,
         shuffle,
         negative_samples,
+        sample_strategy,
         seed,
     ):
         self.max_node_iloc = max_node_iloc
@@ -132,6 +162,7 @@ class KGTripleSequence(Sequence):
         self.target_ilocs = np.asarray(target_ilocs)
 
         self.negative_samples = negative_samples
+        self.sample_strategy = sample_strategy
 
         self.batch_size = batch_size
         self.seed = seed
@@ -177,9 +208,21 @@ class KGTripleSequence(Sequence):
             s_iloc[positive_count:][change_source] = new_nodes[:source_changes]
             o_iloc[positive_count:][~change_source] = new_nodes[source_changes:]
 
-            targets = np.repeat(
-                np.array([1, 0], dtype=np.float32), [positive_count, negative_count]
-            )
+            if self.sample_strategy == "uniform":
+                targets = np.repeat(
+                    np.array([1, 0], dtype=np.float32), [positive_count, negative_count]
+                )
+            elif self.sample_strategy == "self-adversarial":
+                # the negative samples are labelled with an arbitrary within-batch integer <= 0, based on
+                # which positive edge they came from.
+                targets = np.tile(
+                    np.arange(0, -positive_count, -1), 1 + self.negative_samples
+                )
+                # the positive examples are labelled with 1
+                targets[:positive_count] = 1
+            else:
+                raise ValueError(f"unknown sample_strategy: {sample_strategy!r}")
+
             assert len(targets) == len(s_iloc)
 
         assert len(s_iloc) == len(r_iloc) == len(o_iloc)

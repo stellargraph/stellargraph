@@ -82,6 +82,7 @@ Muhan
 Nesreen
 NetworkX
 Neumann
+Nie
 Nitesh
 Oksana
 Peng
@@ -96,6 +97,7 @@ Rfou
 Riedel
 Rong
 Rossi
+RotatE
 RotE
 RotH
 SNE

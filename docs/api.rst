@@ -236,6 +236,12 @@ Neo4j Connector
   :members: Neo4jStellarGraph, Neo4jStellarDiGraph, Neo4jGraphSAGENodeGenerator, Neo4jDirectedGraphSAGENodeGenerator, Neo4jSampledBreadthFirstWalk, Neo4jDirectedBreadthFirstNeighbors
 
 
+Loss functions
+------------------------
+
+.. automodule:: stellargraph.losses
+  :members: graph_log_likelihood, SelfAdversarialNegativeSampling
+
 Utilities
 ------------------------
 
