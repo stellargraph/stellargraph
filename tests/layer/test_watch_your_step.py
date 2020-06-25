@@ -73,9 +73,10 @@ def test_WatchYourStep_bad_init(barbell):
         wys = WatchYourStep(generator, embedding_dimension=1)
 
 
-def test_WatchYourStep(barbell):
+@pytest.mark.parametrize("weighted", [False, True])
+def test_WatchYourStep(barbell, weighted):
 
-    generator = AdjacencyPowerGenerator(barbell, num_powers=5)
+    generator = AdjacencyPowerGenerator(barbell, num_powers=5, weighted=weighted)
     gen = generator.flow(batch_size=4)
     wys = WatchYourStep(generator)
 
