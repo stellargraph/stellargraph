@@ -29,6 +29,8 @@ def graph_log_likelihood(batch_adj, wys_output):
     and part of the adjacency matrix `batch_adj` to calculate how well the node embeddings capture the graph
     structure in some sense.
 
+    .. seealso: The :class:`.WatchYourStep` model, for which this loss function is designed.
+
     Args:
         batch_adj: tensor with shape ``batch_rows x 1 x num_nodes`` containing rows of the adjacency matrix
         wys_output: tensor with shape ``batch_rows x 2 x num_nodes`` containing the embedding outer product

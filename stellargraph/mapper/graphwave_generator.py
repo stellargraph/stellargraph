@@ -35,6 +35,8 @@ class GraphWaveGenerator(Generator):
     found to not work well in practice, and replicating the results of the paper requires manually specifying much
     larger scales than those automatically calculated.
 
+    .. seealso:: Example using this generator: `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/graphwave-embeddings.html>`__.
+
     Args:
         G (StellarGraph): the StellarGraph object.
         scales (iterable of floats): the wavelet scales to use. Smaller values embed smaller scale structural

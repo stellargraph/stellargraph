@@ -320,8 +320,8 @@ class EdgeSplitter(object):
             The reduced graph (positive edges removed) and the edge data as 2 numpy arrays, the first array of
             dimensionality N × 2 (where N is the number of edges) holding the node ids for the edges and the second of
             dimensionality N × 1 holding the edge labels, 0 for negative and 1 for positive examples. The graph
-            matches the input graph passed to the :class:`EdgeSplitter` constructor: the returned graph is a
-            :class:`StellarGraph` instance if the input graph was one, and, similarly, a NetworkX graph if the input
+            matches the input graph passed to the :class:`.EdgeSplitter` constructor: the returned graph is a
+            :class:`.StellarGraph` instance if the input graph was one, and, similarly, a NetworkX graph if the input
             graph was one.
         """
         if p <= 0 or p >= 1:

@@ -444,6 +444,14 @@ class ComplEx(KGModel):
     Embedding layers and a ComplEx scoring layers that implement the ComplEx knowledge graph
     embedding algorithm as in http://jmlr.org/proceedings/papers/v48/trouillon16.pdf
 
+    .. seealso::
+
+       Example using ComplEx: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/complex-link-prediction.html>`__
+
+       Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
+
+       Appropriate data generator: :class:`.KGTripleGenerator`.
+
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
 
@@ -543,6 +551,14 @@ class DistMult(KGModel):
     """
     Embedding layers and a DistMult scoring layers that implement the DistMult knowledge graph
     embedding algorithm as in https://arxiv.org/pdf/1412.6575.pdf
+
+    .. seealso::
+
+       Example using DistMult: `link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/distmult-link-prediction.html>`__
+
+       Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
+
+       Appropriate data generator: :class:`.KGTripleGenerator`.
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
@@ -649,6 +665,12 @@ class RotatEScore(Layer, KGScore):
 class RotatE(KGModel):
     """
     Implementation of https://arxiv.org/abs/1902.10197
+
+    .. seealso::
+
+       Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
+
+       Appropriate data generator: :class:`.KGTripleGenerator`.
     """
 
     def __init__(
@@ -802,6 +824,15 @@ class RotH(KGModel):
     Embedding layers and a RotH scoring layer that implement the RotH knowledge graph
     embedding algorithm as in https://arxiv.org/abs/2005.00545
 
+    .. seealso::
+
+       Related models:
+
+       - other knowledge graph models, see :class:`.KGTripleGenerator` for a full list
+       - :class:`.RotE` for the Euclidean version of this hyperbolic model
+
+       Appropriate data generator: :class:`.KGTripleGenerator`.
+
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.
 
@@ -836,6 +867,15 @@ class RotE(KGModel):
     """
     Embedding layers and a RotE scoring layer that implement the RotE knowledge graph
     embedding algorithm as in https://arxiv.org/pdf/2005.00545.pdf
+
+    .. seealso::
+
+       Related models:
+
+       - other knowledge graph models, see :class:`.KGTripleGenerator` for a full list
+       - :class:`.RotH` for the hyperbolic version of this Euclidean model
+
+       Appropriate data generator: :class:`.KGTripleGenerator`.
 
     Args:
         generator (KGTripleGenerator): A generator of triples to feed into the model.

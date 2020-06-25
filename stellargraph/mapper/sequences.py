@@ -52,8 +52,8 @@ class NodeSequence(Sequence):
 
     This class generated data samples for node inference models
     and should be created using the `.flow(...)` method of
-    :class:`GraphSAGENodeGenerator` or :class:`DirectedGraphSAGENodeGenerator`
-    or :class:`HinSAGENodeGenerator` or :class:`Attri2VecNodeGenerator`.
+    :class:`.GraphSAGENodeGenerator` or :class:`.DirectedGraphSAGENodeGenerator`
+    or :class:`.HinSAGENodeGenerator` or :class:`.Attri2VecNodeGenerator`.
 
     These generator classes are used within the NodeSequence to generate
     the required features for downstream ML tasks from the graph.
@@ -155,7 +155,7 @@ class LinkSequence(Sequence):
     :meth:`keras.Model.evaluate`, and :meth:`keras.Model.predict`
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` or :class:`HinSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
+    :class:`.GraphSAGELinkGenerator` or :class:`.HinSAGELinkGenerator` or :class:`.Attri2VecLinkGenerator`.
 
     Args:
         sample_function (Callable): A function that returns features for supplied head nodes.
@@ -258,7 +258,7 @@ class OnDemandLinkSequence(Sequence):
 
     This class generates data samples for link inference models
     and should be created using the :meth:`flow` method of
-    :class:`GraphSAGELinkGenerator` or :class:`Attri2VecLinkGenerator`.
+    :class:`.GraphSAGELinkGenerator` or :class:`.Attri2VecLinkGenerator`.
 
     Args:
         sample_function (Callable): A function that returns features for supplied head nodes.
@@ -358,7 +358,7 @@ class FullBatchSequence(Sequence):
         :meth:`keras.Model.predict`,
 
     This class should be created using the `.flow(...)` method of
-    :class:`FullBatchNodeGenerator`.
+    :class:`.FullBatchNodeGenerator`.
 
     Args:
         features (np.ndarray): An array of node features of size (N x F),
@@ -417,10 +417,10 @@ class SparseFullBatchSequence(Sequence):
 
     This class uses sparse matrix representations to send data to the models,
     and only works with the Keras tensorflow backend. For any other backends,
-    use the :class:`FullBatchSequence` class.
+    use the :class:`.FullBatchSequence` class.
 
     This class should be created using the `.flow(...)` method of
-    :class:`FullBatchNodeGenerator`.
+    :class:`.FullBatchNodeGenerator`.
 
     Args:
         features (np.ndarray): An array of node features of size (N x F),
@@ -484,7 +484,7 @@ class RelationalFullBatchNodeSequence(Sequence):
     This class uses either dense or sparse representations to send data to the models.
 
     This class should be created using the `.flow(...)` method of
-    :class:`RelationalFullBatchNodeGenerator`.
+    :class:`.RelationalFullBatchNodeGenerator`.
 
     Args:
         features (np.ndarray): An array of node features of size (N x F),
