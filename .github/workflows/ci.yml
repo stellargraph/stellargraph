@@ -55,6 +55,12 @@ jobs:
           path: ${{ env.JUNIT_NAME }}.xml
         if: ${{ always() }}
 
+      # highlight the test failures with annotations
+      - name: Annotate test results
+        if: always()
+        run: |
+          python scripts/ci/junit_to_github_checks.py ${{ env.JUNIT_NAME }}.xml
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
