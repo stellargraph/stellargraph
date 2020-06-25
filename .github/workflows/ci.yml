@@ -460,9 +460,5 @@ jobs:
       - name: Checking spelling
         run: |
           exit_code=0
-          make spelling SPHINXOPTS=$sphinx_opts || exit_code="$?"
-          if [ "$exit_code" -ne 0 ]; then
-            echo "::warning::Documentation failled spelling check, please check Github Actions log"
-          fi
-          # we soft fail
+          make spelling SPHINXOPTS=$sphinx_opts
         working-directory: ./docs
