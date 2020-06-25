@@ -263,7 +263,7 @@ class GCN:
         Keras methods. When using the :class:`.FullBatchNodeGenerator` specify the
         ``method='gcn'`` argument to do this preprocessing.
 
-      - The nodes provided to the :class:`.FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.

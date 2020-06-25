@@ -561,7 +561,7 @@ class GAT:
         the adjacency matrix to add self-loops, using the ``method='gat'`` argument
         of the :class:`.FullBatchNodeGenerator`.
 
-      - The nodes provided to the :class:`.FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.

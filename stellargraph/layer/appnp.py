@@ -165,9 +165,9 @@ class APPNP:
     To use this class as a Keras model, the features and preprocessed adjacency matrix
     should be supplied using:
 
-    - the :class:`FullBatchNodeGenerator` class for node inference
-    - the :class:`ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
-    - the :class:`FullBatchLinkGenerator` class for link inference
+    - the :class:`.FullBatchNodeGenerator` class for node inference
+    - the :class:`.ClusterNodeGenerator` class for scalable/inductive node inference using the Cluster-GCN training procedure (https://arxiv.org/abs/1905.07953)
+    - the :class:`.FullBatchLinkGenerator` class for link inference
 
     To have the appropriate preprocessing the generator object should be instantiated
     with the `method='gcn'` argument.
@@ -192,7 +192,7 @@ class APPNP:
         Keras methods. When using the :class:`.FullBatchNodeGenerator` specify the
         ``method='gcn'`` argument to do this preprocessing.
 
-      - The nodes provided to the :class:`.FullBatchNodeGenerator.flow` method are
+      - The nodes provided to the :meth:`.FullBatchNodeGenerator.flow` method are
         used by the final layer to select the predictions for those nodes in order.
         However, the intermediate layers before the final layer order the nodes
         in the same way as the adjacency matrix.
