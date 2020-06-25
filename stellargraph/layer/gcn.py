@@ -452,7 +452,6 @@ class GCN:
         else:
             self.x_out_flat = x_out
 
-        raise ValueError("make tests fail")
         return x_inp, x_out
 
     def _link_model(self):

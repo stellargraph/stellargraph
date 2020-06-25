@@ -489,8 +489,6 @@ def test_node_feature_sizes_shapes():
     ):
         g.node_feature_sizes(node_types=["B"])
 
-    assert False
-
 
 def test_edge_feature_sizes_shapes():
     # edges don't support multidimensional features (yet...)
