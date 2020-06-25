@@ -299,4 +299,4 @@ visualizing
 weren
 Éric
 Neo
-laplacian
+Laplacian
