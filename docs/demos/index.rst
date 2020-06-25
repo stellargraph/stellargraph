@@ -73,7 +73,7 @@ Find a demo for an algorithm
      - yes
      - :any:`demo <node-classification/cluster-gcn-node-classification>`
      - yes
-     -
+     - :any:`DeepGraphInfomax <embeddings/deep-graph-infomax-embeddings>`
      - yes
      -
    *

@@ -68,7 +68,7 @@ class CorruptedGenerator(Generator):
        - `unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/deep-graph-infomax-embeddings.html>`__
        - `semi-supervised node classification <https://stellargraph.readthedocs.io/en/stable/demos/node-classification/gcn-deep-graph-infomax-fine-tuning-node-classification.html>`__
 
-       Generators that support corruption natively: :class:`.FullBatchNodeGenerator`, :class:`.RelationalFullBatchNodeGenerator`, :class:`.GraphSAGENodeGenerator`, :class:`.DirectedGraphSAGENodeGenerator`, :class:`.HinSAGENodeGenerator`.
+       Generators that support corruption natively: :class:`.FullBatchNodeGenerator`, :class:`.RelationalFullBatchNodeGenerator`, :class:`.GraphSAGENodeGenerator`, :class:`.DirectedGraphSAGENodeGenerator`, :class:`.HinSAGENodeGenerator`, :class:`.ClusterNodeGenerator`.
 
     Args:
         base_generator (Generator): the uncorrupted Generator object.
