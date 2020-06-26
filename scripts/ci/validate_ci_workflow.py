@@ -90,7 +90,7 @@ def check_notebook_list(contents, workflow):
     marker_line = find_marker_line(contents, NOTEBOOK_MARKER)
 
     found = find_key(
-        workflow, ["jobs", NOTEBOOK_JOB, "strategy", "matrix", "notebook"], line
+        workflow, ["jobs", NOTEBOOK_JOB, "strategy", "matrix", "notebook"], marker_line
     )
     expected = set(glob.glob("demos/**/*.ipynb", recursive=True))
 
