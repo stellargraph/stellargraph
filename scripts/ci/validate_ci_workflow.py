@@ -66,12 +66,12 @@ def unique_and_equal(found, expected, name, step):
 
     listed = set(found)
 
-    if listed != on_disk:
-        extra = listed - on_disk
-        missing = on_disk - listed
+    if listed != expected:
+        extra = listed - expected
+        missing = expected - listed
 
         message = [
-            f"found list of {len(listed)} {names} in '{step}' to be different to the {len(on_disk)} {name} on disk"
+            f"found list of {len(listed)} {names} in '{step}' to be different to the {len(expected)} {name} on disk"
         ]
 
         if extra:
