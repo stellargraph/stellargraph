@@ -491,9 +491,9 @@ jobs:
       - name: Run check
         run: python3 scripts/ci/validate_ci_workflow.py
 
-  # This step only exists to be marked as a "required" check on GitHub, because it only runs if
+  # This jobs only exists to be marked as a "required" check on GitHub, because it only runs if
   # everything else passes. (The list of checks is validated in the step above.)
-  required-check:
+  all-jobs-passed:
     needs:
       # MARKER: list of all jobs
       - build

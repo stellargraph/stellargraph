@@ -22,8 +22,8 @@ from collections import Counter
 NOTEBOOK_MARKER = "# MARKER: list of all notebooks"
 NOTEBOOK_JOB = "notebooks"
 
-REQUIRED_CHECK_MARKER = "# MARKER: list of all jobs"
-REQUIRED_CHECK_JOB = "required-check"
+ALL_JOBS_PASSED_MARKER = "# MARKER: list of all jobs"
+ALL_JOBS_PASSED_JOB = "all-jobs-passed"
 
 WORKFLOW = ".github/workflows/ci.yml"
 
@@ -100,18 +100,18 @@ def check_notebook_list(contents, workflow):
 
 
 def check_needs_list(contents, workflow):
-    marker_line = find_marker_line(contents, REQUIRED_CHECK_MARKER)
+    marker_line = find_marker_line(contents, ALL_JOBS_PASSED_MARKER)
 
     jobs = find_key(workflow, ["jobs"], line)
-    found = find_key(jobs, [REQUIRED_CHECK_JOB, "needs"], line)
+    found = find_key(jobs, [ALL_JOBS_PASSED_JOB, "needs"], line)
 
     # this should depend on all of the other jobs...
     expected = set(jobs.keys())
     # ... except itself
-    expected.remove(REQUIRED_CHECK_JOB)
+    expected.remove(ALL_JOBS_PASSED_JOB)
 
     unique_and_equal(
-        found, expected, name="job(s)", step=REQUIRED_CHECK_JOB,
+        found, expected, name="job(s)", step=ALL_JOBS_PASSED_JOB,
     )
 
 
