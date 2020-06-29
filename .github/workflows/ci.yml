@@ -154,9 +154,6 @@ jobs:
           # FIXME #818: datasets can't be downloaded
           # FIXME #819: out-of-memory
           - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
-          - notebook: "demos/interpretability/gat-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
           - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
           - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
           - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
