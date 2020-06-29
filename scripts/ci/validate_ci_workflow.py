@@ -17,6 +17,7 @@
 import yaml
 import sys
 import glob
+import os
 from collections import Counter
 
 NOTEBOOK_MARKER = "# MARKER: list of all notebooks"
@@ -25,6 +26,7 @@ NOTEBOOK_JOB = "notebooks"
 ALL_JOBS_PASSED_MARKER = "# MARKER: list of all jobs"
 ALL_JOBS_PASSED_JOB = "all-jobs-passed"
 
+ROOT_DIR = os.path.join(os.path.dirname(__file__), "../..")
 WORKFLOW = ".github/workflows/ci.yml"
 
 
@@ -71,7 +73,7 @@ def unique_and_equal(found, expected, name, step, marker_line):
         missing = expected - listed
 
         message = [
-            f"found list of {len(listed)} {names} in '{step}' to be different to the {len(expected)} {name} on disk"
+            f"found list of {len(listed)} {name} in '{step}' to be different to the {len(expected)} {name} on disk"
         ]
 
         if extra:
@@ -120,6 +122,10 @@ def check_needs_list(contents, workflow):
 
 
 def main():
+    # make sure we're always in the root of the repo, no matter from where the script is run
+    os.chdir(ROOT_DIR)
+    print(f"Running in {os.getcwd()}")
+
     with open(WORKFLOW) as f:
         contents = f.read()
 
