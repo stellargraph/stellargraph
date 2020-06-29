@@ -200,7 +200,7 @@ class CiteSeer(
 class PubMedDiabetes(
     DatasetLoader,
     name="PubMed Diabetes",
-    directory_name="Pubmed-Diabetes",
+    directory_name="pubmed-diabetes",
     url="https://linqs-data.soe.ucsc.edu/public/pubmed-diabetes/pubmed-diabetes.tar.gz",
     url_archive_format="gztar",
     expected_files=[
