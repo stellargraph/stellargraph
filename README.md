@@ -8,8 +8,8 @@
 </p>
 <p align="center">
   <a href="https://github.com/stellargraph/stellargraph/blob/develop/CONTRIBUTING.md" alt="contributions welcome"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg"/></a>
-  <a href="https://buildkite.com/stellar/stellargraph-public?branch=master/" alt="Build status: master"><img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/master.svg?label=branch:+master"/></a>
-  <a href="https://buildkite.com/stellar/stellargraph-public?branch=develop/" alt="Build status: develop"><img src="https://img.shields.io/buildkite/8aa4d147372ccc0153101b50137f5f3439c6038f29b21f78f8/develop.svg?label=branch:+develop"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/actions?query=branch%3Amaster" alt="Build status: master"><img src="https://github.com/stellargraph/stellargraph/workflows/CI/badge.svg?branch=master"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/actions?query=branch%3Adevelop" alt="Build status: develop"><img src="https://github.com/stellargraph/stellargraph/workflows/CI/badge.svg?branch=develop"/></a>
   <a href="https://codecov.io/gh/stellargraph/stellargraph"><img src="https://codecov.io/gh/stellargraph/stellargraph/branch/develop/graph/badge.svg" /></a>
   <a href="https://pypi.org/project/stellargraph" alt="pypi downloads"><img alt="pypi downloads" src="https://pepy.tech/badge/stellargraph"></a>
 </p>

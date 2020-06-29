@@ -26,7 +26,6 @@ from stellargraph.mapper import FullBatchNodeGenerator, FullBatchLinkGenerator
 from stellargraph.core.graph import StellarGraph
 from stellargraph.core.utils import GCN_Aadj_feats_op
 
-import sys
 import networkx as nx
 import pandas as pd
 import numpy as np
@@ -91,7 +90,6 @@ def test_GraphConvolution_dense():
         np.testing.assert_array_equal(preds[i, ...], preds[0, ...])
 
 
-@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GraphConvolution_sparse():
     G, features = create_graph_features()
     n_nodes = features.shape[0]
@@ -126,7 +124,7 @@ def test_GraphConvolution_sparse():
     ):
         GraphConvolution(2)([x_t_10, A_mat])
 
-    A_mat = tf.sparse.expand_dims(A_mat, axis=0)
+    A_mat = keras.layers.Lambda(lambda x: tf.sparse.expand_dims(x, axis=0))(A_mat)
     with pytest.raises(
         ValueError,
         match="adjacency: expected a single adjacency matrix .* found adjacency tensor of rank 3",
@@ -168,7 +166,6 @@ def test_GCN_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_apply_sparse():
 
     G, features = create_graph_features()
@@ -223,7 +220,6 @@ def test_GCN_linkmodel_apply_dense():
     assert preds_1 == pytest.approx(preds_2)
 
 
-@pytest.mark.xfail(sys.platform == "win32", reason="FIXME #1699")
 def test_GCN_linkmodel_apply_sparse():
 
     G, features = create_graph_features()
