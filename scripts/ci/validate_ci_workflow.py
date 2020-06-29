@@ -102,8 +102,8 @@ def check_notebook_list(contents, workflow):
 def check_needs_list(contents, workflow):
     marker_line = find_marker_line(contents, ALL_JOBS_PASSED_MARKER)
 
-    jobs = find_key(workflow, ["jobs"], line)
-    found = find_key(jobs, [ALL_JOBS_PASSED_JOB, "needs"], line)
+    jobs = find_key(workflow, ["jobs"], marker_line)
+    found = find_key(jobs, [ALL_JOBS_PASSED_JOB, "needs"], marker_line)
 
     # this should depend on all of the other jobs...
     expected = set(jobs.keys())
