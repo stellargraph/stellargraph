@@ -140,6 +140,14 @@ jobs:
           - notebook: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
           - notebook: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
           - notebook: "demos/basics/loading-saving-neo4j.ipynb"
+          # notebooks that don't yet run on CI
+          # FIXME #818: datasets can't be downloaded
+          # FIXME #819: out-of-memory
+          - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
+          - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
+          - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
+          - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
+          - notebook: "demos/use-cases/hateful-twitters.ipynb"
 
     env:
       PYTHON_VERSION: 3.6
