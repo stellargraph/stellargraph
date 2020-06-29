@@ -693,7 +693,7 @@ class RotatE(KGModel):
         )
 
 
-class RotHEScoring(Layer, KGScore):
+class RotHEScore(Layer, KGScore):
     def __init__(self, hyperbolic):
         self._hyperbolic = hyperbolic
         if self._hyperbolic:
@@ -855,7 +855,7 @@ class RotH(KGModel):
     ):
         super().__init__(
             generator,
-            RotHEScoring(hyperbolic=True),
+            RotHEScore(hyperbolic=True),
             embedding_dimension=embedding_dimension,
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
@@ -899,7 +899,7 @@ class RotE(KGModel):
     ):
         super().__init__(
             generator,
-            RotHEScoring(hyperbolic=False),
+            RotHEScore(hyperbolic=False),
             embedding_dimension=embedding_dimension,
             embeddings_initializer=embeddings_initializer,
             embeddings_regularizer=embeddings_regularizer,
