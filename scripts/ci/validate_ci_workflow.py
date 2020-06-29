@@ -57,7 +57,7 @@ def find_key(obj, path, marker_line):
     return obj
 
 
-def unique_and_equal(found, expected, name, step):
+def unique_and_equal(found, expected, name, step, marker_line):
     # check for any notebooks listed more than once
     repeated = [name for name, count in Counter(found).items() if count > 1]
     if repeated:
@@ -95,7 +95,7 @@ def check_notebook_list(contents, workflow):
     expected = set(glob.glob("demos/**/*.ipynb", recursive=True))
 
     unique_and_equal(
-        found, expected, name="notebook(s)", step=NOTEBOOK_JOB,
+        found, expected, name="notebook(s)", step=NOTEBOOK_JOB, marker_line=marker_line
     )
 
 
@@ -111,7 +111,11 @@ def check_needs_list(contents, workflow):
     expected.remove(ALL_JOBS_PASSED_JOB)
 
     unique_and_equal(
-        found, expected, name="job(s)", step=ALL_JOBS_PASSED_JOB,
+        found,
+        expected,
+        name="job(s)",
+        step=ALL_JOBS_PASSED_JOB,
+        marker_line=marker_line,
     )
 
 
