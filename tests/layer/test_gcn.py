@@ -126,7 +126,7 @@ def test_GraphConvolution_sparse():
     ):
         GraphConvolution(2)([x_t_10, A_mat])
 
-    A_mat = tf.sparse.expand_dims(A_mat, axis=0)
+    A_mat = keras.layers.Lambda(lambda x: tf.sparse.expand_dims(x, axis=0))(A_mat)
     with pytest.raises(
         ValueError,
         match="adjacency: expected a single adjacency matrix .* found adjacency tensor of rank 3",
