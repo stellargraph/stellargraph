@@ -178,7 +178,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v1
         with:
-          name: ${{ steps.run_notebook.outputs.notebook_name }}
+          name: notebooks
           path: ${{ matrix.notebook }}
         if: ${{ always() }}
 
