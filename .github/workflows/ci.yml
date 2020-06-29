@@ -13,11 +13,17 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         exclude:
+          # skip Mac OS Python 3.7 and 3.8 to save time
+          - python-version: 3.7
+            os: macos-latest
+          - python-version: 3.8
+            os: macos-latest
+
           # FIXME #1736: tests on Windows with Python3.8 are very slow, so excluded
-          - os: windows-latest
-            python-version: 3.8
+          - python-version: 3.8
+            os: windows-latest
 
     runs-on: ${{ matrix.os }}
 
