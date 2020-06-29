@@ -30,8 +30,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install .[test,demos]
+          python -m pip install --pre --upgrade pip
+          pip install --pre .[test,demos]
 
       - name: List dependency versions
         run: "pip freeze"
@@ -165,8 +165,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install .[test,demos]
+          python -m pip install --pre --upgrade pip
+          pip install --pre .[test,demos]
 
       - name: List dependency versions
         run: "pip freeze"
@@ -218,8 +218,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install .[test,neo4j]
+          python -m pip install --pre --upgrade pip
+          pip install --pre .[test,neo4j]
 
       - name: List dependency versions
         run: "pip freeze"
@@ -290,8 +290,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install black
         run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install black==19.10b0
+          python3 -m pip install --pre --upgrade pip
+          python3 -m pip install --pre black==19.10b0
           echo ::add-path::$HOME/.local/bin
       - name: Check formatting
         run: |
@@ -372,8 +372,8 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --upgrade pip
-          pip install nbconvert nbformat black==19.10b0
+          pip install --pre --upgrade pip
+          pip install --pre nbconvert nbformat black==19.10b0
 
       - name: Run check
         run: python scripts/format_notebooks.py --default --ci demos/
@@ -389,8 +389,8 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --upgrade pip
-          pip install nbformat commonmark
+          pip install --pre --upgrade pip
+          pip install --pre nbformat commonmark
 
       - name: Run check
         run: python scripts/notebook_text_checker.py demos/
@@ -453,8 +453,8 @@ jobs:
 
       - name: Install requirements
         run: |
-          pip install --upgrade pip
-          pip install nbformat
+          pip install --pre --upgrade pip
+          pip install --pre nbformat
 
       - name: Check demo indexing
         run: python scripts/demo_indexing.py --action=compare
@@ -476,9 +476,9 @@ jobs:
 
       - name: Install python requirements
         run: |
-          pip install --upgrade pip
-          pip install .
-          pip install -r docs/requirements.txt
+          pip install --pre --upgrade pip
+          pip install --pre .
+          pip install --pre -r docs/requirements.txt
 
       - name: Listing dependency versions
         run: pip freeze
