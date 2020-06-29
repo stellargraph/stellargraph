@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest]
         exclude:
           # FIXME #1736: tests on Windows with Python3.8 are very slow, so excluded
           - os: windows-latest
