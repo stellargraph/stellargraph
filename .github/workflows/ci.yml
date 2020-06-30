@@ -154,9 +154,6 @@ jobs:
           # FIXME #818: datasets can't be downloaded
           # FIXME #819: out-of-memory
           - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
-          - notebook: "demos/interpretability/gat-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
           - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
           - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
           - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
@@ -234,7 +231,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: loading-saving-neo4j.ipynb
+          name: loading-saving-neo4j_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/basics/loading-saving-neo4j.ipynb"
 
       - name: Run load-cora-into-neo4j.ipynb
@@ -243,7 +240,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: load-cora-into-neo4j.ipynb
+          name: load-cora-into-neo4j_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
 
       - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
@@ -254,7 +251,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: directed-graphsage-on-cora-neo4j-example.ipynb
+          name: directed-graphsage-on-cora-neo4j-example_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
@@ -265,7 +262,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: undirected-graphsage-on-cora-neo4j-example.ipynb
+          name: undirected-graphsage-on-cora-neo4j-example_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
@@ -275,7 +272,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: cluster-gcn-on-cora-neo4j-example.ipynb
+          name: cluster-gcn-on-cora-neo4j-example_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
 
       # Clean up
