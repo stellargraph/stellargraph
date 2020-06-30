@@ -86,6 +86,8 @@ custom_keras_layers = {
         layer.graphsage.GraphSAGEAggregator,
         layer.knowledge_graph.ComplExScore,
         layer.knowledge_graph.DistMultScore,
+        layer.knowledge_graph.RotatEScore,
+        layer.knowledge_graph.RotHEScore,
         layer.preprocessing_layer.GraphPreProcessingLayer,
         layer.preprocessing_layer.SymmetricGraphPreProcessingLayer,
         layer.watch_your_step.AttentiveWalk,
