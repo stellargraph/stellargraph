@@ -1,5 +1,21 @@
 # Change Log
 
+## [1.2.1](https://github.com/stellargraph/stellargraph/tree/v1.2.1)
+
+[Full Changelog](https://github.com/stellargraph/stellargraph/compare/v1.2.0...v1.2.1)
+
+This release is a small bug fix release on top of [1.2.0](https://github.com/stellargraph/stellargraph/releases/tag/v1.2.0).
+
+### Bug fixes and other changes
+
+- Update the URLs of some datasets (`Cora`, `PubMedDiabetes`, `CiteSeer`) for upstream changes [\#1738](https://github.com/stellargraph/stellargraph/pull/1738), [\#1759](https://github.com/stellargraph/stellargraph/pull/1759)
+- Add two missing layers to the `stellargraph.custom_keras_layers` dictionary [\#1757](https://github.com/stellargraph/stellargraph/pull/1757)
+- Experimental changes: rename `RotHEScoring` to `RotHEScore` [\#1756](https://github.com/stellargraph/stellargraph/pull/1756)
+- DevOps:
+  - Automated testing on macOS [\#1752](https://github.com/stellargraph/stellargraph/pull/1752)
+  - Automated testing against Neo4j 4.1, in addition to Neo4j 3.5 and 4.0 [\#1754](https://github.com/stellargraph/stellargraph/pull/1754)
+  - Other CI: [\#1732](https://github.com/stellargraph/stellargraph/pull/1732), [\#1740](https://github.com/stellargraph/stellargraph/pull/1740), [\#1741](https://github.com/stellargraph/stellargraph/pull/1741), [\#1744](https://github.com/stellargraph/stellargraph/pull/1744), [\#1745](https://github.com/stellargraph/stellargraph/pull/1745), [\#1747](https://github.com/stellargraph/stellargraph/pull/1747), [\#1750](https://github.com/stellargraph/stellargraph/pull/1750), [\#1751](https://github.com/stellargraph/stellargraph/pull/1751), [\#1753](https://github.com/stellargraph/stellargraph/pull/1753)
+
 ## [1.2.0](https://github.com/stellargraph/stellargraph/tree/v1.2.0)
 
 [Full Changelog](https://github.com/stellargraph/stellargraph/compare/v1.1.0...v1.2.0)
