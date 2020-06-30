@@ -93,6 +93,7 @@ custom_keras_layers = {
         layer.gcn_lstm.FixedAdjacencyGraphConvolution,
         _LinkEmbedding,
         _LeakyClippedLinear,
+        layer.ugraphemb_attention_pooling.UGraphEmbAttentionPooling,
     ]
 }
 """
