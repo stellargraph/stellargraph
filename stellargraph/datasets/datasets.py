@@ -101,7 +101,7 @@ class Cora(
     DatasetLoader,
     name="Cora",
     directory_name="cora",
-    url="https://linqs-data.soe.ucsc.edu/public/cora/cora.tar.gz",
+    url="https://linqs-data.soe.ucsc.edu/public/datasets/cora/cora.tar.gz",
     url_archive_format="gztar",
     expected_files=["cora.cites", "cora.content"],
     description="The Cora dataset consists of 2708 scientific publications classified into one of seven classes. "
@@ -161,7 +161,7 @@ class CiteSeer(
     DatasetLoader,
     name="CiteSeer",
     directory_name="citeseer-doc-classification",
-    url="https://linqs-data.soe.ucsc.edu/public/citeseer-doc-classification/citeseer-doc-classification.tar.gz",
+    url="https://linqs-data.soe.ucsc.edu/public/datasets/citeseer-doc-classification/citeseer-doc-classification.tar.gz",
     url_archive_format="gztar",
     expected_files=["citeseer.cites", "citeseer.content"],
     description="The CiteSeer dataset consists of 3312 scientific publications classified into one of six classes. "
@@ -201,7 +201,7 @@ class PubMedDiabetes(
     DatasetLoader,
     name="PubMed Diabetes",
     directory_name="pubmed-diabetes",
-    url="https://linqs-data.soe.ucsc.edu/public/pubmed-diabetes/pubmed-diabetes.tar.gz",
+    url="https://linqs-data.soe.ucsc.edu/public/datasets/pubmed-diabetes/pubmed-diabetes.tar.gz",
     url_archive_format="gztar",
     expected_files=[
         "data/Pubmed-Diabetes.DIRECTED.cites.tab",
