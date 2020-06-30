@@ -13,7 +13,17 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7, 3.8]
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        exclude:
+          # skip Mac OS Python 3.7 and 3.8 to save time
+          - python-version: 3.7
+            os: macos-latest
+          - python-version: 3.8
+            os: macos-latest
+
+          # FIXME #1736: tests on Windows with Python3.8 are very slow, so excluded
+          - python-version: 3.8
+            os: windows-latest
 
     runs-on: ${{ matrix.os }}
 
@@ -31,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .[test,demos]
+          pip install .[test]
 
       - name: List dependency versions
         run: "pip freeze"
@@ -144,9 +154,6 @@ jobs:
           # FIXME #818: datasets can't be downloaded
           # FIXME #819: out-of-memory
           - notebook: "demos/community_detection/attacks_clustering_analysis.ipynb"
-          - notebook: "demos/interpretability/gat-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-node-link-importance.ipynb"
-          - notebook: "demos/interpretability/gcn-sparse-node-link-importance.ipynb"
           - notebook: "demos/interpretability/hateful-twitters-interpretability.ipynb"
           - notebook: "demos/link-prediction/attri2vec-link-prediction.ipynb"
           - notebook: "demos/node-classification/rgcn-node-classification.ipynb"
@@ -182,20 +189,12 @@ jobs:
           path: ${{ matrix.notebook }}
         if: ${{ always() }}
 
-  validate-notebooks-list:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run check
-        run: python3 scripts/ci/ci_workflow_notebook_list.py
-
   neo4j-notebooks:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        neo4j_version: ["3.5", "4.0"]
+        neo4j_version: ["3.5", "4.0", "4.1"]
 
     env:
       STELLARGRAPH_NEO4J_HOST: localhost
@@ -232,7 +231,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: loading-saving-neo4j.ipynb
+          name: loading-saving-neo4j_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/basics/loading-saving-neo4j.ipynb"
 
       - name: Run load-cora-into-neo4j.ipynb
@@ -241,7 +240,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: load-cora-into-neo4j.ipynb
+          name: load-cora-into-neo4j_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/load-cora-into-neo4j.ipynb"
 
       - name: Run directed-graphsage-on-cora-neo4j-example.ipynb
@@ -252,7 +251,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: directed-graphsage-on-cora-neo4j-example.ipynb
+          name: directed-graphsage-on-cora-neo4j-example_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/directed-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run undirected-graphsage-on-cora-neo4j-example.ipynb
@@ -263,7 +262,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: undirected-graphsage-on-cora-neo4j-example.ipynb
+          name: undirected-graphsage-on-cora-neo4j-example_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/undirected-graphsage-on-cora-neo4j-example.ipynb"
 
       - name: Run cluster-gcn-on-cora-neo4j-example.ipynb
@@ -273,7 +272,7 @@ jobs:
         uses: actions/upload-artifact@v1
         if: always()
         with:
-          name: cluster-gcn-on-cora-neo4j-example.ipynb
+          name: cluster-gcn-on-cora-neo4j-example_neo4j-${{ matrix.neo4j_version }}.ipynb
           path: "demos/connector/neo4j/cluster-gcn-on-cora-neo4j-example.ipynb"
 
       # Clean up
@@ -490,3 +489,37 @@ jobs:
       - name: Checking spelling
         run: make spelling SPHINXOPTS=$sphinx_opts
         working-directory: ./docs
+
+  validate-this-workflow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run check
+        run: python3 scripts/ci/validate_ci_workflow.py
+
+  # This jobs only exists to be marked as a "required" check on GitHub, because it only runs if
+  # everything else passes. (The list of checks is validated in the step above.)
+  all-jobs-passed:
+    needs:
+      # MARKER: list of all jobs
+      - build
+      - notebooks
+      - neo4j-notebooks
+      - black
+      - check-linters
+      - copyright
+      - whitespace
+      - conda
+      - check-notebook-format
+      - check-notebook-text
+      - shfmt
+      - dockerfile-format
+      - prettier
+      - check-demo-indexing
+      - check-documentation
+      - validate-this-workflow
+
+    runs-on: ubuntu-latest
+    steps:
+      - run: true # the 'needs' is the real testing here
