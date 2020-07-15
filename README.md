@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://stellargraph.readthedocs.io/" alt="Docs"><img src="https://readthedocs.org/projects/stellargraph/badge/?version=latest"/></a>
-  <a href="https://community.stellargraph.io" alt="Discourse Forum"><img src="https://img.shields.io/badge/help_forum-discourse-blue.svg"/></a>
+  <a href="https://github.com/stellargraph/stellargraph/discussions" alt="Discussions forum"><img src="https://img.shields.io/badge/help_forum-discussions-blue.svg"/></a>
   <a href="https://pypi.org/project/stellargraph/" alt="PyPI"><img src="https://img.shields.io/pypi/v/stellargraph.svg"/></a>
   <a href="https://github.com/stellargraph/stellargraph/blob/develop/LICENSE" alt="license"><img src="https://img.shields.io/github/license/stellargraph/stellargraph.svg"/></a>
 </p>
@@ -79,7 +79,7 @@ If you get stuck or have a problem, there's many ways to make progress and get h
 - [Read the documentation](https://stellargraph.readthedocs.io)
 - [Consult the examples][demos]
 - Contact us:
-  - [Ask questions and discuss problems on the StellarGraph Discourse forum](https://community.stellargraph.io)
+  - [Ask questions and discuss problems on the StellarGraph Discussions forum](https://github.com/stellargraph/stellargraph/discussions)
   - [File an issue](https://github.com/stellargraph/stellargraph/issues/new/choose)
   - Send us an email at [stellar.admin@csiro.au](mailto:stellar.admin@csiro.au?subject=Question%20about%20the%20StellarGraph%20library)
 
