@@ -7,6 +7,8 @@ name: CI
     # only build each push to develop and master, other branches are built through pull requests
     branches: [develop, master]
   pull_request:
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   build:
