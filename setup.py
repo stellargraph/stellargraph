@@ -82,7 +82,7 @@ setuptools.setup(
     version=VERSION,
     description=DESCRIPTION,
     author="Data61, CSIRO",
-    author_email="stellar.admin@csiro.au",
+    author_email="stellargraph.io@gmail.com",
     url=URL,
     license="Apache 2.0",
     long_description=LONG_DESCRIPTION,
