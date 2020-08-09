@@ -25,7 +25,7 @@ requirements:
     - pandas >=0.24
     - python >=3.6
     - scikit-learn >=0.20
-    - scipy >=1.1.0
+    - scipy==1.4.1
     - tensorflow >=2.1.0
     - ipython
     - ipykernel
