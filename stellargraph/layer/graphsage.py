@@ -155,6 +155,7 @@ class GraphSAGEAggregator(Layer):
             else:
                 group_dim = 0
             weight_dims.append(group_dim)
+        
         self.weight_dims = weight_dims
 
     def build(self, input_shape):
