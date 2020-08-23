@@ -36,6 +36,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Lambda, Dropout, Reshape, LeakyReLU
 from tensorflow.keras.utils import Sequence
 from tensorflow.keras import activations, initializers, constraints, regularizers
+from tensorflow import add_n
 from typing import List, Tuple, Callable, AnyStr, Union
 from ..mapper import (
     GraphSAGENodeGenerator,
@@ -259,7 +260,7 @@ class GraphSAGEAggregator(Layer):
                 sources.append(x_agg)
 
         # Sum outputs from all groups
-        h_out = sum(sources)
+        h_out = add_n(sources)
 
         # Optionally add bias
         if self.has_bias:
