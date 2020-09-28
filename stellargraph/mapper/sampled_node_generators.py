@@ -207,7 +207,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         batch_size (int): Size of batch to return.
         num_samples (list): The number of samples per layer (hop) to take.
         seed (int): [Optional] Random seed for the node sampler.
-        use_edge_features (bool): Include edge features too.
+        use_edge_features (bool): If True, include edge features too.
     """
 
     def __init__(
@@ -249,7 +249,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         if len(samples_per_hop) < 1:
             return
 
-        yield from get_levels(
+        yield from self._get_levels(
             end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
         )
 
@@ -266,7 +266,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
 
         batch_feats = (
             features(layer_elems, type_, use_ilocs=True)
-            for layer_nodes in elems_per_hop
+            for layer_elems in elems_per_hop
         )
         batch_feats = [
             a.reshape(this_batch_size, -1 if np.size(a) > 0 else 0, a.shape[1])
@@ -295,15 +295,15 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
             nodes=head_nodes,
             n=1,
             n_size=self.num_samples,
-            include_edges=self._use_edge_features,
+            include_edges=self.use_edge_features,
         )
 
-        if self._use_edge_features:
+        if self.use_edge_features:
             node_samples, edge_samples = node_samples
 
         node_features = self._get_features(len(head_nodes), node_samples, is_nodes=True)
 
-        if self._use_edge_features:
+        if self.use_edge_features:
             edge_features = self._get_features(len(head_nodes), edge_samples, is_nodes=False)
 
             # there's never an edge for the head node (i.e. first element), so don't include it
@@ -319,7 +319,7 @@ class GraphSAGENodeGenerator(BatchedNodeGenerator):
         # all nodes can be shuffled together
         node_tensors = list(range(num_node_tensors))
 
-        if self._use_edge_features:
+        if self.use_edge_features:
             # as can all edges, if they exist
             num_edge_tensors = num_node_tensors - 1
             edge_tensors = list(range(num_edge_tensors))

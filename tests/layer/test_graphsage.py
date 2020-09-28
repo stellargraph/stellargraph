@@ -698,3 +698,15 @@ def test_kernel_and_bias_defaults():
         assert layer.bias_regularizer is None
         assert layer.kernel_constraint is None
         assert layer.bias_constraint is None
+
+def test_graphsage_edge_features():
+    G = example_graph(feature_size=3, edge_feature_size=5)
+    gen = GraphSAGENodeGenerator(G, batch_size=2, num_samples=[2, 2], use_edge_features=True)
+    gs = GraphSAGE(layer_sizes=[4, 8], generator=gen, bias=True)
+    model = keras.Model(*gs.in_out_tensors())
+
+    model.compile("adam", loss="mse")
+    seq = gen.flow([1, 2], targets=[10, 20])
+    model.fit(seq)
+
+

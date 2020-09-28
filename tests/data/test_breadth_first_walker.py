@@ -548,3 +548,16 @@ class TestBreadthFirstWalk(object):
         n_size = [5, 5]
 
         benchmark(lambda: bfw.run(nodes=nodes, n=n, n_size=n_size))
+
+    def test_include_edges(self):
+        g = create_test_graph()
+        _conv = g.node_ids_to_ilocs
+        bfw = SampledBreadthFirstWalk(g)
+
+        w_nodes, w_edges = bfw.run(nodes=_conv([1]), n=1, n_size=[2, 3], seed=101, include_edges=True)
+
+        assert len(w_nodes) == len(w_edges)
+        for nodes, edges in zip(w_nodes, w_edges):
+            assert len(nodes) == len(edges) + 1
+
+            steps = [nodes[0], nodes[1:3], nodes[]

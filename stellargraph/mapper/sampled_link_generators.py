@@ -52,7 +52,7 @@ from .base import Generator
 
 
 class BatchedLinkGenerator(Generator):
-    def __init__(self, G, batch_size, schema=None, use_node_features=True):
+    def __init__(self, G, batch_size, schema=None, use_node_features=True, use_edge_features=False):
         if not isinstance(G, StellarGraph):
             raise TypeError("Graph must be a StellarGraph or StellarDiGraph object.")
 
@@ -77,8 +77,8 @@ class BatchedLinkGenerator(Generator):
         self.sampler = None
 
         # Check if the graph has features
-        if use_node_features:
-            G.check_graph_for_ml()
+        if use_node_features or use_edge_features:
+            G.check_graph_for_ml(edge_features=use_edge_features)
 
     @abc.abstractmethod
     def sample_features(self, head_links, batch_num):
@@ -221,10 +221,11 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         batch_size (int): Size of batch of links to return.
         num_samples (list): List of number of neighbour node samples per GraphSAGE layer (hop) to take.
         seed (int or str), optional: Random seed for the sampling methods.
+        use_edge_features (bool): If True, include edge features too.
     """
 
-    def __init__(self, G, batch_size, num_samples, seed=None, name=None):
-        super().__init__(G, batch_size)
+    def __init__(self, G, batch_size, num_samples, seed=None, name=None, use_edge_features=False):
+        super().__init__(G, batch_size, use_edge_features=use_edge_features)
 
         self.num_samples = num_samples
         self.name = name
@@ -238,6 +239,11 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             )
 
         self.head_node_types = self.schema.node_types * 2
+        self.use_edge_features = use_edge_features
+        if self.use_edge_features:
+            self._edge_type = G.unique_edge_type(
+                "G: expected a graph with a single edge type when using 'use_edge_features=True', found a graph with edge types: %(found)s"
+            )
 
         self._graph = G
         self._samplers = SeededPerBatch(
@@ -246,6 +252,41 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
             ),
             seed=seed,
         )
+
+    # Reshape node samples to sensible format
+    def _get_levels(self, loc, lsize, samples_per_hop, walks):
+        end_loc = loc + lsize
+        walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
+
+        yield walks_at_level
+
+        if len(samples_per_hop) < 1:
+            return
+
+        yield from self._get_levels(
+            end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
+        )
+
+    def _get_features(self, this_batch_size, samples, is_nodes):
+        start = 0 if is_nodes else -1
+        elems_per_hop = self._get_levels(start, 1, self.num_samples, samples)
+
+        if is_nodes:
+            features = self.graph.node_features
+            type_ = self.head_node_types[0]
+        else:
+            features = self.graph.edge_features
+            type_ = self._edge_type
+
+        batch_feats = (
+            features(layer_elems, type_, use_ilocs=True)
+            for layer_elems in elems_per_hop
+        )
+        batch_feats = [
+            a.reshape(this_batch_size, -1 if np.size(a) > 0 else 0, a.shape[1])
+            for a in batch_feats
+        ]
+        return batch_feats
 
     def sample_features(self, head_links, batch_num):
         """
@@ -270,39 +311,33 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
         # The number of samples for each head node (not including itself)
         num_full_samples = np.sum(np.cumprod(self.num_samples))
 
-        # Reshape node samples to sensible format
-        def get_levels(loc, lsize, samples_per_hop, walks):
-            end_loc = loc + lsize
-            walks_at_level = list(it.chain(*[w[loc:end_loc] for w in walks]))
-            if len(samples_per_hop) < 1:
-                return [walks_at_level]
-            return [walks_at_level] + get_levels(
-                end_loc, lsize * samples_per_hop[0], samples_per_hop[1:], walks
-            )
-
         # Get sampled nodes for the subgraphs for the edges where each edge is a tuple
         # of 2 nodes, so we are extracting 2 head nodes per edge
         batch_feats = []
         for hns in zip(*head_links):
             node_samples = self._samplers[batch_num].run(
-                nodes=hns, n=1, n_size=self.num_samples
+                nodes=hns, n=1, n_size=self.num_samples, include_edges=self.use_edge_features
             )
+            if self.use_edge_features:
+                node_samples, edge_samples = node_samples
+            
+            node_features = self._get_features(len(hns), node_samples, is_nodes=True)
 
-            nodes_per_hop = get_levels(0, 1, self.num_samples, node_samples)
+            if self.use_edge_features:
+                edge_features = self._get_features(len(hns), edge_samples, is_nodes=False)
 
-            # Get features for the sampled nodes
-            batch_feats.append(
-                [
-                    self.graph.node_features(layer_nodes, node_type, use_ilocs=True,)
-                    for layer_nodes in nodes_per_hop
-                ]
-            )
+                # there's never an edge for the head node (i.e. first element), so don't include it
+                assert np.size(edge_features[0]) == 0
+                edge_features = edge_features[1:]
+                batch_feats.append(node_features + edge_features)
+            else:
+                batch_feats.append(node_features)
 
         # Resize features to (batch_size, n_neighbours, feature_size)
         # and re-pack features into a list where source, target feats alternate
         # This matches the GraphSAGE link model with (node_src, node_dst) input sockets:
         batch_feats = [
-            np.reshape(feats, (head_size, -1, feats.shape[1]))
+            feats
             for ab in zip(*batch_feats)
             for feats in ab
         ]

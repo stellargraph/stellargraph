@@ -30,6 +30,7 @@ __all__ = [
 
 import warnings
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.layers import Layer
 from tensorflow.keras import Input
 from tensorflow.keras import backend as K
@@ -966,7 +967,8 @@ class GraphSAGE:
 
             """
             layer_out = []
-            for i in range(self.max_hops - num_hops):
+            last_node_index = self.max_hops - num_hops
+            for i in range(last_node_index):
                 head_shape = K.int_shape(x[i])[1]
 
                 # Reshape neighbours per node per layer
@@ -977,22 +979,38 @@ class GraphSAGE:
                 )
 
                 # Apply aggregator to head node and neighbour nodes
-                layer_out.append(
-                    self._aggs[num_hops]([Dropout(self.dropout)(x[i]), neigh_in])
-                )
+                agg_inp = [Dropout(self.dropout)(x[i]), neigh_in]
+
+                # On the first layer, include the edge features
+                print(num_hops, self.edge_feature_size)
+                if num_hops == 0 and self.edge_feature_size is not None:
+                    tf.print(head_shape, K.int_shape(edge_in[i]))
+                    neigh_edge_in = Dropout(self.dropout)(
+                        Reshape((head_shape, self.n_samples[i], self.dims[num_hops]))(
+                            edge_in[i]
+                        )
+                    )
+                    agg_inp.append(neigh_edge_in)
+
+                layer_out.append(self._aggs[num_hops](agg_inp))
 
             return layer_out
 
         if not isinstance(xin, list):
             raise TypeError("Input features to GraphSAGE must be a list")
 
-        if len(xin) != self.max_hops + 1:
+        num_node_tensors = self.max_hops + 1
+        num_edge_tensors = 0 if self.edge_feature_size is None else self.max_hops
+
+        if len(xin) != num_node_tensors + num_edge_tensors:
             raise ValueError(
                 "Length of input features should equal the number of GraphSAGE layers plus one"
             )
+        node_in = xin[:num_node_tensors]
+        edge_in = xin[num_node_tensors:]
 
         # Form GraphSAGE layers iteratively
-        h_layer = xin
+        h_layer = node_in
         for layer in range(0, self.max_hops):
             h_layer = apply_layer(h_layer, layer)
 

@@ -161,7 +161,7 @@ class GraphWalk(object):
             # seed the random number generator
             rs, np_rs = random_state(seed)
 
-        if numpy:
+        if use_numpy:
             return np_rs
 
         return rs
@@ -718,7 +718,7 @@ class SampledBreadthFirstWalk(GraphWalk):
                     walks_edges.append(walk_edges)
 
         if include_edges:
-            return walks, walk_edges
+            return walks, walks_edges
 
         return walks
 
