@@ -23,6 +23,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import backend as K
 from tensorflow.keras.layers import Input
+from stellargraph import custom_keras_layers
 from stellargraph.mapper import (
     FullBatchNodeGenerator,
     FullBatchLinkGenerator,
@@ -424,7 +425,11 @@ class Test_GAT:
         x_in, x_out = gat.in_out_tensors()
         assert len(x_in) == 4 if self.sparse else 3
         assert int(x_in[0].shape[-1]) == self.F_in
-        assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
+        if self.sparse:
+            assert K.int_shape(x_in[-2]) == (1, None, 2)
+            assert K.int_shape(x_in[-1]) == (1, None)
+        else:
+            assert K.int_shape(x_in[-1]) == (1, G.number_of_nodes(), G.number_of_nodes())
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
     def test_gat_build_linkmodel_constructor(self):
@@ -445,6 +450,9 @@ class Test_GAT:
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
     def test_gat_build_constructor_no_generator(self):
+        if self.sparse:
+            pytest.skip("no_generator is always dense")
+
         G = example_graph(feature_size=self.F_in)
         gat = GAT(
             layer_sizes=self.layer_sizes,
@@ -458,7 +466,7 @@ class Test_GAT:
         assert gat.use_sparse == False
 
         x_in, x_out = gat.in_out_tensors()
-        assert len(x_in) == 4 if self.sparse else 3
+        assert len(x_in) == 3
         assert int(x_in[0].shape[-1]) == self.F_in
         assert int(x_out.shape[-1]) == self.layer_sizes[-1]
 
@@ -570,10 +578,7 @@ class Test_GAT:
         # Load model from json & set all weights
         model2 = keras.models.model_from_json(
             model_json,
-            custom_objects={
-                "GraphAttention": GraphAttention,
-                "GatherIndices": GatherIndices,
-            },
+            custom_objects=custom_keras_layers,
         )
         model2.set_weights(model_weights)
 
@@ -622,6 +627,6 @@ class Test_GAT:
         test_utils.model_save_load(tmpdir, gat)
 
 
-def TestGATsparse(Test_GAT):
+class TestGATsparse(Test_GAT):
     sparse = True
     method = "gat"
