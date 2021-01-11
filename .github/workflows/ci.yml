@@ -293,7 +293,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install black==19.10b0
-          echo ::add-path::$HOME/.local/bin
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Check formatting
         run: |
           if ! black --check --diff . ; then
