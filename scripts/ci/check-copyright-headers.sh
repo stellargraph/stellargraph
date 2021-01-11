@@ -2,7 +2,7 @@
 # shellcheck disable=SC2016
 # Disable the above because this formats some markdown, and so there's lots of literal ` in strings
 
-set -euo pipefail
+set -xeuo pipefail
 
 temp="$(mktemp)"
 
