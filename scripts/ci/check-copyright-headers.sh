@@ -4,19 +4,19 @@
 
 set -xeuo pipefail
 
-temp="$(mktemp)"
-
 copyrightRegex="# Copyright [0-9-]*2020 Data61, CSIRO"
 
 echo "--- checking files have copyright headers"
 # Some files shouldn't have our copyright header and so are ignored
-find . \( \
+incorrect=$(find . \( \
   -name "*.py" \
   -a ! -path "./docs/conf.py" \
   \) \
-  -exec grep -L "$copyrightRegex" {} + | tee "$temp"
+  -exec grep -L "$copyrightRegex" {} +)
 
-if [ -s "$temp" ]; then
+echo "$incorrect"
+
+if [ -n "$incorrect" ]; then
   echo "^^^ +++"
   msg="Found files without a copyright header (no matches for \`$copyrightRegex\`)"
   echo "$msg"
