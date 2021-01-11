@@ -319,7 +319,7 @@ jobs:
           filter_mode: file
 
   copyright:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
 
@@ -461,7 +461,7 @@ jobs:
         run: python scripts/demo_indexing.py --action=compare
 
   check-documentation:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     env:
       sphinx_opts: "-W --keep-going"
     steps:
