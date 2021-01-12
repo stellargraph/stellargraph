@@ -421,6 +421,7 @@ class MovieLens(
             header=None,
             names=movie_columns,
             usecols=["movie_id"] + movie_columns[5:],
+            encoding="iso-8859-1",
         )
 
         # manage the IDs
