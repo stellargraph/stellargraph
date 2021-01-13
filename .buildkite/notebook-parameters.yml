@@ -28,3 +28,7 @@ walk_number: 2
 
 # the reddit dataset isn't available on CI for graph-resource-usage.ipynb
 reddit_path: null
+
+# minimal parameters for demos/interpretability/gat-node-link-importance.ipynb:
+n_steps: 2
+target_nid: 409725 # 2-hop ego net has 5 nodes
