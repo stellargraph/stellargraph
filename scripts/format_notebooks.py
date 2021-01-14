@@ -22,7 +22,9 @@ a machine-learning ready graph used by models.
 
 """
 import argparse
+import copy
 import difflib
+import hashlib
 import nbformat
 import re
 import shlex
@@ -289,6 +291,50 @@ class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
         return nb, resources
 
 
+class IdempotentIdPreprocessor(preprocessors.Preprocessor):
+    # https://github.com/jupyter/enhancement-proposals/blob/master/62-cell-id/cell-id.md introduces
+    # 'cell ids', which nbformat 5.1.0+ inserts. However, it inserts random ones. This class
+    # overwrites the random ones with fixed IDs.
+
+    KEY = "id-source-seen"p
+
+    def preprocess(self, nb, resources):
+        # a scoped dictionary to track the source code seen in this notebook
+        resources[self.KEY] = {}
+        out_nb, out_resources = super().preprocess(nb, resources)
+        out_resources.pop(self.KEY)
+
+        # double check the IDs are actually assigned uniquely
+        ids = [c.id for c in out_nb.cells]
+        assert len(ids) == len(set(ids))
+
+        return out_nb, out_resources
+
+    def preprocess_cell(self, cell, resources, cell_index):
+        cell = copy.deepcopy(cell)
+        source = cell["source"]
+
+        # the core of the ID is a hash of the source code: this will be the same across every time a
+        # given version of the notebook is reformatted.
+        hasher = hashlib.sha256()
+        hasher.update(source.encode())
+        digest = hasher.hexdigest()[:8]
+
+        # However, there might be multiple cells with identical source in a single notebook
+        # (e.g. the badge cells), so a counter disambiguates (this also doesn't change, if the
+        # notebook hasn't changed).
+        counter = resources[self.KEY]
+        same_source_seen = counter.get(source, 0)
+        counter[source] = same_source_seen + 1
+
+        if same_source_seen > 0:
+            cell.id = f"{digest}-{same_source_seen}"
+        else:
+            cell.id = digest
+
+        return cell, resources
+
+
 # ANSI terminal escape sequences
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
@@ -375,6 +421,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Add or update cells that link to docs for loading data",
     )
+    parser.add_argument(
+        "-i",
+        "--ids",
+        action="store_true",
+        help="Add fixed IDs based on a hash of cell contents",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-o",
@@ -417,6 +469,7 @@ if __name__ == "__main__":
     run_cloud = args.run_cloud or args.default
     version_validation = args.version_validation or args.default
     loading_links = args.loading_links or args.default
+    ids = args.ids or args.default
 
     # Add preprocessors
     preprocessor_list = []
@@ -434,6 +487,10 @@ if __name__ == "__main__":
 
     if format_code:
         preprocessor_list.append(FormatCodeCellPreprocessor)
+
+    if ids:
+        # this needs to look at every cell's source, so must run after all additions/changes
+        preprocessor_list.append(IdempotentIdPreprocessor)
 
     if execute_code:
         preprocessor_list.append(preprocessors.ExecutePreprocessor)
