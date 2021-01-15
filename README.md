@@ -180,7 +180,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 StellarGraph is a Python 3 library and we recommend using Python version `3.6`. The required Python version
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
-environment, available from [anaconda.com](https://www.anaconda.com/download/).
+environment, available from [anaconda.com](https://www.anaconda.com/products/individual#Downloads).
 
 The StellarGraph library can be installed from PyPI, from Anaconda Cloud, or directly from GitHub, as described below.
 
