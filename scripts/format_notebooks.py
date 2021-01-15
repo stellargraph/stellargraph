@@ -24,7 +24,6 @@ a machine-learning ready graph used by models.
 import argparse
 import copy
 import difflib
-import hashlib
 import nbformat
 import re
 import shlex
@@ -389,10 +388,7 @@ if __name__ == "__main__":
         help="Add or update cells that link to docs for loading data",
     )
     parser.add_argument(
-        "-i",
-        "--ids",
-        action="store_true",
-        help="Add fixed IDs based on a hash of cell contents",
+        "-i", "--ids", action="store_true", help="Add fixed IDs to each cell",
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
