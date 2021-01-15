@@ -296,42 +296,9 @@ class IdempotentIdPreprocessor(preprocessors.Preprocessor):
     # 'cell ids', which nbformat 5.1.0+ inserts. However, it inserts random ones. This class
     # overwrites the random ones with fixed IDs.
 
-    KEY = "id-source-seen"
-
-    def preprocess(self, nb, resources):
-        # a scoped dictionary to track the source code seen in this notebook
-        resources[self.KEY] = {}
-        out_nb, out_resources = super().preprocess(nb, resources)
-        out_resources.pop(self.KEY)
-
-        # double check the IDs are actually assigned uniquely
-        ids = [c.id for c in out_nb.cells]
-        assert len(ids) == len(set(ids))
-
-        return out_nb, out_resources
-
     def preprocess_cell(self, cell, resources, cell_index):
         cell = copy.deepcopy(cell)
-        source = cell["source"]
-
-        # the core of the ID is a hash of the source code: this will be the same across every time a
-        # given version of the notebook is reformatted.
-        hasher = hashlib.sha256()
-        hasher.update(source.encode())
-        digest = hasher.hexdigest()[:8]
-
-        # However, there might be multiple cells with identical source in a single notebook
-        # (e.g. the badge cells), so a counter disambiguates (this also doesn't change, if the
-        # notebook hasn't changed).
-        counter = resources[self.KEY]
-        same_source_seen = counter.get(source, 0)
-        counter[source] = same_source_seen + 1
-
-        if same_source_seen > 0:
-            cell.id = f"{digest}-{same_source_seen}"
-        else:
-            cell.id = digest
-
+        cell.id = str(cell_index)
         return cell, resources
 
 
