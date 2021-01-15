@@ -296,7 +296,7 @@ class IdempotentIdPreprocessor(preprocessors.Preprocessor):
     # 'cell ids', which nbformat 5.1.0+ inserts. However, it inserts random ones. This class
     # overwrites the random ones with fixed IDs.
 
-    KEY = "id-source-seen"p
+    KEY = "id-source-seen"
 
     def preprocess(self, nb, resources):
         # a scoped dictionary to track the source code seen in this notebook
