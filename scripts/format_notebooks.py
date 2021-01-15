@@ -456,7 +456,7 @@ if __name__ == "__main__":
         preprocessor_list.append(FormatCodeCellPreprocessor)
 
     if ids:
-        # this needs to look at every cell's source, so must run after all additions/changes
+        # this needs to know the order of cells, so must run after all additions/changes
         preprocessor_list.append(IdempotentIdPreprocessor)
 
     if execute_code:
