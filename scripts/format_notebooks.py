@@ -22,6 +22,7 @@ a machine-learning ready graph used by models.
 
 """
 import argparse
+import copy
 import difflib
 import nbformat
 import re
@@ -289,6 +290,17 @@ class LoadingLinksPreprocessor(InsertTaggedCellsPreprocessor):
         return nb, resources
 
 
+class IdempotentIdPreprocessor(preprocessors.Preprocessor):
+    # https://github.com/jupyter/enhancement-proposals/blob/master/62-cell-id/cell-id.md introduces
+    # 'cell ids', which nbformat 5.1.0+ inserts. However, it inserts random ones. This class
+    # overwrites the random ones with fixed IDs.
+
+    def preprocess_cell(self, cell, resources, cell_index):
+        cell = copy.deepcopy(cell)
+        cell.id = str(cell_index)
+        return cell, resources
+
+
 # ANSI terminal escape sequences
 YELLOW_BOLD = "\033[1;33;40m"
 LIGHT_RED_BOLD = "\033[1;91;40m"
@@ -375,6 +387,9 @@ if __name__ == "__main__":
         action="store_true",
         help="Add or update cells that link to docs for loading data",
     )
+    parser.add_argument(
+        "-i", "--ids", action="store_true", help="Add fixed IDs to each cell",
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "-o",
@@ -417,6 +432,7 @@ if __name__ == "__main__":
     run_cloud = args.run_cloud or args.default
     version_validation = args.version_validation or args.default
     loading_links = args.loading_links or args.default
+    ids = args.ids or args.default
 
     # Add preprocessors
     preprocessor_list = []
@@ -434,6 +450,10 @@ if __name__ == "__main__":
 
     if format_code:
         preprocessor_list.append(FormatCodeCellPreprocessor)
+
+    if ids:
+        # this needs to know the order of cells, so must run after all additions/changes
+        preprocessor_list.append(IdempotentIdPreprocessor)
 
     if execute_code:
         preprocessor_list.append(preprocessors.ExecutePreprocessor)
