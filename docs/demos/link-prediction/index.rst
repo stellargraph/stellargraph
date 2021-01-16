@@ -65,6 +65,11 @@ This table lists all node classification demos, including the algorithms trained
      -
      - yes, multiple edge types
      -
+   * - :doc:`RotatE <rotate-link-prediction>`
+     - RotatE
+     -
+     - yes, multiple edge types
+     -
 
 
 See :doc:`the root README <../../README>` or each algorithm's documentation for the relevant citation(s). See :doc:`the demo index <../index>` for more tasks, and a summary of each algorithm.

@@ -17,6 +17,7 @@ These demos are displayed with detailed descriptions in the documentation: https
 | [Comparison of link prediction with random walks based node embedding](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/homogeneous-comparison-link-prediction.html) | [source](homogeneous-comparison-link-prediction.ipynb) |
 | [Link prediction with Metapath2Vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html) | [source](metapath2vec-link-prediction.ipynb) |
 | [Link prediction with Node2Vec](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/node2vec-link-prediction.html) | [source](node2vec-link-prediction.ipynb) |
+| [Knowledge graph link prediction with RotatE](https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/rotate-link-prediction.html) | [source](rotate-link-prediction.ipynb) |
 
 The demo titles link to the latest, nicely rendered version. The 'source' links will open the demo in the application in which this README is being viewed, such as Jupyter Lab (ready for execution).
 <!-- DOCS LINKS -->

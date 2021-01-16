@@ -530,6 +530,14 @@ ALGORITHMS = [
         rl=True,
     ),
     Algorithm(
+        "RotatE",
+        heterogeneous=HETEROGENEOUS_EDGE,
+        directed=True,
+        nc=via_rl(),
+        lp=T(link="link-prediction/rotate-link-prediction"),
+        rl=True,
+    ),
+    Algorithm(
         T("DGCNN", details="Deep Graph CNN"),
         features=True,
         weighted=True,

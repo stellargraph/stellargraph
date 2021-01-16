@@ -664,13 +664,32 @@ class RotatEScore(Layer, KGScore):
 @experimental(reason="demo and documentation is missing", issues=[1549, 1550])
 class RotatE(KGModel):
     """
-    Implementation of https://arxiv.org/abs/1902.10197
+    Embedding layers and a RotatE scoring layers that implement the RotatE knowledge graph
+    embedding algorithm as in [1].
+
+    [1] Z. Sun, Z.-H. Deng, J.-Y. Nie, and J. Tang, “RotatE: Knowledge Graph Embedding by Relational Rotation in Complex Space,” `arXiv:1902.10197 <http://arxiv.org/abs/1902.10197>`_, Feb. 2019.
 
     .. seealso::
 
        Related models: other knowledge graph models, see :class:`.KGTripleGenerator` for a full list.
 
        Appropriate data generator: :class:`.KGTripleGenerator`.
+
+    Args:
+        generator (KGTripleGenerator): A generator of triples to feed into the model.
+
+        embedding_dimension (int): the dimension of the embedding (that is, a vector in
+            ``C^embedding_dimension`` is learnt for each node and each link type)
+
+        margin (float): a fixed margin parameter by which to offset each score.
+
+        norm_order (int): the order :math:`p` of the :math:`L^p` norm to use for the distance
+            between vectors. The paper suggests :math:`p = 1`, but `the reference implementation
+            <https://github.com/DeepGraphLearning/KnowledgeGraphEmbedding>`_ uses :math:`p = 2`.
+
+        embeddings_initializer (str or func, optional): The initialiser to use for the embeddings.
+
+        embeddings_regularizer (str or func, optional): The regularizer to use for the embeddings.
     """
 
     def __init__(
@@ -679,7 +698,6 @@ class RotatE(KGModel):
         embedding_dimension,
         # default taken from the paper's code: https://github.com/DeepGraphLearning/KnowledgeGraphEmbedding
         margin=12.0,
-        # default taken from the paper's code: https://github.com/DeepGraphLearning/KnowledgeGraphEmbedding
         norm_order=2,
         embeddings_initializer="normal",
         embeddings_regularizer=None,
