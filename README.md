@@ -274,7 +274,7 @@ International Conference on Machine Learning (ICML), 2019, ([link](https://arxiv
 
 14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018, arXiv:1710.09599 ([link](https://arxiv.org/pdf/1710.09599.pdf))
 
-15. Deep Graph Infomax. P. Veličković, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm. International Conference on Learning Representations, ICLR, 2019, arXiv:1809.10341, ([link](https://arxiv.org/pdf/1809.10341.pdf)).
+15. Deep Graph Infomax. P. Veličković, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm. International Conference on Learning Representations (ICLR), 2019, arXiv:1809.10341, ([link](https://arxiv.org/pdf/1809.10341.pdf)).
 
 16. Continuous-Time Dynamic Network Embeddings. Giang Hoang Nguyen, John Boaz Lee, Ryan A. Rossi, Nesreen K. Ahmed, Eunyee Koh, and Sungchul Kim. Proceedings of the 3rd International Workshop on Learning Representations for Big Networks (WWW BigNet) 2018. ([link](https://dl.acm.org/doi/10.1145/3184558.3191526))
 
