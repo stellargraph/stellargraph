@@ -74,7 +74,7 @@ The dependencies required to run most of our demo notebooks locally can be insta
 
 ## Getting Help
 
-If you get stuck or have a problem, there's many ways to make progress and get help or support:
+If you get stuck or have a problem, there are many ways to make progress and get help or support:
 
 - [Read the documentation](https://stellargraph.readthedocs.io)
 - [Consult the examples][demos]
@@ -180,7 +180,7 @@ The StellarGraph library currently includes the following algorithms for graph m
 
 StellarGraph is a Python 3 library and we recommend using Python version `3.6`. The required Python version
 can be downloaded and installed from [python.org](https://python.org/). Alternatively, use the Anaconda Python
-environment, available from [anaconda.com](https://www.anaconda.com/download/).
+environment, available from [anaconda.com](https://www.anaconda.com/products/individual#Downloads).
 
 The StellarGraph library can be installed from PyPI, from Anaconda Cloud, or directly from GitHub, as described below.
 
@@ -195,7 +195,7 @@ pip install stellargraph
 pip install stellargraph[demos]
 ```
 
-The community detection demos requires `python-igraph` which is only available on some platforms. To install this in addition to the other demo requirements:
+The community detection demos require `python-igraph` which is only available on some platforms. To install this in addition to the other demo requirements:
 ```
 pip install stellargraph[demos,igraph]
 ```
@@ -242,46 +242,44 @@ If you use any part of this library in your research, please cite it using the f
 ## References
 
 1. Inductive Representation Learning on Large Graphs. W.L. Hamilton, R. Ying, and J. Leskovec.
-Neural Information Processing Systems (NIPS), 2017. ([link](https://arxiv.org/abs/1706.02216) [webpage](https://snap.stanford.edu/graphsage/))
+Neural Information Processing Systems (NIPS), 2017, ([link](https://arxiv.org/abs/1706.02216) [webpage](https://snap.stanford.edu/graphsage/))
 
-2. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016. ([link](https://snap.stanford.edu/node2vec/))
+2. Node2Vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016, ([link](https://snap.stanford.edu/node2vec/))
 
 3. Metapath2Vec: Scalable Representation Learning for Heterogeneous Networks. Yuxiao Dong, Nitesh V. Chawla, and Ananthram Swami.
-ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017
-([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
+ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 135–144, 2017, ([link](https://ericdongyx.github.io/metapath2vec/m2v.html))
 
-4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, Data Mining and Knowledge Discovery, 2019. ([link](https://link.springer.com/article/10.1007/s10618-019-00650-2))
+4. Attributed Network Embedding via Subspace Discovery. D. Zhang, Y. Jie, X. Zhu and C. Zhang, Data Mining and Knowledge Discovery, 2019, ([link](https://link.springer.com/article/10.1007/s10618-019-00650-2))
 
 5. Graph Attention Networks. P. Veličković et al.
-International Conference on Learning Representations (ICLR) 2018 ([link](https://arxiv.org/abs/1710.10903))
+International Conference on Learning Representations (ICLR), 2018, ([link](https://arxiv.org/abs/1710.10903))
 
 6. Graph Convolutional Networks (GCN): Semi-Supervised Classification with Graph Convolutional Networks. Thomas N. Kipf, Max Welling.
-International Conference on Learning Representations (ICLR), 2017
-([link](https://github.com/tkipf/gcn))
+International Conference on Learning Representations (ICLR), 2017, ([link](https://github.com/tkipf/gcn))
 
 7. Simplifying Graph Convolutional Networks. F. Wu, T. Zhang, A. H. de Souza, C. Fifty, T. Yu, and K. Q. Weinberger.
-International Conference on Machine Learning (ICML), 2019. ([link](https://arxiv.org/abs/1902.07153))
+International Conference on Machine Learning (ICML), 2019, ([link](https://arxiv.org/abs/1902.07153))
 
-8. Adversarial Examples on Graph Data: Deep Insights into Attack and Defense. H. Wu, C. Wang, Y. Tyshetskiy, A. Docherty, K. Lu, and L. Zhu. IJCAI 2019. ([link](https://arxiv.org/abs/1903.01610))
+8. Adversarial Examples on Graph Data: Deep Insights into Attack and Defense. H. Wu, C. Wang, Y. Tyshetskiy, A. Docherty, K. Lu, and L. Zhu. IJCAI 2019, ([link](https://arxiv.org/abs/1903.01610))
 
 9. Predict then propagate: Graph neural networks meet personalized PageRank. J. Klicpera, A. Bojchevski, A., and S. Günnemann, ICLR, 2019, arXiv:1810.05997.([link](https://arxiv.org/abs/1810.05997))
 
 10. Cluster-GCN: An Efficient Algorithm for Training Deep and Large Graph Convolutional Networks. W. Chiang, X. Liu, S. Si, Y. Li, S. Bengio, and C. Hsiej, KDD, 2019, arXiv:1905.07953.([link](https://arxiv.org/abs/1905.07953))
 
-11. Modeling relational data with graph convolutional networks. M. Schlichtkrull, T. N. Kipf, P. Bloem, R. Van Den Berg, I. Titov, and M. Welling, European Semantic Web Conference (2018), arXiv:1609.02907 ([link](https://arxiv.org/abs/1703.06103)).
+11. Modeling relational data with graph convolutional networks. M. Schlichtkrull, T. N. Kipf, P. Bloem, R. Van Den Berg, I. Titov, and M. Welling, European Semantic Web Conference, 2018, arXiv:1609.02907 ([link](https://arxiv.org/pdf/1703.06103.pdf)).
 
-12. Complex Embeddings for Simple Link Prediction. T. Trouillon, J. Welbl, S. Riedel, É. Gaussier and G. Bouchard, ICML 2016. ([link](http://jmlr.org/proceedings/papers/v48/trouillon16.pdf))
+12. Complex Embeddings for Simple Link Prediction. T. Trouillon, J. Welbl, S. Riedel, É. Gaussier and G. Bouchard, ICML, 2016. ([link](http://jmlr.org/proceedings/papers/v48/trouillon16.pdf))
 
 13. Learning Structural Node Embeddings via Diffusion Wavelets. C. Donnat, M. Zitnik, D. Hallac, and J. Leskovec, SIGKDD, 2018, arXiv:1710.10321 ([link](https://arxiv.org/pdf/1710.10321.pdf))
 
-14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018. arXiv:1710.09599 ([link](https://arxiv.org/abs/1710.09599))
+14. Watch Your Step: Learning Node Embeddings via Graph Attention. S. Abu-El-Haija, B. Perozzi, R. Al-Rfou and A. Alemi, NIPS, 2018, arXiv:1710.09599 ([link](https://arxiv.org/pdf/1710.09599.pdf))
 
-15. Deep Graph Infomax. P. Veličković, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm, ICLR, 2019, arXiv:1809.10341 ([link](https://arxiv.org/pdf/1809.10341.pdf)).
+15. Deep Graph Infomax. P. Veličković, W. Fedus, W. L. Hamilton, P. Lio, Y. Bengio, R. D. Hjelm. International Conference on Learning Representations (ICLR), 2019, arXiv:1809.10341, ([link](https://arxiv.org/pdf/1809.10341.pdf)).
 
 16. Continuous-Time Dynamic Network Embeddings. Giang Hoang Nguyen, John Boaz Lee, Ryan A. Rossi, Nesreen K. Ahmed, Eunyee Koh, and Sungchul Kim. Proceedings of the 3rd International Workshop on Learning Representations for Big Networks (WWW BigNet) 2018. ([link](https://dl.acm.org/doi/10.1145/3184558.3191526))
 
-17. Embedding Entities and Relations for Learning and Inference in Knowledge Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng, ICLR, 2015. arXiv:1412.6575 ([link](https://arxiv.org/pdf/1412.6575))
+17. Embedding Entities and Relations for Learning and Inference in Knowledge Bases. Bishan Yang, Wen-tau Yih, Xiaodong He, Jianfeng Gao, and Li Deng, ICLR, 2015. arXiv:1412.6575 ([link](https://arxiv.org/pdf/1412.6575.pdf))
 
 18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~muhan/papers/AAAI_2018_DGCNN.pdf))
 
-19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. Ling Zhao, Yujiao Song, Chao Zhang, Yu Liu, Pu Wang, Tao Lin, Min Deng, and Haifeng Li.IEEE Transactions on Intelligent Transportation Systems, 2019. ([link](https://ieeexplore.ieee.org/document/8809901))
+19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. Ling Zhao, Yujiao Song, Chao Zhang, Yu Liu, Pu Wang, Tao Lin, Min Deng, and Haifeng Li. IEEE Transactions on Intelligent Transportation Systems, 2019. ([link](https://ieeexplore.ieee.org/document/8809901))
