@@ -218,7 +218,7 @@ class StellarGraph:
 
         foo_nodes = IndexedArray(np.array([[-1]]), index=["a"])
         bar_nodes = IndexedArray(
-            np.array([[0.4, 100], [0.1, 200], [0.9, 300]], index=["b", "c", "d"])
+            np.array([[0.4, 100], [0.1, 200], [0.9, 300]]), index=["b", "c", "d"],
         )
 
         StellarGraph({"foo": foo_nodes, "bar": bar_nodes}, edges)
