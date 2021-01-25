@@ -137,16 +137,16 @@ class FixedAdjacencyGraphConvolution(Layer):
         """
         _batch_dim, n_nodes, features = input_shapes
 
-        if self.adj is None:
-            raise ValueError(
-                "A: expected adjacency matrix when initially defining layer, found None which is only supported when loading a saved model"
-            )
+        if self.adj is not None:
+            adj_init = initializers.constant(self.adj)
+        else:
+            adj_init = initializers.zeros()
 
         self.A = self.add_weight(
             name="A",
             shape=(n_nodes, n_nodes),
             trainable=False,
-            initializer=initializers.constant(self.adj),
+            initializer=adj_init,
         )
         self.kernel = self.add_weight(
             shape=(features, self.units),
