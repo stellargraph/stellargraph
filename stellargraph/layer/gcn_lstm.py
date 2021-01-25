@@ -143,10 +143,7 @@ class FixedAdjacencyGraphConvolution(Layer):
             adj_init = initializers.zeros()
 
         self.A = self.add_weight(
-            name="A",
-            shape=(n_nodes, n_nodes),
-            trainable=False,
-            initializer=adj_init,
+            name="A", shape=(n_nodes, n_nodes), trainable=False, initializer=adj_init
         )
         self.kernel = self.add_weight(
             shape=(features, self.units),
