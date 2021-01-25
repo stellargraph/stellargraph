@@ -69,7 +69,8 @@ class FixedAdjacencyGraphConvolution(Layer):
             kwargs["input_shape"] = (input_dim,)
 
         self.units = units
-        self.adj = calculate_laplacian(A)
+        self.adj = calculate_laplacian(A) if A is not None else None
+
         self.activation = activations.get(activation)
         self.use_bias = use_bias
 
@@ -101,6 +102,10 @@ class FixedAdjacencyGraphConvolution(Layer):
             "bias_initializer": initializers.serialize(self.bias_initializer),
             "bias_regularizer": regularizers.serialize(self.bias_regularizer),
             "bias_constraint": constraints.serialize(self.bias_constraint),
+            # the adjacency matrix argument is required, but
+            # (semi-secretly) supports None for loading from a saved
+            # model, where the adjacency matrix is a saved weight
+            "A": None,
         }
 
         base_config = super().get_config()
@@ -132,11 +137,13 @@ class FixedAdjacencyGraphConvolution(Layer):
         """
         _batch_dim, n_nodes, features = input_shapes
 
+        if self.adj is not None:
+            adj_init = initializers.constant(self.adj)
+        else:
+            adj_init = initializers.zeros()
+
         self.A = self.add_weight(
-            name="A",
-            shape=(n_nodes, n_nodes),
-            trainable=False,
-            initializer=initializers.constant(self.adj),
+            name="A", shape=(n_nodes, n_nodes), trainable=False, initializer=adj_init
         )
         self.kernel = self.add_weight(
             shape=(features, self.units),

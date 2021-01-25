@@ -217,7 +217,6 @@ def test_gcn_lstm_generator(arange_graph):
     np.testing.assert_array_equal(predictions, predictions2)
 
 
-@pytest.mark.xfail(reason="FIXME #1681")
 def test_gcn_lstm_save_load(tmpdir, arange_graph):
     gen = SlidingFeaturesNodeGenerator(arange_graph, 2, batch_size=3)
     gcn_lstm = GCN_LSTM(None, None, [2], [4], generator=gen)
