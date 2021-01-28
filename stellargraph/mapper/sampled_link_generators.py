@@ -213,7 +213,7 @@ class GraphSAGELinkGenerator(BatchedLinkGenerator):
 
     Example::
 
-        G_generator = GraphSageLinkGenerator(G, 50, [10,10])
+        G_generator = GraphSAGELinkGenerator(G, 50, [10,10])
         train_data_gen = G_generator.flow(edge_ids)
 
     .. seealso::
