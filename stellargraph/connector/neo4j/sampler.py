@@ -58,7 +58,7 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
 
             // pick random nodes with replacement
             WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS sampled
-            
+
             // pull the ids of the sampled nodes only
             unwind sampled as nn
             WITH CASE collect(nn.{id_property}) WHEN [] THEN sampled ELSE collect(nn.{id_property}) END AS in_samples_list
@@ -66,7 +66,7 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
             RETURN in_samples_list',
             {{ node_id: node_id, num_samples: $num_samples  }}) YIELD value
 
-        RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS sampled
+        RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS next_sample
         """
 
 
