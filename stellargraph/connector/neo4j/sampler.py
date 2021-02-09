@@ -53,16 +53,20 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
             // find the neighbors
             MATCH (cur_node){direction_arrow}(neighbors)
 
-            // put all ids into a list
-            WITH CASE collect(neighbors.{id_property}) WHEN [] THEN [null] ELSE collect(neighbors.{id_property}) END AS in_neighbors_list
+            // collect neighbors in a list
+            WITH CASE collect(neighbors) WHEN [] THEN [null] ELSE collect(neighbors) END AS in_neighbors_list
 
             // pick random nodes with replacement
-            WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS in_samples_list
+            WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS sampled
+            
+            // pull the ids of the sampled nodes only
+            unwind sampled as nn
+            WITH CASE collect(nn.{id_property}) WHEN [] THEN sampled ELSE collect(nn.{id_property}) END AS in_samples_list
 
             RETURN in_samples_list',
             {{ node_id: node_id, num_samples: $num_samples  }}) YIELD value
 
-        RETURN apoc.coll.flatten(collect(value.in_samples_list)) as next_samples
+        RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS sampled
         """
 
 
