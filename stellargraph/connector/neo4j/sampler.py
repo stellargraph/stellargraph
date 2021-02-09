@@ -66,7 +66,7 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
             RETURN in_samples_list',
             {{ node_id: node_id, num_samples: $num_samples  }}) YIELD value
 
-        RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS next_sample
+        RETURN apoc.coll.flatten(collect(value.in_samples_list)) AS next_samples
         """
 
 
