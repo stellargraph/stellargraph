@@ -60,7 +60,7 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
             WITH apoc.coll.randomItems(in_neighbors_list, $num_samples, True) AS sampled
 
             // pull the ids of the sampled nodes only
-            unwind sampled as nn
+            UNWIND sampled AS nn
             WITH CASE collect(nn.{id_property}) WHEN [] THEN sampled ELSE collect(nn.{id_property}) END AS in_samples_list
 
             RETURN in_samples_list',
