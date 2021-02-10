@@ -61,7 +61,9 @@ def _bfs_neighbor_query(sampling_direction, id_property, node_label=None):
 
             // pull the ids of the sampled nodes only
             UNWIND sampled AS nn
-            WITH CASE collect(nn.{id_property}) WHEN [] THEN sampled ELSE collect(nn.{id_property}) END AS in_samples_list
+            WITH collect(nn.{id_property}) AS in_samples_list
+            // collect ignores nulls, so re-handle the no-neighbours case to ensure we get [null, null, ...] output
+            WITH CASE in_samples_list WHEN [] THEN sampled ELSE in_samples_list END AS in_samples_list
 
             RETURN in_samples_list',
             {{ node_id: node_id, num_samples: $num_samples  }}) YIELD value
