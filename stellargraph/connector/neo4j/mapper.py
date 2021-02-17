@@ -491,4 +491,3 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
             features.append( target )
 
         return features
-
