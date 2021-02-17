@@ -520,7 +520,7 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        if use_ilocs == True:
+        if use_ilocs:
             node_indices = np.asarray(node_ids)
         else:
             node_indices = self.graph.node_ids_to_ilocs(node_ids)
