@@ -504,6 +504,8 @@ class RelationalFullBatchNodeGenerator(Generator):
                 (e.g., training, validation, or test set nodes)
             targets: a 2D array of numeric node targets with shape ``(len(node_ids), target_size)``
 
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
+                otherwise node_ids need to be transformed into ilocs
         Returns:
             A NodeSequence object to use with RGCN models
             in Keras methods :meth:`fit`, :meth:`evaluate`,
