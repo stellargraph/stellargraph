@@ -503,7 +503,6 @@ class RelationalFullBatchNodeGenerator(Generator):
             node_ids: and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
             targets: a 2D array of numeric node targets with shape ``(len(node_ids), target_size)``
-
             use_ilocs (bool): if True, node_ids are represented by ilocs,
                 otherwise node_ids need to be transformed into ilocs
         Returns:
