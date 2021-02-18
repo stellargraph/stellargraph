@@ -47,9 +47,11 @@ from ..mapper import (
 )
 
 from .misc import deprecated_model_function
-from ..connector.neo4j.mapper import (
+from ..connector.neo4j.mapper_nodes import (
     Neo4jGraphSAGENodeGenerator,
     Neo4jDirectedGraphSAGENodeGenerator,
+)
+from ..connector.neo4j.mapper_links import (
     Neo4jGraphSAGELinkGenerator,
     Neo4jDirectedGraphSAGELinkGenerator,
 )

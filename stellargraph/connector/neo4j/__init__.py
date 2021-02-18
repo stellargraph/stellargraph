@@ -19,5 +19,6 @@
 """
 
 from .sampler import *
-from .mapper import *
+from .mapper_nodes import *
+from .mapper_links import *
 from .graph import *
