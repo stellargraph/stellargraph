@@ -36,6 +36,26 @@ from ...mapper.sampled_link_generators import BatchedLinkGenerator
 from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph
 
+def __reformat_feature_array( nodes_per_hop, batch_features ):
+
+    features = []
+    idx = 0
+
+    for nodes in nodes_per_hop:
+
+        features_for_slot = batch_features[ idx : idx + len(nodes) ]
+        resize            = -1 if np.size(features_for_slot) > 0 else 0
+
+        features.append(
+            np.reshape(
+                features_for_slot,
+                ( len(head_nodes), resize, features_for_slot.shape[1] ),
+            )
+        )
+
+        idx += len(nodes)
+
+    return features
 
 @experimental(reason="the class is not fully tested")
 class Neo4jBatchedNodeGenerator:
@@ -152,18 +172,7 @@ class Neo4jGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
         batch_nodes = np.concatenate(nodes_per_hop)
         batch_features = self.graph.node_features(batch_nodes)
 
-        features = []
-        idx = 0
-        for nodes in nodes_per_hop:
-            features_for_slot = batch_features[idx : idx + len(nodes)]
-            resize = -1 if np.size(features_for_slot) > 0 else 0
-            features.append(
-                np.reshape(
-                    features_for_slot,
-                    (len(head_nodes), resize, features_for_slot.shape[1]),
-                )
-            )
-            idx += len(nodes)
+        features = __reformat_feature_array( nodes_per_hop, batch_features )
 
         return features
 
@@ -345,22 +354,7 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
         batch_nodes    = np.concatenate( nodes_per_hop )
         batch_features = self.graph.node_features( batch_nodes )
 
-        features = []
-        idx = 0
-
-        for nodes in nodes_per_hop:
-
-            features_for_slot = batch_features[ idx : idx + len(nodes) ]
-            resize            = -1 if np.size(features_for_slot) > 0 else 0
-
-            features.append(
-                np.reshape(
-                    features_for_slot,
-                    ( len(head_nodes), resize, features_for_slot.shape[1] ),
-                )
-            )
-
-            idx += len(nodes)
+        features = __reformat_feature_array( nodes_per_hop, batch_features )
 
         return features
 
