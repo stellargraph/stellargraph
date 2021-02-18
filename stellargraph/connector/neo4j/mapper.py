@@ -57,6 +57,24 @@ def reformat_feature_array( nodes_per_hop, batch_features, N ):
 
     return features
 
+def reformat_feature_array_directed( max_slots, batch_features, node_samples, N ):
+
+    features = [None] * max_slots
+    idx = 0
+
+    for slot in range(max_slots):
+
+        features_for_slot = batch_features[idx : idx + len(node_samples[slot])]
+        resize = -1 if np.size(features_for_slot) > 0 else 0
+
+        features[slot] = np.reshape(
+            features_for_slot, ( N, resize, features_for_slot.shape[1] )
+        )
+
+        idx += len(node_samples[slot])
+
+    return features
+
 @experimental(reason="the class is not fully tested")
 class Neo4jBatchedNodeGenerator:
     """
@@ -253,19 +271,11 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
 
         max_hops = len(self.in_samples)
         max_slots = 2 ** (max_hops + 1) - 1
-        features = [None] * max_slots  # flattened binary tree
 
         batch_nodes = np.concatenate(node_samples)
         batch_features = self.graph.node_features(batch_nodes)
 
-        idx = 0
-        for slot in range(max_slots):
-            features_for_slot = batch_features[idx : idx + len(node_samples[slot])]
-            resize = -1 if np.size(features_for_slot) > 0 else 0
-            features[slot] = np.reshape(
-                features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
-            )
-            idx += len(node_samples[slot])
+        features = reformat_feature_array_directed( max_slots, batch_features, node_samples, len(head_nodes) )
 
         return features
 
@@ -441,19 +451,11 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
 
         max_hops = len(self.in_samples)
         max_slots = 2 ** (max_hops + 1) - 1
-        features = [None] * max_slots  # flattened binary tree
 
         batch_nodes = np.concatenate(node_samples)
         batch_features = self.graph.node_features(batch_nodes)
 
-        idx = 0
-        for slot in range(max_slots):
-            features_for_slot = batch_features[idx : idx + len(node_samples[slot])]
-            resize = -1 if np.size(features_for_slot) > 0 else 0
-            features[slot] = np.reshape(
-                features_for_slot, (len(head_nodes), resize, features_for_slot.shape[1])
-            )
-            idx += len(node_samples[slot])
+        features = reformat_feature_array_directed( max_slots, batch_features, node_samples, len(head_nodes) )
 
         return features
 
