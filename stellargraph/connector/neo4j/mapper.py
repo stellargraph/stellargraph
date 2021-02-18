@@ -36,7 +36,7 @@ from ...mapper.sampled_link_generators import BatchedLinkGenerator
 from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph
 
-def __reformat_feature_array( nodes_per_hop, batch_features ):
+def reformat_feature_array( nodes_per_hop, batch_features, N ):
 
     features = []
     idx = 0
@@ -49,7 +49,7 @@ def __reformat_feature_array( nodes_per_hop, batch_features ):
         features.append(
             np.reshape(
                 features_for_slot,
-                ( len(head_nodes), resize, features_for_slot.shape[1] ),
+                ( N, resize, features_for_slot.shape[1] ),
             )
         )
 
@@ -172,7 +172,7 @@ class Neo4jGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
         batch_nodes = np.concatenate(nodes_per_hop)
         batch_features = self.graph.node_features(batch_nodes)
 
-        features = __reformat_feature_array( nodes_per_hop, batch_features )
+        features = reformat_feature_array( nodes_per_hop, batch_features, len(head_nodes) )
 
         return features
 
@@ -354,7 +354,7 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
         batch_nodes    = np.concatenate( nodes_per_hop )
         batch_features = self.graph.node_features( batch_nodes )
 
-        features = __reformat_feature_array( nodes_per_hop, batch_features )
+        features = reformat_feature_array( nodes_per_hop, batch_features, len(head_nodes) )
 
         return features
 
