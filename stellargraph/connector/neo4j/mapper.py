@@ -36,6 +36,7 @@ from ...mapper.sampled_link_generators import BatchedLinkGenerator
 from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph
 
+
 def reformat_feature_array(nodes_per_hop, batch_features, N):
 
     features = []
@@ -43,7 +44,7 @@ def reformat_feature_array(nodes_per_hop, batch_features, N):
 
     for nodes in nodes_per_hop:
 
-        features_for_slot = batch_features[ idx : idx + len(nodes) ]
+        features_for_slot = batch_features[idx : idx + len(nodes)]
         resize = -1 if np.size(features_for_slot) > 0 else 0
 
         features.append(
@@ -54,7 +55,8 @@ def reformat_feature_array(nodes_per_hop, batch_features, N):
 
     return features
 
-def reformat_feature_array_directed( max_slots, batch_features, node_samples, N ):
+
+def reformat_feature_array_directed(max_slots, batch_features, node_samples, N):
 
     features = [None] * max_slots
     idx = 0
@@ -71,6 +73,7 @@ def reformat_feature_array_directed( max_slots, batch_features, node_samples, N 
         idx += len(node_samples[slot])
 
     return features
+
 
 @experimental(reason="the class is not fully tested")
 class Neo4jBatchedNodeGenerator:
@@ -193,6 +196,7 @@ class Neo4jGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
 
         return features
 
+
 @experimental(reason="the class is not fully tested")
 class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
     """
@@ -280,6 +284,7 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
 
         return features
 
+
 @experimental(reason="the class is not fully tested")
 class Neo4jBatchedLinkGenerator:
     """
@@ -320,6 +325,7 @@ class Neo4jBatchedLinkGenerator:
         )
 
     flow.__doc__ = BatchedLinkGenerator.flow.__doc__
+
 
 @experimental(reason="the class is not fully tested")
 class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
@@ -389,10 +395,10 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
         """
 
         features_source = self.__sample_features_nodes(
-            [ edge[0] for edge in head_links ], batch_num
+            [edge[0] for edge in head_links], batch_num
         )
         features_target = self.__sample_features_nodes(
-            [ edge[1] for edge in head_links ], batch_num
+            [edge[1] for edge in head_links], batch_num
         )
 
         features = []
@@ -403,6 +409,7 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
             features.append(target)
 
         return features
+
 
 @experimental(reason="the class is not fully tested")
 class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
@@ -441,7 +448,7 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
         out_samples,
         seed=None,
         name=None,
-        weighted=False
+        weighted=False,
     ):
 
         super().__init__(G, batch_size)
@@ -494,10 +501,10 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
         """
 
         features_source = self.__sample_features_nodes(
-            [ edge[0] for edge in head_links ], batch_num
+            [edge[0] for edge in head_links], batch_num
         )
         features_target = self.__sample_features_nodes(
-            [ edge[1] for edge in head_links ], batch_num
+            [edge[1] for edge in head_links], batch_num
         )
 
         features = []
