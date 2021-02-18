@@ -18,7 +18,7 @@ import numpy as np
 from tensorflow.keras.utils import Sequence
 
 from . import Generator
-from ..connector.neo4j.mapper_nodes import Neo4jBatchedNodeGenerator
+from ..connector.neo4j.mapper import Neo4jBatchedNodeGenerator
 from ..core.validation import comma_sep
 
 
