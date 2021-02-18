@@ -494,7 +494,7 @@ class RelationalFullBatchNodeGenerator(Generator):
     def num_batch_dims(self):
         return 2
 
-    def flow(self, node_ids, targets=None):
+    def flow(self, node_ids, targets=None, use_ilocs=False):
         """
         Creates a generator/sequence object for training or evaluation
         with the supplied node ids and numeric targets.
@@ -503,7 +503,8 @@ class RelationalFullBatchNodeGenerator(Generator):
             node_ids: and iterable of node ids for the nodes of interest
                 (e.g., training, validation, or test set nodes)
             targets: a 2D array of numeric node targets with shape ``(len(node_ids), target_size)``
-
+            use_ilocs (bool): if True, node_ids are represented by ilocs,
+                otherwise node_ids need to be transformed into ilocs
         Returns:
             A NodeSequence object to use with RGCN models
             in Keras methods :meth:`fit`, :meth:`evaluate`,
@@ -519,7 +520,10 @@ class RelationalFullBatchNodeGenerator(Generator):
             if len(targets) != len(node_ids):
                 raise TypeError("Targets must be the same length as node_ids")
 
-        node_indices = self.graph.node_ids_to_ilocs(node_ids)
+        if use_ilocs:
+            node_indices = np.asarray(node_ids)
+        else:
+            node_indices = self.graph.node_ids_to_ilocs(node_ids)
 
         return RelationalFullBatchNodeSequence(
             self.features, self.As, self.use_sparse, targets, node_indices
