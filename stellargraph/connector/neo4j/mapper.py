@@ -363,7 +363,7 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
 
         self.sampler = Neo4jSampledBreadthFirstWalk(graph)
 
-    def __sample_features_nodes(self, head_nodes, batch_num):
+    def _sample_features_nodes(self, head_nodes, batch_num):
 
         nodes_per_hop = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
 
@@ -394,10 +394,10 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
             for that layer.
         """
 
-        features_source = self.__sample_features_nodes(
+        features_source = self._sample_features_nodes(
             [edge[0] for edge in head_links], batch_num
         )
-        features_target = self.__sample_features_nodes(
+        features_target = self._sample_features_nodes(
             [edge[1] for edge in head_links], batch_num
         )
 
@@ -460,7 +460,7 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
 
         self.sampler = Neo4jDirectedBreadthFirstNeighbors(graph)
 
-    def __sample_features__nodes(self, head_nodes, batch_num):
+    def _sample_features__nodes(self, head_nodes, batch_num):
 
         node_samples = self.sampler.run(
             nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
@@ -500,10 +500,10 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
             given the sequence of in/out directions.
         """
 
-        features_source = self.__sample_features_nodes(
+        features_source = self._sample_features_nodes(
             [edge[0] for edge in head_links], batch_num
         )
-        features_target = self.__sample_features_nodes(
+        features_target = self._sample_features_nodes(
             [edge[1] for edge in head_links], batch_num
         )
 
