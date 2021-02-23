@@ -50,11 +50,8 @@ def reformat_feature_array(nodes_per_hop, batch_features, N):
         resize = -1 if np.size(features_for_slot) > 0 else 0
 
         features.append(
-            np.reshape(
-                features_for_slot,
-                (N, resize, features_for_slot.shape[1]),
-            )
-        )
+            np.reshape(features_for_slot,
+                (N, resize, features_for_slot.shape[1]),))
 
         idx += len(nodes)
 
@@ -85,16 +82,8 @@ def threaded_feature_sampling(sample_function, node_list_1, node_list_2, batch_n
     with ThreadPoolExecutor(max_workers=2) as executor:
 
         future_samples = [
-            executor.submit(
-                sample_function,
-                node_list_1,
-                batch_num,
-            ),
-            executor.submit(
-                sample_function,
-                node_list_2,
-                batch_num,
-            ),
+            executor.submit(sample_function, node_list_1, batch_num,),
+            executor.submit(sample_function, node_list_2, batch_num,),
         ]
 
         features_source, features_target = (
@@ -265,12 +254,7 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
     """
 
     def __init__(
-        self,
-        graph,
-        batch_size,
-        in_samples,
-        out_samples,
-        name=None,
+        self, graph, batch_size, in_samples, out_samples, name=None,
     ):
         super().__init__(graph, batch_size)
 
@@ -299,10 +283,7 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
             given the sequence of in/out directions.
         """
         node_samples = self.sampler.run(
-            nodes=head_nodes,
-            n=1,
-            in_size=self.in_samples,
-            out_size=self.out_samples,
+            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
         )
 
         # Reshape node samples to sensible format
@@ -501,10 +482,7 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
     def __sample_features__nodes(self, head_nodes, batch_num):
 
         node_samples = self.sampler.run(
-            nodes=head_nodes,
-            n=1,
-            in_size=self.in_samples,
-            out_size=self.out_samples,
+            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
         )
 
         # Reshape node samples to sensible format
