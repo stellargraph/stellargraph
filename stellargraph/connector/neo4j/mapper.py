@@ -36,6 +36,8 @@ from ...mapper.sampled_link_generators import BatchedLinkGenerator
 from ...core.experimental import experimental
 from .graph import Neo4jStellarGraph
 
+from concurrent.futures import ThreadPoolExecutor
+
 
 def reformat_feature_array(nodes_per_hop, batch_features, N):
 
@@ -48,7 +50,10 @@ def reformat_feature_array(nodes_per_hop, batch_features, N):
         resize = -1 if np.size(features_for_slot) > 0 else 0
 
         features.append(
-            np.reshape(features_for_slot, (N, resize, features_for_slot.shape[1]),)
+            np.reshape(
+                features_for_slot,
+                (N, resize, features_for_slot.shape[1]),
+            )
         )
 
         idx += len(nodes)
@@ -73,6 +78,31 @@ def reformat_feature_array_directed(max_slots, batch_features, node_samples, N):
         idx += len(node_samples[slot])
 
     return features
+
+
+def threaded_feature_sampling(sample_function, node_list_1, node_list_2, batch_num):
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+
+        future_samples = [
+            executor.submit(
+                sample_function,
+                node_list_1,
+                batch_num,
+            ),
+            executor.submit(
+                sample_function,
+                node_list_2,
+                batch_num,
+            ),
+        ]
+
+        features_source, features_target = (
+            future_samples[0].result(),
+            future_samples[1].result(),
+        )
+
+    return features_source, features_target
 
 
 @experimental(reason="the class is not fully tested")
@@ -235,7 +265,12 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
     """
 
     def __init__(
-        self, graph, batch_size, in_samples, out_samples, name=None,
+        self,
+        graph,
+        batch_size,
+        in_samples,
+        out_samples,
+        name=None,
     ):
         super().__init__(graph, batch_size)
 
@@ -264,7 +299,10 @@ class Neo4jDirectedGraphSAGENodeGenerator(Neo4jBatchedNodeGenerator):
             given the sequence of in/out directions.
         """
         node_samples = self.sampler.run(
-            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
+            nodes=head_nodes,
+            n=1,
+            in_size=self.in_samples,
+            out_size=self.out_samples,
         )
 
         # Reshape node samples to sensible format
@@ -363,7 +401,7 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
 
         self.sampler = Neo4jSampledBreadthFirstWalk(graph)
 
-    def _sample_features_nodes(self, head_nodes, batch_num):
+    def __sample_features_nodes(self, head_nodes, batch_num):
 
         nodes_per_hop = self.sampler.run(nodes=head_nodes, n=1, n_size=self.num_samples)
 
@@ -394,11 +432,11 @@ class Neo4jGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
             for that layer.
         """
 
-        features_source = self._sample_features_nodes(
-            [edge[0] for edge in head_links], batch_num
-        )
-        features_target = self._sample_features_nodes(
-            [edge[1] for edge in head_links], batch_num
+        features_source, features_target = threaded_feature_sampling(
+            self.__sample_features_nodes,
+            [edge[0] for edge in head_links],
+            [edge[1] for edge in head_links],
+            batch_num,
         )
 
         features = []
@@ -460,10 +498,13 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
 
         self.sampler = Neo4jDirectedBreadthFirstNeighbors(graph)
 
-    def _sample_features__nodes(self, head_nodes, batch_num):
+    def __sample_features__nodes(self, head_nodes, batch_num):
 
         node_samples = self.sampler.run(
-            nodes=head_nodes, n=1, in_size=self.in_samples, out_size=self.out_samples,
+            nodes=head_nodes,
+            n=1,
+            in_size=self.in_samples,
+            out_size=self.out_samples,
         )
 
         # Reshape node samples to sensible format
@@ -500,11 +541,11 @@ class Neo4jDirectedGraphSAGELinkGenerator(Neo4jBatchedLinkGenerator):
             given the sequence of in/out directions.
         """
 
-        features_source = self._sample_features_nodes(
-            [edge[0] for edge in head_links], batch_num
-        )
-        features_target = self._sample_features_nodes(
-            [edge[1] for edge in head_links], batch_num
+        features_source, features_target = threaded_feature_sampling(
+            self.__sample_features_nodes,
+            [edge[0] for edge in head_links],
+            [edge[1] for edge in head_links],
+            batch_num,
         )
 
         features = []
