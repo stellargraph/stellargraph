@@ -50,8 +50,8 @@ def reformat_feature_array(nodes_per_hop, batch_features, N):
         resize = -1 if np.size(features_for_slot) > 0 else 0
 
         features.append(
-            np.reshape(features_for_slot,
-                (N, resize, features_for_slot.shape[1]),))
+            np.reshape(features_for_slot, (N, resize, features_for_slot.shape[1]),)
+        )
 
         idx += len(nodes)
 
