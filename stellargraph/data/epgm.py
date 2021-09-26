@@ -21,7 +21,6 @@ import os
 import json
 import uuid
 import numpy as np
-import chardet
 import scipy.sparse as sp
 
 import multiprocessing
