@@ -214,7 +214,7 @@ def test_normalized_laplacian(example_graph):
     # Sum of laplacian is equal to the number of degree 0 nodes
     laplacian = normalized_laplacian(Aadj, symmetric=False) 
     num_degree_zero_nodes = (Aadj.sum(axis=1) == 0).sum()
-    assert num_isolated_nodes == pytest.approx(laplacian.sum(), abs=1e-7)
+    assert num_degree_zero_nodes == pytest.approx(laplacian.sum(), abs=1e-7)
     assert laplacian.get_shape() == Aadj.get_shape()
 
 
