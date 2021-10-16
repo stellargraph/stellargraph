@@ -184,14 +184,13 @@ def test_smart_array_concatenate_broadcast():
         _check_smart_concatenate([a0, c43])
 
 
-@flaky_xfail_mark(AssertionError, 1678)
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
     csr = normalize_adj(Aadj, symmetric=True)
     dense = csr.todense()
     eigen_vals, _ = np.linalg.eig(dense)
-    assert eigen_vals.max() == pytest.approx(1, abs=1e-7)
+    assert eigen_vals.max() == pytest.approx(1, abs=1e-5)
     assert csr.get_shape() == Aadj.get_shape()
 
     # Sum of normalized adjacency matrix is equal to the number of positive degree nodes
