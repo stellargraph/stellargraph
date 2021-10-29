@@ -184,19 +184,20 @@ def test_smart_array_concatenate_broadcast():
         _check_smart_concatenate([a0, c43])
 
 
-@flaky_xfail_mark(AssertionError, 1678)
 def test_normalize_adj(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
     csr = normalize_adj(Aadj, symmetric=True)
     dense = csr.todense()
     eigen_vals, _ = np.linalg.eig(dense)
-    assert eigen_vals.max() == pytest.approx(1, abs=1e-7)
+    assert eigen_vals.max() == pytest.approx(1, abs=1e-5)
     assert csr.get_shape() == Aadj.get_shape()
 
+    # Sum of normalized adjacency matrix is equal to the number of positive degree nodes
     csr = normalize_adj(Aadj, symmetric=False)
     dense = csr.todense()
-    assert 5 == pytest.approx(dense.sum(), 0.1)
+    num_pos_degree_nodes = (Aadj.sum(axis=1) > 0).sum()
+    assert num_pos_degree_nodes == pytest.approx(dense.sum(), 0.1)
     assert csr.get_shape() == Aadj.get_shape()
 
 
@@ -212,7 +213,7 @@ def test_normalized_laplacian(example_graph):
     assert laplacian.shape == Aadj.get_shape()
 
     # Sum of laplacian is equal to the number of degree 0 nodes
-    laplacian = normalized_laplacian(Aadj, symmetric=False) 
+    laplacian = normalized_laplacian(Aadj, symmetric=False)
     num_degree_zero_nodes = (Aadj.sum(axis=1) == 0).sum()
     assert num_degree_zero_nodes == pytest.approx(laplacian.sum(), abs=1e-7)
     assert laplacian.get_shape() == Aadj.get_shape()
