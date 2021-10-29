@@ -21,7 +21,7 @@ The feature update rule for homogeneous graphs is, for mean aggregator:
 
    :math:`{h_{v}}^{k} = \sigma\left( concat\lbrack{W^{k}}_{\text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack,\ {W^{k}}_{\text{neigh}}{{h}^{k}}_{N(v)}\rbrack + b^{k} \right)`
 
-   If ````concat=False````:
+   If ``concat=False``:
 
    :math:`{h_{v}}^{k} = \sigma\left( {W^{k}}_{\text{self}}D_{p}\lbrack{h_{v}}^{k - 1}\rbrack + \ {W^{k}}_{\text{neigh}}{h^{k}}_{N(v)} + b^{k} \right)`
 

@@ -200,7 +200,6 @@ def test_normalize_adj(example_graph):
     assert csr.get_shape() == Aadj.get_shape()
 
 
-@flaky_xfail_mark(AssertionError, 1160)
 def test_normalized_laplacian(example_graph):
     Aadj = example_graph.to_adjacency_matrix()
     laplacian = normalized_laplacian(Aadj).todense()
@@ -212,8 +211,10 @@ def test_normalized_laplacian(example_graph):
     assert eigenvalues.max() <= (2 + 1e-7)
     assert laplacian.shape == Aadj.get_shape()
 
-    laplacian = normalized_laplacian(Aadj, symmetric=False)
-    assert 1 == pytest.approx(laplacian.sum(), abs=1e-7)
+    # Sum of laplacian is equal to the number of degree 0 nodes
+    laplacian = normalized_laplacian(Aadj, symmetric=False) 
+    num_degree_zero_nodes = (Aadj.sum(axis=1) == 0).sum()
+    assert num_degree_zero_nodes == pytest.approx(laplacian.sum(), abs=1e-7)
     assert laplacian.get_shape() == Aadj.get_shape()
 
 
