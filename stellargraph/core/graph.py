@@ -1190,11 +1190,12 @@ class StellarGraph:
         Checks if all properties required for machine learning training/inference are set up.
         An error will be raised if the graph is not correctly setup.
         """
-        if all(size == 0 for _, size in self.node_feature_sizes().items()):
-            raise RuntimeError(
-                "This StellarGraph has no numeric feature attributes for nodes"
-                "Node features are required for machine learning"
-            )
+        # DEPRECATED
+        # if all(size == 0 for _, size in self.node_feature_sizes().items()):
+        #     raise RuntimeError(
+        #         "This StellarGraph has no numeric feature attributes for nodes"
+        #         "Node features are required for machine learning"
+        #     )
 
         # TODO: check the schema
 
