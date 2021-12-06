@@ -681,6 +681,156 @@ class UniformRandomMetaPathWalk(RandomWalk):
                 )
 
 
+class WeightedRandomMetaPathWalk(RandomWalk):
+    """
+    For heterogeneous graphs, it performs weighted random walks based on given metapaths and edge weights. Optional
+    parameters default to using the values passed in during construction.
+
+    .. seealso::
+
+       Examples using this random walk:
+
+       - `Metapath2Vec link prediction <https://stellargraph.readthedocs.io/en/stable/demos/link-prediction/metapath2vec-link-prediction.html>`__
+       - `Metapath2Vec unsupervised representation learning <https://stellargraph.readthedocs.io/en/stable/demos/embeddings/metapath2vec-embeddings.html>`__
+
+       Related functionality:
+
+       - :class:`.UnsupervisedSampler` for transforming random walks into links for unsupervised training of link prediction models
+       - Other random walks: :class:`.UniformRandomMetaPathWalk`, class:`.UniformRandomWalk`, :class:`.BiasedRandomWalk`, :class:`.TemporalRandomWalk`.
+
+
+    Args:
+        graph (StellarGraph): Graph to traverse
+        n (int, optional): Total number of random walks per root node
+        length (int, optional): Maximum length of each random walk
+        metapaths (list of list, optional): List of lists of node labels that specify a metapath schema, e.g.,
+            [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+            schemas of length 3 and 5 respectively.
+        seed (int, optional): Random number generator seed
+
+    """
+
+    def __init__(
+        self, graph, n=None, length=None, metapaths=None, seed=None,
+    ):
+        super().__init__(graph, seed=seed)
+        self.n = n
+        self.length = length
+        self.metapaths = metapaths
+
+    def run(self, nodes, *, n=None, length=None, metapaths=None, seed=None):
+        """
+        Performs metapath-driven weighted random walks on heterogeneous graphs.
+
+        Args:
+            nodes (list): The root nodes as a list of node IDs
+            n (int, optional): Total number of random walks per root node
+            length (int, optional): Maximum length of each random walk
+            metapaths (list of list, optional): List of lists of node labels that specify a metapath schema, e.g.,
+                [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+                schemas of length 3 and 5 respectively.
+            seed (int, optional): Random number generator seed; default is None
+
+        Returns:
+            List of lists of nodes ids for each of the random walks generated
+        """
+        n = _default_if_none(n, self.n, "n")
+        length = _default_if_none(length, self.length, "length")
+        metapaths = _default_if_none(metapaths, self.metapaths, "metapaths")
+        self._validate_walk_params(nodes, n, length)
+        self._check_metapath_values(metapaths)
+        _, rs = self._get_random_state(seed)
+
+        nodes = self.graph.node_ids_to_ilocs(nodes)
+
+        walks = []
+
+        for node in nodes:
+            # retrieve node type
+            label = self.graph.node_type(node, use_ilocs=True)
+            filtered_metapaths = [
+                metapath
+                for metapath in metapaths
+                if len(metapath) > 0 and metapath[0] == label
+            ]
+
+            for metapath in filtered_metapaths:
+                
+                metapath = metapath[1:] * ((length // (len(metapath) - 1)) + 1)
+                for _ in range(n):
+                    walk = (
+                        []
+                    )  # holds the walk data for this walk; first node is the starting node
+                    current_node = node
+                    for d in range(length):
+                        walk.append(current_node)
+                        # d+1 can also be used to index metapath to retrieve the node type for the next step in the walk
+                        neighbours, edge_weights = self.graph.neighbor_arrays(
+                            current_node, use_ilocs=True, include_edge_weight=True
+                        )
+                        # filter these by node type
+                        neighbour_types = self.graph.node_type(
+                            neighbours, use_ilocs=True
+                        )
+                        neighbours = [
+                            (neigh, edge_weight)
+                            for neigh, neigh_type, edge_weight in zip(neighbours, neighbour_types, edge_weights)
+                            if neigh_type == metapath[d]
+                        ]
+
+                        neighbours, edge_weights = zip(*neighbours)
+
+                        # create edges probability distribution to help choose next node in the walk
+                        edges_prob = np.array(edge_weights) / np.sum(edge_weights)
+
+                        if len(neighbours) == 0:
+                            # if no neighbours of the required type as dictated by the metapath exist, then stop.
+                            break
+                        # select one of the neighbours randomly based on the edges probability distribution
+                        current_node = rs.choice(
+                            neighbours,
+                            p=edges_prob
+                        )  # the next node in the walk
+
+                    walks.append(
+                        list(self.graph.node_ilocs_to_ids(walk))
+                    )  # store the walk
+
+        return walks
+
+    def _check_metapath_values(self, metapaths):
+        """
+        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
+        parameter (the first one encountered in the checks) with invalid value.
+
+        Args:
+            metapaths: <list> List of lists of node labels that specify a metapath schema, e.g.,
+                [['Author', 'Paper', 'Author'], ['Author, 'Paper', 'Venue', 'Paper', 'Author']] specifies two metapath
+                schemas of length 3 and 5 respectively.
+        """
+
+        def raise_error(msg):
+            raise ValueError(f"metapaths: {msg}, found {metapaths}")
+
+        if type(metapaths) != list:
+            raise_error("expected list of lists.")
+        for metapath in metapaths:
+            if type(metapath) != list:
+                raise_error("expected each metapath to be a list of node labels")
+            if len(metapath) < 2:
+                raise_error("expected each metapath to specify at least two node types")
+
+            for node_label in metapath:
+                if type(node_label) != str:
+                    raise_error("expected each node type in metapaths to be a string")
+            if metapath[0] != metapath[-1]:
+                raise_error(
+                    "expected the first and last node type in a metapath to be the same"
+                )
+
+
+
+
 class SampledBreadthFirstWalk(GraphWalk):
     """
     Breadth First Walk that generates a sampled number of paths from a starting node.
