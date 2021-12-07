@@ -25,6 +25,7 @@ __all__ = [
 ]
 
 
+import operator
 import numpy as np
 import warnings
 from collections import defaultdict, deque
@@ -768,17 +769,18 @@ class WeightedRandomMetaPathWalk(RandomWalk):
                         neighbours, edge_weights = self.graph.neighbor_arrays(
                             current_node, use_ilocs=True, include_edge_weight=True
                         )
-                        # filter these by node type
-                        neighbour_types = self.graph.node_type(
+                        # filter indexes by node type
+                        neighbour_d_type_idxs = [idx for idx, x in enumerate(self.graph.node_type(
                             neighbours, use_ilocs=True
-                        )
-                        neighbours = [
-                            (neigh, edge_weight)
-                            for neigh, neigh_type, edge_weight in zip(neighbours, neighbour_types, edge_weights)
-                            if neigh_type == metapath[d]
-                        ]
+                        )) if x ==  metapath[d]]
 
-                        neighbours, edge_weights = zip(*neighbours)
+                        # filter neighbours and edge weights based on neighbour_d_type_idxs
+                        if len(neighbour_d_type_idxs) < 2:
+                            neighbours = [operator.itemgetter(*neighbour_d_type_idxs)(neighbours)]
+                            edge_weights = [operator.itemgetter(*neighbour_d_type_idxs)(edge_weights)]
+                        else:
+                            neighbours = operator.itemgetter(*neighbour_d_type_idxs)(neighbours)
+                            edge_weights = operator.itemgetter(*neighbour_d_type_idxs)(edge_weights)
 
                         # create edges probability distribution to help choose next node in the walk
                         edges_prob = np.array(edge_weights) / np.sum(edge_weights)
