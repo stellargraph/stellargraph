@@ -3,7 +3,7 @@ sphinx-markdown-tables==0.0.15
 nbsphinx==0.7.1
 nbsphinx-link==1.3.0
 # needed for Pygments highlighting in notebooks
-ipython==7.13.0
+ipython==7.16.3
 
 sphinx-notfound-page==0.4
 sphinxcontrib-spelling==5.1.2
