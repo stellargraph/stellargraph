@@ -223,7 +223,7 @@ def test_rescale_laplacian(example_graph):
     node_list = list(example_graph.nodes())
     Aadj = example_graph.to_adjacency_matrix()
     rl = rescale_laplacian(normalized_laplacian(Aadj))
-    assert rl.max() < 1
+    assert rl.max() < 0.8
     assert rl.get_shape() == Aadj.get_shape()
 
 
