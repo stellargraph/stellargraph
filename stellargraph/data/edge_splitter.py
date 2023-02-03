@@ -639,22 +639,12 @@ class EdgeSplitter(object):
                 )
             )
 
-        # shuffle the edges
-        self._random.shuffle(all_edges)
-        # iterate over the list of edges and for each edge if the edge is not in minedges, remove it from the graph
-        # until num_edges_to_remove edges have been removed and the graph reduced to p of its original size
-        count = 0
-        removed_edges = []
-        for edge in all_edges:
-            if edge not in minedges:
-                removed_edges.append(
-                    (edge[0], edge[1], 1)
-                )  # the last entry is the label
-                self.g_train.remove_edge(*edge)
+        removable = list(set(all_edges).difference(set(minedges))) # compute the removeble edges
+        self._shuffle(removable)  # shuffle the nodes
+        removed_edges = [(edge[0],edge[1],1) for edge in removable[:num_edges_to_remove]] # get edges to remove
+        self.g_train.remove_edges_from(removable[:num_edges_to_remove]) # remove edge from g_train
+        return removed_edges
 
-                count += 1
-            if count == num_edges_to_remove:
-                return removed_edges
 
     def _sample_negative_examples_by_edge_type_local_dfs(
         self,
