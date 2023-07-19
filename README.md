@@ -195,7 +195,7 @@ pip install stellargraph
 pip install stellargraph[demos]
 ```
 
-The community detection demos require `python-igraph` which is only available on some platforms. To install this in addition to the other demo requirements:
+The community detection demos require `python-igraph`. To install this in addition to the other demo requirements:
 ```
 pip install stellargraph[demos,igraph]
 ```
