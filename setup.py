@@ -52,7 +52,7 @@ EXTRAS_REQUIRES = {
         "mplleaflet==0.0.5",
         "gensim>=4.0.0",
     ],
-    "igraph": ["python-igraph"],
+    "igraph": ["igraph"],
     "neo4j": ["py2neo"],
     "test": [
         "pytest==5.3.1",
