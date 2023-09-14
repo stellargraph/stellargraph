@@ -847,8 +847,8 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
         Args:
             nodes (list): A list of root node ids such that from each node n BFWs will be generated up to the
             given depth d.
-            in_size (int): The number of in-directed nodes to sample with replacement at each depth of the walk.
-            out_size (int): The number of out-directed nodes to sample with replacement at each depth of the walk.
+            in_size (list of int): The number of in-directed nodes to sample with replacement at each depth of the walk.
+            out_size (list of int): The number of out-directed nodes to sample with replacement at each depth of the walk.
             n (int, default 1): Number of walks per node id.
             seed (int, optional): Random number generator seed; default is None
             weighted (bool, optional): If True, sample neighbours using the edge weights in the graph.
@@ -935,14 +935,12 @@ class DirectedBreadthFirstNeighbours(GraphWalk):
 
     def _check_neighbourhood_sizes(self, in_size, out_size):
         """
-        Checks that the parameter values are valid or raises ValueError exceptions with a message indicating the
-        parameter (the first one encountered in the checks) with invalid value.
+        Checks that the parameter values are valid and are of equal length or raises ValueError exceptions
+        with a message indicating the parameter (the first one encountered in the checks) with invalid value.
 
         Args:
-            nodes: <list> A list of root node ids such that from each node n BFWs will be generated up to the
-            given depth d.
-            n_size: <list> The number of neighbouring nodes to expand at each depth of the walk.
-            seed: <int> Random number generator seed; default is None
+            in_size (list of int): List of number of in-directed nodes to be sampled at each depth.
+            out_size (list of int): List of number of out-directed nodes to be sampled at each depth.
         """
         self._check_sizes(in_size)
         self._check_sizes(out_size)
