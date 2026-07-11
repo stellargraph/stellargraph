@@ -283,3 +283,7 @@ International Conference on Machine Learning (ICML), 2019, ([link](https://arxiv
 18. An End-to-End Deep Learning Architecture for Graph Classification. Muhan Zhang, Zhicheng Cui, Marion Neumann, and Yixin Chen, AAAI, 2018. ([link](https://www.cse.wustl.edu/~yixin.chen/public/DGCNN.pdf))
 
 19. T-GCN: A Temporal Graph Convolutional Network for Traffic Prediction. Ling Zhao, Yujiao Song, Chao Zhang, Yu Liu, Pu Wang, Tao Lin, Min Deng, and Haifeng Li. IEEE Transactions on Intelligent Transportation Systems, 2019. ([link](https://ieeexplore.ieee.org/document/8809901))
+
+---
+
+*[Mukller](https://github.com/Mukller)*
